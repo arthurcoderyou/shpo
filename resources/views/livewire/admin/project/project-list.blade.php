@@ -26,9 +26,7 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/@preline/remove-element@2.6.0/index.min.js"></script>
-    {{-- The whole world belongs to you. --}}
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&libraries=places"></script>
-
+    
 
     <!-- Card -->
     <div class="flex flex-col">
