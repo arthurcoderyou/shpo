@@ -1,0 +1,163 @@
+<!-- Card Section -->
+<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+
+    <div wire:loading class="loading-overlay">
+        <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    
+
+    
+    <!-- Card -->
+    <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+
+
+        <div class="  p-4">
+
+            <div class="sm:col-span-12 flex justify-between align-self-center">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    Project Timer
+                </h2>
+
+                @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('timer apply to all'))
+                <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
+                    onclick="confirm('Are you sure, you want to apply this to all records?') || event.stopImmediatePropagation()"
+                    wire:click.prevent="apply_to_all" 
+                    class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-sky-500 text-white shadow-sm hover:bg-sky-50 hover:text-sky-600 hover:border-sky-500 focus:outline-sky-500 focus:text-sky-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M352 256c0 22.2-1.2 43.6-3.3 64l-185.3 0c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64l185.3 0c2.2 20.4 3.3 41.8 3.3 64zm28.8-64l123.1 0c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64l-123.1 0c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64zm112.6-32l-116.7 0c-10-63.9-29.8-117.4-55.3-151.6c78.3 20.7 142 77.5 171.9 151.6zm-149.1 0l-176.6 0c6.1-36.4 15.5-68.6 27-94.7c10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5c11.6 26 20.9 58.2 27 94.7zm-209 0L18.6 160C48.6 85.9 112.2 29.1 190.6 8.4C165.1 42.6 145.3 96.1 135.3 160zM8.1 192l123.1 0c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64L8.1 320C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64zM194.7 446.6c-11.6-26-20.9-58.2-27-94.6l176.6 0c-6.1 36.4-15.5 68.6-27 94.6c-10.5 23.6-22.2 40.7-33.5 51.5C272.6 508.8 263.3 512 256 512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6C112.2 482.9 48.6 426.1 18.6 352l116.7 0zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6c25.5-34.2 45.2-87.7 55.3-151.6l116.7 0z"/></svg>
+                    
+                    APPLY TO ALL
+                </button>
+                @endif
+
+            </div>
+            <!-- End Col -->
+            <form wire:submit="save">
+                <!-- Grid -->
+                <div class="grid grid-cols-12 gap-x-2  ">
+
+                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
+                        <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            Submitter duration
+                        </label>
+
+                        <input
+                        min="1"
+                        autofocus autocomplete="submitter_response_duration"
+                        wire:model="submitter_response_duration"
+                        id="submitter_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+
+                        @error('submitter_response_duration')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
+                        <label for="submitter_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            Submitter duration type
+                        </label>
+
+                        <select 
+                        autofocus autocomplete="submitter_response_duration_type"
+                        wire:model="submitter_response_duration_type"
+                        id="submitter_response_duration_type" 
+                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                            <option selected="">Select type</option>
+                            <option value="day">Day</option>
+                            <option value="week">Week</option>
+                            <option value="month">Month</option>
+                        </select>
+
+                        @error('submitter_response_duration_type')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+
+                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
+                        <label for="reviewer_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            Reviewer duration
+                        </label>
+
+                        <input
+                        min="1"
+                        autofocus autocomplete="reviewer_response_duration"
+                        wire:model="reviewer_response_duration"
+                        id="reviewer_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+
+                        @error('reviewer_response_duration')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
+                        <label for="reviewer_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            Reviewer duration type
+                        </label>
+
+                        <select 
+                        autofocus autocomplete="reviewer_response_duration_type"
+                        wire:model="reviewer_response_duration_type"
+                        id="reviewer_response_duration_type" 
+                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                            <option selected="">Select type</option>
+                            <option value="day">Day</option>
+                            <option value="week">Week</option>
+                            <option value="month">Month</option>
+                        </select>
+
+                        @error('reviewer_response_duration_type')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+                    
+                    @if(!empty($project_timer))
+                    <p class="text-sm text-gray-500 mt-2 col-span-12"> 
+                        Updated {{  \Carbon\Carbon::parse($project_timer->updated_at)->format('d M, h:i A') }} by {{ $project_timer->updator ? $project_timer->updator->name : '' }}
+                                            
+                    </p>
+
+                    @else
+                    <p class="text-sm text-gray-500 mt-2 col-span-12"> 
+                        Project timers are set to default and haven't been updated.                   
+                    </p>
+                    @endif
+
+
+                </div>
+                <!-- End Grid -->
+
+                
+
+                <div class="mt-5 flex justify-center gap-x-2">
+
+
+
+
+                    <a href="{{ route('project.index') }}" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                        Cancel
+                    </a>
+
+                    @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('timer edit'))
+                    <button type="submit" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+                    Update
+                    </button>
+                    @endif
+                </div>
+
+            </form>
+        </div>
+    </div>
+    <!-- End Card --> 
+</div>
+<!-- End Card Section -->
