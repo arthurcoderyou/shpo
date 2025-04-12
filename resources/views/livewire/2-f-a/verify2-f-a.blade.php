@@ -176,14 +176,14 @@ new #[Layout('layouts.guest')] class extends Component
 
         <div class=" ">
              
-            <label for="otp_code" class="inline-block text-sm font-medium text-gray-800   dark:text-neutral-200">
+            <label for="otp_code" class="inline-block text-sm font-medium text-gray-800   ">
                 Enter the 6-digit code sent to your email.
             </label>
 
             <input
             autofocus autocomplete="otp_code"
             wire:model="otp_code"
-            id="otp_code" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+            id="otp_code" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
             @error('otp_code')
                 <p class="text-sm text-red-600 mt-2">{{ $message }}</p>

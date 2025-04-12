@@ -32,15 +32,15 @@
     <div class="flex flex-col">
         <div class="-m-1.5 overflow-x-auto">
         <div class="p-1.5 min-w-full inline-block align-middle">
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden  ">
             <!-- Header -->
-            <div class=" min-w-full px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 dark:border-neutral-700">
+            <div class=" min-w-full px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 ">
                 <div>
-                    <h2 class="text-nowrap text-xl font-semibold text-gray-800 dark:text-neutral-200 inline-flex items-center gap-x-2">
+                    <h2 class="text-nowrap text-xl font-semibold text-gray-800  inline-flex items-center gap-x-2">
                         {{ $title }} <span class="shrink-0 flex justify-center items-center size-[30px] text-sm bg-black text-white rounded-full  ">{{ $projects_count ?? 0 }}</span>
 
                     </h2>
-                    {{-- <p class="text-sm text-gray-600 dark:text-neutral-400">
+                    {{-- <p class="text-sm text-gray-600 ">
                         {{ $subtitle }}
                     </p> --}}
                     </div>
@@ -50,7 +50,7 @@
 
 
                         <input type="text" wire:model.live="search"
-                            class="text-nowrap min-w-32 py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                            class="text-nowrap min-w-32 py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
                             placeholder="Search">
 
 
@@ -58,7 +58,7 @@
                         <button
                             @click="showModal = true, initMap" type="button"
                             @keydown.window="handleKeydown" 
-                            class="text-nowrap min-w-44 py-2 px-3 inline-flex items-center gap-x-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50   dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                            class="text-nowrap min-w-44 py-2 px-3 inline-flex items-center gap-x-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50    "
                             {{-- href="{{ route('schedule.index') }}"> --}}
                             >
                                     
@@ -71,7 +71,7 @@
 
                         <div class="text-nowrap inline-flex items-center gap-x-2">
 
-                            <select wire:model.live="review_status" class="min-w-36 py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            <select wire:model.live="review_status" class="min-w-36 py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
                                 <option value="">Review Status</option> 
                                 
                                 @foreach ($review_status_options as $key => $value )
@@ -83,7 +83,7 @@
 
                         <div class="text-nowrap inline-flex items-center gap-x-2">
 
-                            <select wire:model.live="project_status" class="min-w-36 py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            <select wire:model.live="project_status" class="min-w-36 py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
                                 <option value="">Project Status</option> 
                                 
                                 @foreach ($project_status_options as $key => $value )
@@ -95,7 +95,7 @@
 
                         <div class="text-nowrap inline-flex items-center gap-x-2">
 
-                            <select wire:model.live="type" class="min-w-32 py-2 px-3 pe-9 max-w-32 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            <select wire:model.live="type" class="min-w-32 py-2 px-3 pe-9 max-w-32 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
                                 <option value="">Project type</option>
                                 @if(!empty($project_types))
                                     @foreach ($project_types as $type_id => $type_name )
@@ -107,7 +107,7 @@
 
                         <div class="text-nowrapinline-flex items-center gap-x-2">
 
-                            <select wire:model.live="sort_by" class="min-w-32 py-2 px-3 pe-9 max-w-32 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            <select wire:model.live="sort_by" class="min-w-32 py-2 px-3 pe-9 max-w-32 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
                                 <option value="">Sort By</option>
                                 <option>Name A - Z</option>
                                 <option>Name Z - A</option>
@@ -136,19 +136,19 @@
                                 onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                                 wire:click.prevent="deleteSelected"
                                 {{ $count == 0 ? 'disabled' : '' }}
-                                class=" text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-red-500 text-white shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-500 focus:outline-red-500 focus:text-red-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
+                                class=" text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-red-500 text-white shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-500 focus:outline-red-500 focus:text-red-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
                                 <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                 Delete ({{ $count }})
                             </button>
                         @endif
 
                         <a href="{{ route('project.create') }}"
-                            class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
+                            class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg>
                         </a>
 
                         <a href="{{ route('project.index') }}"
-                            class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-sky-500 text-white shadow-sm hover:bg-sky-50 hover:text-sky-600   hover:border-sky-500 focus:outline-sky-500 focus:text-sky-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
+                            class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-sky-500 text-white shadow-sm hover:bg-sky-50 hover:text-sky-600   hover:border-sky-500 focus:outline-sky-500 focus:text-sky-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
                             {{-- <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg> --}}
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M370.7 133.3C339.5 104 298.9 88 255.8 88c-77.5 .1-144.3 53.2-162.8 126.9-1.3 5.4-6.1 9.2-11.7 9.2H24.1c-7.5 0-13.2-6.8-11.8-14.2C33.9 94.9 134.8 8 256 8c66.4 0 126.8 26.1 171.3 68.7L463 41C478.1 25.9 504 36.6 504 57.9V192c0 13.3-10.7 24-24 24H345.9c-21.4 0-32.1-25.9-17-41l41.8-41.7zM32 296h134.1c21.4 0 32.1 25.9 17 41l-41.8 41.8c31.3 29.3 71.8 45.3 114.9 45.3 77.4-.1 144.3-53.1 162.8-126.8 1.3-5.4 6.1-9.2 11.7-9.2h57.3c7.5 0 13.2 6.8 11.8 14.2C478.1 417.1 377.2 504 256 504c-66.4 0-126.8-26.1-171.3-68.7L49 471C33.9 486.1 8 475.4 8 454.1V320c0-13.3 10.7-24 24-24z"/></svg>
                         </a>
@@ -171,7 +171,7 @@
                             
                                 
                     <div>
-                        <p class="text-sm  dark:text-neutral-400">
+                        <p class="text-sm  ">
                             
                             <strong>Location:</strong> <span class="italic text-blue-500 font-bold">{!! $location !!}</span>
 
@@ -181,14 +181,14 @@
 
                     </div>
                     <div>
-                        <p class="text-sm  dark:text-neutral-400">
+                        <p class="text-sm  ">
                             <strong>Latitude:</strong> <span class="italic text-blue-500 font-bold">{!! $latitude !!}</span> 
                         </p> 
 
                     </div>
 
                     <div>
-                        <p class="text-sm  dark:text-neutral-400">
+                        <p class="text-sm  ">
                             <strong>Longitude:</strong> <span class="italic text-blue-500 font-bold">{!! $longitude !!}</span> 
                         </p> 
 
@@ -203,8 +203,8 @@
 
 
             <!-- Table -->
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
-                <thead class="bg-gray-50 dark:bg-neutral-800">
+            <table class="min-w-full divide-y divide-gray-200 ">
+                <thead class="bg-gray-50 ">
                 <tr>
                     <th scope="col" class="px-2 py-3 text-start">
                         {{-- <label for="hs-at-with-checkboxes-main" class="flex">
@@ -213,7 +213,7 @@
                                 wire:model.live="selectAll"
                                 wire:click="toggleSelectAll"
                                 wire:change="updateSelectedCount"
-                                class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-600 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                                class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
                                 id="hs-at-with-checkboxes-main">
                             <span class="sr-only">Checkbox</span>
                         </label> --}}
@@ -221,7 +221,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Name & Agency
                             </span>
                         </div>
@@ -229,7 +229,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Location
                             </span>
                         </div>
@@ -237,7 +237,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Description
                             </span>
                         </div>
@@ -245,7 +245,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Review Status
                             </span>
                         </div>
@@ -253,7 +253,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Status
                             </span>
                         </div>
@@ -263,7 +263,7 @@
                 </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+                <tbody class="divide-y divide-gray-200 ">
 
                     @if(!empty($projects) && count($projects) > 0)
                         @foreach ($projects as $project)
@@ -274,7 +274,7 @@
                                             <input type="checkbox"
                                             wire:model="selected_records"
                                             wire:change="updateSelectedCount"
-                                            class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-600 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                                            class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
                                             id="project_{{ $project->id }}"
                                             value="{{ $project->id }}"
                                             >
@@ -288,10 +288,10 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
-                                                <span class="block text-sm text-black dark:text-neutral-500">{{ $project->name }}</span>
-                                                <span class="block text-sm text-gray-500 dark:text-neutral-500">{{ $project->federal_agency }}</span>
+                                                <span class="block text-sm text-black ">{{ $project->name }}</span>
+                                                <span class="block text-sm text-gray-500 ">{{ $project->federal_agency }}</span>
                                                 <strong>
-                                                    <span class="block text-sm text-green-800 dark:text-neutral-500">{{ $project->type }}</span>
+                                                    <span class="block text-sm text-green-800 ">{{ $project->type }}</span>
                                                 </strong>
                                             </div>
                                         </div>
@@ -301,15 +301,15 @@
                                     <div class="px-2 py-2">
                                         @if(!empty($project->location))
                                          
-                                            <span class="block text-sm text-gray-500 dark:text-neutral-500 max-h-40 overflow-y-auto">
+                                            <span class="block text-sm text-gray-500  max-h-40 overflow-y-auto">
                                                 Loc: <span class="italic text-blue-500 font-bold">{{ $project->location }}</span>
-                                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200
+                                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 
                                                 inline-flex items-center gap-x-2
                                                 ">
                                                     
                                                     <div class="hs-tooltip inline-block" onclick="copyLocationToClipboard('{{  $project->location }}')">
                                                         <svg class="shrink-0 size-3 hover:bg-sky-500 cursor-pointer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M384 336l-192 0c-8.8 0-16-7.2-16-16l0-256c0-8.8 7.2-16 16-16l140.1 0L400 115.9 400 320c0 8.8-7.2 16-16 16zM192 384l192 0c35.3 0 64-28.7 64-64l0-204.1c0-12.7-5.1-24.9-14.1-33.9L366.1 14.1c-9-9-21.2-14.1-33.9-14.1L192 0c-35.3 0-64 28.7-64 64l0 256c0 35.3 28.7 64 64 64zM64 128c-35.3 0-64 28.7-64 64L0 448c0 35.3 28.7 64 64 64l192 0c35.3 0 64-28.7 64-64l0-32-48 0 0 32c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256c0-8.8 7.2-16 16-16l32 0 0-48-32 0z"/></svg>
-                                                        <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-sky-900 w-44 text-wrap  text-xs normal-case font-medium text-white rounded shadow-sm dark:bg-neutral-700" role="tooltip">
+                                                        <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-sky-900 w-44 text-wrap  text-xs normal-case font-medium text-white rounded shadow-sm " role="tooltip">
                                                             <div>
                                                                 Click to copy location
                                                             </div>
@@ -326,12 +326,12 @@
 
                                         @endif
                                         @if(!empty($project->latitude))
-                                            <span class="block text-sm text-gray-500 dark:text-neutral-500 max-h-40 overflow-y-auto">
+                                            <span class="block text-sm text-gray-500  max-h-40 overflow-y-auto">
                                                 Lat: <span class="italic text-blue-500 font-bold">{{ $project->latitude }}</span>
                                             </span>
                                         @endif
                                         @if(!empty($project->longitude))
-                                            <span class="block text-sm text-gray-500 dark:text-neutral-500 max-h-40 overflow-y-auto">
+                                            <span class="block text-sm text-gray-500  max-h-40 overflow-y-auto">
                                                 Lng: <span class="italic text-blue-500 font-bold">{{ $project->longitude }}</span>
                                             </span>
                                         @endif
@@ -339,7 +339,7 @@
                                 </td>
                                 <td class="size-auto text-wrap max-w-96 ">
                                     <div class="px-2 py-2">
-                                        <span class="block text-sm text-gray-500 dark:text-neutral-500 max-h-40 overflow-y-auto">
+                                        <span class="block text-sm text-gray-500  max-h-40 overflow-y-auto">
                                             {{ $project->description }}
                                         </span>
                                            
@@ -354,7 +354,7 @@
                                              
                                             <!--  While the project is still in review-->
                                             @if($project->status == "draft")
-                                                <span class="block text-sm text-gray-800 dark:text-neutral-500">
+                                                <span class="block text-sm text-gray-800 ">
                                                     Draft
                                                 </span>
                                             @elseif($project->status !== "approved")
@@ -366,12 +366,12 @@
 
                                                 @endphp 
 
-                                                <span class="block text-sm text-gray-800 dark:text-neutral-500">
+                                                <span class="block text-sm text-gray-800 ">
                                                     Reviewer: {{ $reviewer->user->name ? $reviewer->user->name : '' }}
                                                 </span>
                                                 
                                                 
-                                                <span class="block text-sm text-gray-500 dark:text-neutral-500">
+                                                <span class="block text-sm text-gray-500 ">
                                                     Review Status: 
                                                     @if($reviewer->review_status == "approved")
                                                         <span class="font-bold text-lime-500">{{ ucfirst($reviewer->review_status) }} </span> 
@@ -386,7 +386,7 @@
                                                 </span>
 
                                                 <hr>
-                                                <span class="block text-sm text-gray-500 dark:text-neutral-500  ">
+                                                <span class="block text-sm text-gray-500   ">
                                                     @if($reviewer->review_status == "pending") <!-- if review status is pending, it means the review due date must be seen here -->
                                                         Expected <span class="font-bold text-blue-800 ">review</span> on or before <br>  
                                                         <strong>
@@ -401,7 +401,7 @@
                                                 </span>
 
                                             @else 
-                                                <span class="block text-sm text-gray-800 dark:text-neutral-500">
+                                                <span class="block text-sm text-gray-800 ">
                                                     <span class="font-bold text-lime-500">Approved</span>
                                                 </span>
                                             @endif 
@@ -421,12 +421,12 @@
                                         <div class="flex items-center gap-x-3">
                                         <div class="grow">
 
-                                            <span class="block text-sm text-gray-800 dark:text-neutral-500">
+                                            <span class="block text-sm text-gray-800 ">
                                                 {!! $project->getStatus() !!}
                                             </span>
 
 
-                                            <span class="block text-sm text-gray-500 dark:text-neutral-500">
+                                            <span class="block text-sm text-gray-500 ">
                                                 Updated at 
                                                 <br> <strong>{{ \Carbon\Carbon::parse($project->updated_at)->format('M d, Y') }}</strong> 
                                                 <br> <strong>{{ \Carbon\Carbon::parse($project->updated_at)->format('h:i A') }}</strong>
@@ -459,10 +459,10 @@
                                                         </a>
 
                                                     @else 
-                                                        <span class="block text-sm text-gray-800 dark:text-neutral-500">
+                                                        <span class="block text-sm text-gray-800 ">
                                                             Currently reviewed by 
                                                         </span>
-                                                        <span class="block text-sm text-gray-800 dark:text-neutral-500">
+                                                        <span class="block text-sm text-gray-800 ">
                                                             {{ $project->getCurrentReviewerUser()->name }}
                                                         </span>
                                                     @endif
@@ -603,7 +603,7 @@
                         <tr>
                             <th scope="col" class="px-6 py-3 text-start">
                                 <div class="flex items-center gap-x-2">
-                                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                                     No records found
                                     </span>
                                 </div>
@@ -615,15 +615,15 @@
             <!-- End Table -->
 
             <!-- Footer -->
-            <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 dark:border-neutral-700">
+            <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 ">
                 {{ $projects->links() }}
 
                 <div class="inline-flex items-center gap-x-2">
-                    <p class="text-sm text-gray-600 dark:text-neutral-400">
+                    <p class="text-sm text-gray-600 ">
                     Showing:
                     </p>
                     <div class="max-w-sm space-y-3">
-                    <select wire:model.live="record_count" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                    <select wire:model.live="record_count" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
                         <option>10</option>
                         <option>25</option>
                         <option>50</option>
@@ -631,7 +631,7 @@
                         <option>200</option>
                     </select>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-neutral-400">
+                    <p class="text-sm text-gray-600 ">
                         {{ count($projects) > 0 ? 'of '.$projects->total()  : '' }}
                     </p>
                 </div>
@@ -700,7 +700,7 @@
                                             autofocus autocomplete="location"
                                             wire:model.live="location"
                                             placeholder="Search location"
-                                            id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                                            id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         
                                             <input type="hidden" id="latitude" wire:model.live="latitude">

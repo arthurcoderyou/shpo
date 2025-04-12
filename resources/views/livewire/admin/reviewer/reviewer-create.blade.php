@@ -10,13 +10,13 @@
 
     <form wire:submit="save">
         <!-- Card -->
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+        <div class="bg-white rounded-xl shadow ">
 
 
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                     Add Reviewer
                     </h2>
                 </div>
@@ -26,7 +26,7 @@
                 <div class="grid grid-cols-12 gap-x-2  ">
 
                     <div class="space-y-2 col-span-12 sm:col-span-6 ">
-                        <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             User
                         </label>
 
@@ -34,7 +34,7 @@
                         wire:model="user_id" 
                         id="user_id"
                         name="user_id"
-                        class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                        class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
 
                             @if(!empty($users) && count($users) > 0) 
                                 <option value="">Select User</option>
@@ -54,7 +54,7 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-6 ">
-                        <label for="order" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="order" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Order
                         </label>
 
@@ -62,7 +62,7 @@
                         wire:model="order" 
                         id="order"
                         name="order"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
                             <option value="">Select Order</option>
                             <option value="top">Add at the beginning of the order</option>
                             <option value="end">Add at the end of the order</option> 
@@ -76,7 +76,7 @@
                     </div>
 
                     {{-- <div class="space-y-2 col-span-12 sm:col-span-4 ">
-                        <label for="status" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="status" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Status
                         </label>
 
@@ -84,7 +84,7 @@
                         wire:model="status" 
                         id="status"
                         name="status"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
                             <option value="1">Active</option>
                             <option value="0">Inactive</option> 
                         </select>

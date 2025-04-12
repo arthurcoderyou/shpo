@@ -10,18 +10,18 @@
 
     
         <!-- Card -->
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+        <div class="bg-white rounded-xl shadow ">
 
 
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                     Submit a Review  
                     
                     </h2>
 
-                    <a href="{{ route('project.reviewer.index',['project' => $project->id]) }}" class="text-sm font-semibold text-sky-800 hover:underline dark:text-neutral-200">
+                    <a href="{{ route('project.reviewer.index',['project' => $project->id]) }}" class="text-sm font-semibold text-sky-800 hover:underline ">
                         Click here to add/update/delete reviewers of the project
                     </a>
  
@@ -37,31 +37,31 @@
                                 <!-- check if you are the reviewer -->
                                 @if($project->getCurrentReviewer()->user_id == Auth::user()->id)
                                     @if($project->allow_project_submission == true) <!-- allow_project_submission true means the review had been submitted, and false means the review is not yet submitted -->
-                                        <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                        <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                             You had already submitted a review for this project. Waiting for user reply.
                                         </p> 
                                     @endif 
                                 @else 
-                                    <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                    <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                         You had already submitted a review for this project.  
                                     </p>
         
                                 @endif
         
                             @else 
-                                <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                     You are not a reviewer for this project. 
                                 </p>
 
                             @endif
                         @else 
-                            <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                 The project has passed all reviews and has been fully approved.
                             </p>
                         @endif
                     @else 
 
-                        <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Please update the project's SHPO number.
                         </p>
                     @endif
@@ -85,7 +85,7 @@
 
 
                                 <div class="space-y-2 col-span-12   ">
-                                    <label for="project_review" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                    <label for="project_review" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                         Review
                                     </label>
 
@@ -93,7 +93,7 @@
                                     
                                     autofocus autocomplete="project_review"
                                     wire:model="project_review"
-                                    id="project_review"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder=""></textarea>
+                                    id="project_review"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder=""></textarea>
 
                                     @error('project_review')
                                         <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -108,7 +108,7 @@
                             
 
                                 <div class="space-y-2 col-span-12     ">
-                                    <label for="attachments" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                    <label for="attachments" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                         Attachments
                                     </label>
             
@@ -132,14 +132,14 @@
                                     <div class="grid grid-cols-12 gap-x-2  col-span-12  ">
 
                                         <div class="space-y-2 col-span-12 mt-1 ">
-                                            <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Set the time line for the user to send a response to the review
                                             </label>
                                         </div>
     
 
                                         <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                                            <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Submitter duration
                                             </label>
 
@@ -148,7 +148,7 @@
                                             autofocus autocomplete="submitter_response_duration"
                                             wire:model.live="submitter_response_duration"
                                             
-                                            id="submitter_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                                            id="submitter_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                                             @error('submitter_response_duration')
                                                 <p class="text-sm text-red-600 mt-2">{{ $message  }}</p>
@@ -158,7 +158,7 @@
                                         </div>
 
                                         <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                                            <label for="submitter_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="submitter_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Submitter duration type
                                             </label>
 
@@ -166,7 +166,7 @@
                                             autofocus autocomplete="submitter_response_duration_type"
                                             wire:model.live="submitter_response_duration_type"
                                             id="submitter_response_duration_type" 
-                                            class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                                            class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                                                 <option selected="">Select type</option>
                                                 <option value="day">Day</option>
                                                 <option value="week">Week</option>
@@ -181,7 +181,7 @@
                                         </div>
 
                                         <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                                            <label for="submitter_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="submitter_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Submitter response due date
                                             </label>
 
@@ -189,7 +189,7 @@
                                             {{-- autofocus autocomplete="submitter_due_date"
                                             wire:model.live="submitter_due_date" --}}
                                             value="{{ \Carbon\Carbon::parse($submitter_due_date)->format('d M, h:i A') }}"
-                                            id="submitter_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                                            id="submitter_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                                             @error('submitter_due_date')
                                                 <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -199,14 +199,14 @@
                                         </div>
 
                                         <div class="space-y-2 col-span-12 mt-1 ">
-                                            <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Set the time line for the reviewer to review the project
                                             </label>
                                         </div>
 
 
                                         <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                                            <label for="reviewer_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="reviewer_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Reviewer duration
                                             </label>
                     
@@ -214,7 +214,7 @@
                                             min="1"
                                             autofocus autocomplete="reviewer_response_duration"
                                             wire:model.live="reviewer_response_duration"
-                                            id="reviewer_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                                            id="reviewer_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
                     
                                             @error('reviewer_response_duration')
                                                 <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -224,7 +224,7 @@
                                         </div>
                     
                                         <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                                            <label for="reviewer_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="reviewer_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Reviewer duration type
                                             </label>
                     
@@ -232,7 +232,7 @@
                                             autofocus autocomplete="reviewer_response_duration_type"
                                             wire:model.live="reviewer_response_duration_type"
                                             id="reviewer_response_duration_type" 
-                                            class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                                            class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                                                 <option selected="">Select type</option>
                                                 <option value="day">Day</option>
                                                 <option value="week">Week</option>
@@ -248,7 +248,7 @@
                     
                     
                                         <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                                            <label for="reviewer_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <label for="reviewer_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Reviewer response due date
                                             </label>
                     
@@ -256,7 +256,7 @@
                                             {{-- autocomplete="reviewer_due_date"
                                             wire:model.live="reviewer_due_date" --}}    
                                             value="{{ \Carbon\Carbon::parse($reviewer_due_date)->format('d M, h:i A') }}"
-                                            id="reviewer_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                                            id="reviewer_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
                     
                                             @error('reviewer_due_date')
                                                 <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -328,7 +328,7 @@
                                  
 
                         <div class="space-y-2 col-span-12   ">
-                            <label for="shpo_number" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            <label for="shpo_number" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                 Project SHPO number
                             </label>
 
@@ -336,7 +336,7 @@
                             
                             autofocus autocomplete="shpo_number"
                             wire:model="shpo_number"
-                            id="shpo_number"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder=""> 
+                            id="shpo_number"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder=""> 
 
                             @error('shpo_number')
                                 <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
