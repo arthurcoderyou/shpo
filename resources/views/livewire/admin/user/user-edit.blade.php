@@ -69,10 +69,10 @@
                         <option selected="">Select a role</option>
                             @if (!empty($roles))
                                 @foreach ($roles as $role)
-                                    @if($role->name == "Super Admin" && Auth::user()->hasRole('Super Admin'))
+                                    @if($role->name == "DSI God Admin" && Auth::user()->hasRole('DSI God Admin'))
 
-                                        <option value="{{ $role->id }}">{{ $role->name }}</option>
-                                    @elseif ($role->name != "Super Admin")
+                                        <option value="{{ $role->id }}">{{  $role->name == "DSI God Admin" ? "Global Administrator" : $role->name  }}</option>
+                                    @elseif ($role->name != "DSI God Admin")
                                         <option value="{{ $role->id }}">{{ $role->name }}</option>
                                     @endif
 

@@ -12,5 +12,11 @@ class MapController extends Controller
 
 
     }
+
+    // open layer list
+    public function open_layer_list(){
+        return view('map.openlayer.index');
+    }
+
     
 }

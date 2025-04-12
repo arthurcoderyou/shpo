@@ -1,0 +1,215 @@
+<div>
+    <script async defer 
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&libraries=places,drawing,geometry"></script>
+
+    <script>
+        let map;
+        let drawingManager;
+        let polygons = [], markers = [], circles = [], rectangles = [];
+        let markerCounter = 1, polygonCounter = 1, circleCounter = 1, rectangleCounter = 1;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 13.4443, lng: 144.7937 },
+                zoom: 12,
+                mapTypeId: "satellite",
+            });
+
+            // Enable Drawing Tools
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingControl: true,
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_LEFT,
+                    drawingModes: ["marker", "polygon", "circle", "rectangle"]
+                },
+                markerOptions: { draggable: true, icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" },
+                polygonOptions: { 
+                    editable: true, 
+                    draggable: true, 
+                    strokeColor: "#FF0000",  // Stroke color (border)
+                    strokeOpacity: 0.8,      // Stroke transparency
+                    strokeWeight: 2,         // Border thickness
+                    fillColor: "#FF0000",    // Background color
+                    fillOpacity: 0.35        // Background transparency
+                },
+                circleOptions: { editable: true, draggable: true, fillColor: "#00FF00", strokeColor: "#00AA00" },
+                rectangleOptions: { editable: true, draggable: true, fillColor: "#0000FF", strokeColor: "#000088" }
+            });
+
+            drawingManager.setMap(map);
+
+            // Polygon Drawing
+            google.maps.event.addListener(drawingManager, "polygoncomplete", function (polygon) {
+                let polygonId = `polygon-${polygonCounter++}`;
+                polygons.push({ id: polygonId, polygon });
+                let area = google.maps.geometry.spherical.computeArea(polygon.getPath());
+                addToSidebar(polygonId, "Polygon", area.toFixed(2), () => deletePolygon(polygonId));
+                addClickHighlight(polygon, polygonId);
+            });
+
+            // Marker Placement
+            google.maps.event.addListener(drawingManager, "markercomplete", function (marker) {
+                let markerId = `marker-${markerCounter++}`;
+                markers.push({ id: markerId, marker });
+                addToSidebar(markerId, "Marker", "N/A", () => deleteMarker(markerId));
+                addClickHighlight(marker, markerId);
+            });
+
+            // Circle Drawing
+            google.maps.event.addListener(drawingManager, "circlecomplete", function (circle) {
+                let circleId = `circle-${circleCounter++}`;
+                circles.push({ id: circleId, circle });
+
+                let radius = google.maps.geometry.spherical.computeArea(circle.getBounds());
+                addToSidebar(circleId, "Circle", radius.toFixed(2), () => deleteCircle(circleId));
+
+                google.maps.event.addListener(circle, "radius_changed", function () {
+                    updateArea(circleId, google.maps.geometry.spherical.computeArea(circle.getBounds()).toFixed(2));
+                });
+
+                addClickHighlight(circle, circleId);
+            });
+
+            // Rectangle Drawing
+            google.maps.event.addListener(drawingManager, "rectanglecomplete", function (rectangle) {
+                let rectId = `rectangle-${rectangleCounter++}`;
+                rectangles.push({ id: rectId, rectangle });
+
+                let area = computeRectangleArea(rectangle);
+                addToSidebar(rectId, "Rectangle", area.toFixed(2), () => deleteRectangle(rectId));
+
+                google.maps.event.addListener(rectangle, "bounds_changed", function () {
+                    updateArea(rectId, computeRectangleArea(rectangle).toFixed(2));
+                });
+
+                addClickHighlight(rectangle, rectId);
+            });
+
+            google.maps.event.addListener(map, "click", function () {
+                clearActiveHighlights();
+            });
+        }
+
+        function addToSidebar(id, type, area, deleteFn) {
+            const list = document.getElementById("list");
+            const item = document.createElement("div");
+            item.setAttribute("id", id);
+            item.classList.add("sidebar-item");
+
+            item.innerHTML = `
+                <strong>${type} ${id.split('-')[1]}</strong><br>
+                Title: <input type="text" id="title-${id}" placeholder="Enter title"><br>
+                Description: <input type="text" id="desc-${id}" placeholder="Enter description"><br>
+                Stroke Color: <input type="color" id="stroke-${id}" value="#FF0000" 
+                    onchange="updateShapeColor('${id}', this.value, 'stroke')"><br>
+                Fill Color: <input type="color" id="fill-${id}" value="#FF0000" 
+                    onchange="updateShapeColor('${id}', this.value, 'fill')"><br>
+                Area: <span id="area-${id}">${area} sqm</span><br>
+                <button onclick="(${deleteFn.toString()})()">Delete</button><br>
+            `;
+
+            list.appendChild(item);
+        }
+
+
+        function updateArea(id, newArea) {
+            document.getElementById(`area-${id}`).innerText = `${newArea} sqm`;
+        }
+
+        function addClickHighlight(shape, id) {
+            google.maps.event.addListener(shape, "click", function () {
+                clearActiveHighlights();
+                document.getElementById(id).classList.add("active");
+            });
+        }
+
+        function clearActiveHighlights() {
+            document.querySelectorAll(".sidebar-item").forEach(item => item.classList.remove("active"));
+        }
+
+        function computeRectangleArea(rectangle) {
+            const bounds = rectangle.getBounds();
+            const ne = bounds.getNorthEast();
+            const sw = bounds.getSouthWest();
+            return google.maps.geometry.spherical.computeArea([ne, sw]);
+        }
+
+        function deletePolygon(id) {
+            let obj = polygons.find(p => p.id === id);
+            if (obj) {
+                obj.polygon.setMap(null);
+                polygons = polygons.filter(p => p.id !== id);
+                document.getElementById(id).remove();
+            }
+        }
+
+        function deleteMarker(id) {
+            let obj = markers.find(m => m.id === id);
+            if (obj) {
+                obj.marker.setMap(null);
+                markers = markers.filter(m => m.id !== id);
+                document.getElementById(id).remove();
+            }
+        }
+
+        function deleteCircle(id) {
+            let obj = circles.find(c => c.id === id);
+            if (obj) {
+                obj.circle.setMap(null);
+                circles = circles.filter(c => c.id !== id);
+                document.getElementById(id).remove();
+            }
+        }
+
+        function deleteRectangle(id) {
+            let obj = rectangles.find(r => r.id === id);
+            if (obj) {
+                obj.rectangle.setMap(null);
+                rectangles = rectangles.filter(r => r.id !== id);
+                document.getElementById(id).remove();
+            }
+        }
+
+
+
+        function updateShapeColor(id, color, type) {
+            let obj = polygons.find(p => p.id === id) || 
+                    circles.find(c => c.id === id) || 
+                    rectangles.find(r => r.id === id);
+            
+            if (obj) {
+                if (type === "stroke") {
+                    obj.polygon?.setOptions({ strokeColor: color });
+                    obj.circle?.setOptions({ strokeColor: color });
+                    obj.rectangle?.setOptions({ strokeColor: color });
+                } else if (type === "fill") {
+                    obj.polygon?.setOptions({ fillColor: color });
+                    obj.circle?.setOptions({ fillColor: color });
+                    obj.rectangle?.setOptions({ fillColor: color });
+                }
+            }
+        }
+
+
+
+        window.onload = initMap;
+    </script>
+
+    <h1>Google Maps with Search, Custom Shapes & Placemarks</h1>
+    <input id="search-box" type="text" placeholder="Search for a location" 
+        style="width: 50%; padding: 10px; margin-bottom: 10px; position: absolute; top: 10px; left: 25%; z-index: 5;">
+
+    <div class="flex flex-row justify-between items-start">
+        <div id="list" style="width: 20%; height: 500px; overflow-y: auto; border-right: 1px solid #ddd; padding: 10px;">
+            <h3>Added Items</h3>
+        </div>
+        <div id="map" style="width: 80%; height: 500px;"></div>
+    </div>
+
+    <style>
+        .sidebar-item.active {
+            border: 2px solid red;
+            background: #ffe6e6;
+        }
+    </style>
+</div>

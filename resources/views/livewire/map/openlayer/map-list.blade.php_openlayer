@@ -1,0 +1,72 @@
+<div>
+    
+
+    <h1>OpenLayers Map with Layers</h1>
+    <select id="layer-selector">
+        <option value="osm">OpenStreetMap</option>
+        <option value="satellite">Satellite</option>
+        <option value="terrain">Terrain</option>
+        <option value="google">Google Map</option>
+    </select>
+    <div id="map" style="width: 100%; height: 500px;"></div>
+
+    <script  >
+       document.addEventListener("DOMContentLoaded", function () {
+            // Define base layers
+            const osmLayer = new ol.layer.Tile({
+                source: new ol.source.OSM()
+            });
+
+            const satelliteLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png'
+                })
+            });
+
+            // const satelliteLayer = new ol.layer.Tile({
+            //     source: new ol.source.XYZ({
+            //         url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            //         attributions: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+            //     })
+            // });
+
+            const terrainLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',
+                    attributions: '&copy; <a href="https://www.usgs.gov/">USGS</a>'
+                })
+            });
+
+            const googleLayer = new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA',
+                    attributions: '&copy; Google Maps'
+                })
+            });
+
+            // Initialize map
+            const map = new ol.Map({
+                target: 'map',
+                layers: [osmLayer], // Default layer
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([144.7937, 13.4443]), // Guam
+                    zoom: 12
+                })
+            });
+
+            // Layer switcher logic
+            document.getElementById("layer-selector").addEventListener("change", function (e) {
+                map.getLayers().clear(); // Remove existing layers
+
+                if (e.target.value === "osm") {
+                    map.addLayer(osmLayer);
+                } else if (e.target.value === "satellite") {
+                    map.addLayer(satelliteLayer);
+                } else if (e.target.value === "terrain") {
+                    map.addLayer(terrainLayer);
+                }
+            });
+        });
+    </script>
+
+</div>

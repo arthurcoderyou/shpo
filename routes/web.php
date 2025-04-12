@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DiscussionController;
+use App\Http\Controllers\ForumController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RoleController;
@@ -155,14 +157,44 @@ Route::middleware(['throttle:60,1','auth' ,'log_user_device'])->group(function (
 
 
 
+        # forum 
+
+            Route::get('forum',[ForumController::class,'index'])->name('forum.index');
+            // Route::get('forum/create',[ForumController::class,'create'])->name('forum.create');
+            Route::get('forum/{forum}/edit',[ForumController::class, 'edit'])
+                // ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
+                ->name('forum.edit');
+             
+        # ./ forum
+
+
+        # discussion 
+
+            Route::get('discussion',[DiscussionController::class,'index'])->name('discussion.index');
+            // Route::get('discussion/create',[DiscussionController::class,'create'])->name('discussion.create');
+            Route::get('discussion/{discussion}/edit',[DiscussionController::class, 'edit'])
+                // ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
+                ->name('discussion.edit');
+            
+        # ./ discussion
+
+
         
 
 
 
+
         # map
-            Route::get('map',[MapController::class,'index'])->name('map.index');
+            // Route::get('map',[MapController::class,'index'])->name('map.index');
+
+            Route::get('map/openlayer',[MapController::class,'open_layer_list'])->name('map.open_layer_list');
             
+            // Route::get('map/create',[MapController::class,'create'])->name('map.create');
         # ./ map
+
+
+
+
     }); //2fa middleware 
 
 });

@@ -21,7 +21,7 @@ new #[Layout('layouts.guest')] class extends Component
     public function mount(){
 
 
-        $role_request = request()->query('role_request','user');
+        $role_request = request('role');
 
         if($role_request != 'reviewer'){
             $role_request = 'user';

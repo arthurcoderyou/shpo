@@ -2,30 +2,31 @@
 
 namespace App\Livewire\Admin\Project;
 
+use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Forum;
+use App\Models\Review;
+use App\Models\Project;
+use Livewire\Component;
+use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
-use App\Models\Project;
-use App\Models\ProjectAttachments;
+use App\Models\ProjectTimer;
+use Livewire\WithFileUploads;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
+use Illuminate\Validation\Rule;
 use App\Models\ProjectSubscriber;
-use App\Models\ProjectTimer;
-use App\Models\Review;
-use App\Models\Reviewer;
-use App\Models\User;
-use App\Notifications\ProjectReviewFollowupNotification;
-use App\Notifications\ProjectReviewFollowupNotificationDB;
+use App\Models\ProjectAttachments;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use RealRashid\SweetAlert\Facades\Alert;
+use App\Notifications\ProjectReviewFollowupNotification;
+use App\Notifications\ProjectReviewFollowupNotificationDB;
 
 class ProjectCreate extends Component
 {
@@ -664,11 +665,17 @@ class ProjectCreate extends Component
 
 
 
+        //create the project forum for this project 
+        Forum::create([
+            'project_id' => $project->id,   
+            'description' => "This forum serves as a central hub for both project \"".$this->name."\" collaborators and users. Team members can coordinate and share updates, while users can ask questions, provide feedback, and engage in discussions related to the project. It’s a space built for communication, clarity, and community around your project. ",
+            'title' => "Community Forum for Project Collaboration\"".$this->name."\"",
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+        ]);
 
 
-        
-        
-
+ 
 
 
         ActivityLog::create([
@@ -1077,6 +1084,15 @@ class ProjectCreate extends Component
         $project->updated_at = now();
         $project->save();
         
+
+        //create the project forum for this project 
+        Forum::create([
+            'project_id' => $project->id,   
+            'description' => "This forum serves as a central hub for both project \"".$this->name."\" collaborators and users. Team members can coordinate and share updates, while users can ask questions, provide feedback, and engage in discussions related to the project. It’s a space built for communication, clarity, and community around your project. ",
+            'title' => "Community Forum for Project Collaboration\"".$this->name."\"",
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+        ]);
 
 
         ActivityLog::create([

@@ -41,7 +41,7 @@
                             <option value="no_role">No Role</option>
                             @if(!empty($roles))
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}">{{ $role->name  }}</option>
+                                    <option value="{{ $role->id }}">{{  $role->name == "DSI God Admin" ? "Global Administrator" : $role->name  }}</option>
                                 @endforeach
                             @endif
                             
@@ -192,7 +192,15 @@
                                         <div class="flex items-center gap-x-3">
                                         <div class="grow">
                                             <span class="block text-sm text-gray-500 dark:text-neutral-500">
-                                                {{ !empty($user->roles->first()->name) ? $user->roles->first()->name : '' }}
+
+                                                @if(!empty($user->roles->first()->name))
+                                                    @if($user->roles->first()->name == "DSI God Admin")
+                                                        Global Administrator
+                                                    @else
+                                                        {{ ucfirst($user->roles->first()->name) }}
+                                                    @endif
+                                                @endif
+ 
                                             </span>
                                         </div>
                                         </div>

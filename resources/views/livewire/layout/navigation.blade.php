@@ -418,7 +418,7 @@ new class extends Component
                             <!-- End Dropdown -->
 
                             
-                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('activity log list view'))
+                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('activity log list view'))  
                             <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('activity_logs.index') ? $active : $inactive }} "
                                 href="{{ route('activity_logs.index') }}" >
                                 <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -426,11 +426,52 @@ new class extends Component
                             </a>
                             @endif
 
+                            {{-- <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('forum.index') ? $active : $inactive }} "
+                                href="{{ route('forum.index') }}" >
+                                <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                Forum
+                            </a> --}}
+
+                             <!-- Dropdown -->
+                             <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
+
+                                {{-- @if(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin')) --}}
+                                    <button id="forum_manager" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
+                                        @if(
+                                            request()->routeIs('forum.index') || request()->routeIs('forum.edit') || request()->routeIs('forum.create') 
+                                            )
+                                            {{ $active }}
+                                        @else
+                                            {{  $inactive  }}
+                                        @endif
+                                        " aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
+                                        <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 2.5-2.5L3 5"/><path d="m3 19 2.5-2.5L3 14"/><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/></svg>
+                                        Forum
+                                        <svg class="hs-dropdown-open:-rotate-180 md:hs-dropdown-open:rotate-0 duration-300 shrink-0 size-4 ms-auto md:ms-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                    </button>
+                                {{-- @endif --}}
+                                <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 dark:md:bg-neutral-800 dark:after:bg-neutral-700" role="menu" aria-orientation="vertical" aria-labelledby="forum_manager">
+                                    <div class="py-1 md:px-1 space-y-0.5">
+
+                                        {{-- @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('user list view')) --}}
+                                        <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('forum.index') || request()->routeIs('forum.edit') || request()->routeIs('forum.create') ? $active : $inactive }}"
+                                        href="{{ route('forum.index') }}">
+                                            All Forums
+                                        </a>
+                                        {{-- @endif --}}
+
+                                        <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('discussion.index') || request()->routeIs('discussion.edit') || request()->routeIs('discussion.create') ? $active : $inactive }}"
+                                            href="{{ route('discussion.index') }}">
+                                            All Discussions
+                                        </a>
+ 
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- End Dropdown -->
+                    
                         @endif
-                        <!-- ./only show for users that has role  -->
-                        
-
-
                     </div>
                 
                 </div>

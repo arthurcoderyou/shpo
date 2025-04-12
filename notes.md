@@ -919,3 +919,69 @@ The name will be Submission Type
 going to the 2fa verification page will lead back to dashboard if already authenticated 
 
 THe project create and edit has updated values and now has only one document attachment  
+
+
+
+### 
+
+1.	Account Sign-up (Reviewer/User)
+2.	Login (Reviewer/User)
+3.	User Submission 
+4.	SHPO Review
+
+
+# Fixed some logical bugs ||||| GET FROM THE HOSITNG COPY
+Dark Mode removed 
+Not allowed to submit when there are no project reviewers 
+Fixed email verification first before 2fa verification 
+Fixing the dark mode 
+Added errors
+
+
+
+# Notes on teh updates Needed from the meeting at March 28 2025
+1. Adding GIS to the project mapping API. 
+2. Forum for Project Discussions            || Create, Reply, Edit, Delete 
+    The Forum also has private and public,  public can be accessed by All, private is only for the Admin and Reviewers. 
+    THe update is realtime , the discussion list is being shown without reloading the page making users view the real time discussions added by Website ADmin, Reviewers or Users connected to the project
+    Admin,DSI God Admin, Reviewers can sort the values to only show private 
+    Realtime notifications are added as well: There is a notifications that is displaying at teh top side of teh websitee for Users that are either Admin, Reviewer (that is a reviewer to the project) and project owner.
+    Reply Control, only users part of the project can send a reply. Admin is excemplted on this condition 
+
+3. Project Timer Process Adjustment: The rules is updated on the time reset
+4. Project Review Process Adjustment: New request on review options such as temporary reject that rejects the project but the timer is not stopped
+5. Project Report to PDF 
+6. Project Report Additional Metrics: Project Status with time date metrics.
+7. Project Approval Form and E-Signature Implementation.
+8. Project Reviewer Auto Adjust Based on the selected submission document type: Ex. Submission of Work Plan will automatically change the order or reviewers or add specific reviewers to that project that are not existing on other type of document type submission. 
+9. RFI Added on the review: Request for Information on the project when sending a project rejection review: This can be discussed further for the adjustment of the project review process. 
+10. Project review export
+11. Project Cut Off Time
+
+
+
+
+# From the meeting 
+A cut off time on 4pm Monday to Friday 
+- incorporating a process to not allow users to submit a project. Also adding a disclaimer that submitted projects will be seen for the next day.  
+
+GIS 
+- Project Map 
+- Map Layers
+- Map Multiple Sites 
+- The project map details must be 
+
+
+
+# Needed in GIS Integration 
+Interactive Maps – Display maps with zoom, pan, and layer controls.
+
+Geolocation – Track user locations and provide relevant geographic data.
+
+Spatial Analysis – Analyze geographic patterns, distances, and relationships.
+
+Data Visualization – Overlay data on maps using markers, heatmaps, and polygons.
+
+Routing and Navigation – Provide directions and route optimization.
+
+Geocoding & Reverse Geocoding – Convert addresses into coordinates and vice versa.

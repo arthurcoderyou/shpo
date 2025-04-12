@@ -572,6 +572,31 @@ class Project extends Model
     }
 
 
-     
+    public function canPostInDiscussion($user = null)
+    {
+        $user = $user ?? Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // 1. Is Creator?
+        if ($this->created_by == $user->id) {
+            return true;
+        }
+
+        // 2. Is assigned as a reviewer to this project?
+        $isReviewer = $this->project_reviewers()->where('user_id', $user->id)->exists();
+        if ($isReviewer) {
+            return true;
+        }
+
+        // 3. Has role 'DSI God Admin' or 'Admin'?
+        if ($user->hasRole('DSI God Admin') || $user->hasRole('Admin')) {
+            return true;
+        }
+
+        return false;
+    }
 
 }
