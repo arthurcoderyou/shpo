@@ -14,6 +14,9 @@ class DashboardController extends Controller
     //dashboard
     public function dashboard(){
  
+        // abort(429);
+
+
         $user = User::where('id',Auth::user()->id)->first();
  
         if(Auth::user()->roles->isEmpty()){

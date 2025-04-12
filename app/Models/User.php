@@ -62,6 +62,38 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
 
+    /**
+     * Get all of the projects for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'created_by', 'id');
+    }
+
+
+    // get reviewed projects 
+
+
+
+
+    /**
+     * Projects that this user created.
+     */
+    public function created_projects()
+    {
+        return $this->hasMany(Project::class, 'created_by');
+    }
+
+    /**
+     * Projects that this user is a reviewer of.
+     */
+    public function reviewed_projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_reviewers', 'user_id', 'project_id');
+    }
+
 
     static public function countUsers($selected_role = null,$role_request = null){
 
@@ -116,6 +148,10 @@ class User extends Authenticatable implements MustVerifyEmail
         // ./ Permission verification
 
     }
+
+
+
+
 
 
 

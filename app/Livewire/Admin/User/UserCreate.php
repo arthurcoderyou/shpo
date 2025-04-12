@@ -99,7 +99,14 @@ class UserCreate extends Component
 
     public function render()
     {
-        $roles = Role::orderBy('name','asc')->get();
+        $roles = Role::select('roles.*');
+
+        if(!Auth::user()->hasRole('DSI God Admin')){
+            $roles = $roles->whereNot('name', 'DSI God Admin');
+                
+        } 
+        
+        $roles  = $roles->orderBy('name','asc')->get();
         return view('livewire.admin.user.user-create',compact('roles'));
     }
 }

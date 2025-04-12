@@ -1,0 +1,150 @@
+<div>
+    <style>
+        #map { width: 100%; height: 500px; }
+        .map-control {
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #markerPanel, #shapePanel {
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            display: none;
+            width: 250px;
+        }
+        button { margin-top: 10px; }
+    </style>
+
+     <!-- Panel for Adding Markers -->
+     <div id="markerPanel">
+        <h3>Add Marker</h3>
+        <label>Title:</label>
+        <input type="text" id="markerTitle"><br>
+        <label>Description:</label>
+        <textarea id="markerDesc"></textarea><br>
+        <button onclick="addMarker()">Add Marker</button>
+        <button onclick="closePanel()">Cancel</button>
+    </div>
+
+    <!-- Panel for Adding Shapes -->
+    <div id="shapePanel">
+        <h3>Add Shape</h3>
+        <label>Shape Type:</label>
+        <select id="shapeType">
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+            <option value="polygon">Custom Polygon</option>
+        </select><br>
+        <label>Fill Color:</label>
+        <input type="color" id="fillColor" value="#ff0000"><br>
+        <label>Stroke Color:</label>
+        <input type="color" id="strokeColor" value="#000000"><br>
+        <label>Stroke Width:</label>
+        <input type="number" id="strokeWidth" value="2"><br>
+        <label>Opacity:</label>
+        <input type="range" id="opacity" min="0" max="1" step="0.1" value="0.5"><br>
+        <button onclick="addShape()">Add Shape</button>
+        <button onclick="closeShapePanel()">Cancel</button>
+    </div>
+
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&libraries=places"></script>
+    <script>
+        let map;
+        let markers = [];
+        let tempLatLng;
+        let polygonPoints = [];
+        let polygon;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 13.4443, lng: 144.7937 },
+                zoom: 12,
+                mapTypeId: "satellite",
+            });
+
+            document.getElementById("mapType").addEventListener("change", function() {
+                map.setMapTypeId(this.value);
+            });
+
+            map.addListener("rightclick", function(event) {
+                tempLatLng = event.latLng;
+                openShapePanel();
+            });
+        }
+
+        function openShapePanel() {
+            document.getElementById("shapePanel").style.display = "block";
+        }
+
+        function closeShapePanel() {
+            document.getElementById("shapePanel").style.display = "none";
+        }
+
+        function addShape() {
+            let shapeType = document.getElementById("shapeType").value;
+            let fillColor = document.getElementById("fillColor").value;
+            let strokeColor = document.getElementById("strokeColor").value;
+            let strokeWidth = parseInt(document.getElementById("strokeWidth").value);
+            let opacity = parseFloat(document.getElementById("opacity").value);
+
+            if (shapeType === "circle") {
+                new google.maps.Circle({
+                    center: tempLatLng,
+                    radius: 500,
+                    map: map,
+                    fillColor: fillColor,
+                    fillOpacity: opacity,
+                    strokeColor: strokeColor,
+                    strokeWeight: strokeWidth,
+                });
+            } else if (shapeType === "square") {
+                let bounds = {
+                    north: tempLatLng.lat() + 0.01,
+                    south: tempLatLng.lat() - 0.01,
+                    east: tempLatLng.lng() + 0.01,
+                    west: tempLatLng.lng() - 0.01,
+                };
+                new google.maps.Rectangle({
+                    bounds: bounds,
+                    map: map,
+                    fillColor: fillColor,
+                    fillOpacity: opacity,
+                    strokeColor: strokeColor,
+                    strokeWeight: strokeWidth,
+                });
+            } else if (shapeType === "polygon") {
+                polygonPoints.push(tempLatLng);
+                if (polygon) polygon.setMap(null);
+                polygon = new google.maps.Polygon({
+                    paths: polygonPoints,
+                    map: map,
+                    fillColor: fillColor,
+                    fillOpacity: opacity,
+                    strokeColor: strokeColor,
+                    strokeWeight: strokeWidth,
+                });
+            }
+            closeShapePanel();
+        }
+
+        window.onload = initMap;
+    </script>
+
+    <h1>Google Maps with Custom Shapes</h1>
+    <select id="mapType" class="map-control">
+        <option value="roadmap">Roadmap</option>
+        <option value="satellite">Satellite</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="terrain">Terrain</option>
+    </select>
+    <div id="map" style="width: 100%; height: 500px;"></div>
+</div>

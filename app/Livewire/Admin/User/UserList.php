@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\User;
 
 use App\Models\User;
+use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Livewire\WithPagination;
@@ -52,17 +53,31 @@ class UserList extends Component
 
 
 
-    // Method to delete selected records
     public function deleteSelected()
     {
-        User::whereIn('id', $this->selected_records)->delete(); // Delete the selected records
-
-        User::whereIn('id', $this->selected_records)->notifications()->delete();
-
-
-        $this->selected_records = []; // Clear selected records
-
-        Alert::success('Success','Selected users deleted successfully');
+        // Fetch all projects created by the selected users
+        $projects = Project::whereIn('created_by', $this->selected_records)->get();
+    
+        foreach ($projects as $project) {
+            // Delete related project details
+            $project->project_subscribers()->delete();
+            $project->project_documents()->delete();
+            $project->attachments()->delete();
+            $project->project_reviewers()->delete();
+            $project->project_reviews()->delete();
+    
+            // Finally, delete the project itself
+            $project->delete();
+        }
+    
+        // Delete the selected users
+        User::whereIn('id', $this->selected_records)->delete();
+    
+        // Clear selected records
+        $this->selected_records = [];
+    
+        // Show success message
+        Alert::success('Success', 'Selected users and their projects deleted successfully');
         return redirect()->route('user.index');
     }
 
@@ -86,7 +101,20 @@ class UserList extends Component
 
     public function delete($id){
         $user = User::find($id);
-
+        // Fetch all projects created by the selected users
+        $projects = Project::where('created_by', $user->id)->get();
+    
+        foreach ($projects as $project) {
+            // Delete related project details
+            $project->project_subscribers()->delete();
+            $project->project_documents()->delete();
+            $project->attachments()->delete();
+            $project->project_reviewers()->delete();
+            $project->project_reviews()->delete();
+    
+            // Finally, delete the project itself
+            $project->delete();
+        }
 
         $user->delete();    
         $user->notifications()->delete();

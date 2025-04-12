@@ -443,6 +443,15 @@ class ProjectList extends Component
 
 
     public function submit_project($project_id){
+
+        // check if there are existing project reviewers 
+        if(Reviewer::count() == 0){
+            Alert::error('Error','Project reviewers are not added yet to the system');
+            return redirect()->route('project.index');
+
+        }
+
+
         
         $project = Project::find($project_id);
         $response_time_hours = 0;

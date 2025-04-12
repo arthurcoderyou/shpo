@@ -1,0 +1,295 @@
+<div>
+    <style>
+        #map { width: 100%; height: 500px; }
+        .map-control {
+            /* position: absolute; */
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+
+        #markerPanel {
+            /* position: absolute; */
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            display: none;
+            width: 250px;
+        }
+        button { margin-top: 10px; }
+
+
+    </style>
+
+     <!-- Panel for Adding Markers -->
+     <div id="markerPanel">
+        <h3>Add Marker</h3>
+        <label>Title:</label>
+        <input type="text" id="markerTitle"><br>
+        <label>Description:</label>
+        <textarea id="markerDesc"></textarea><br>
+        <button onclick="addMarker()">Add Marker</button>
+        
+
+
+        <h3>Add Shape</h3>
+        <label>Shape Type:</label>
+        <select id="shapeType">
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+        </select><br>
+        <label>Fill Color:</label>
+        <input type="color" id="fillColor" value="#ff0000"><br>
+        <label>Stroke Color:</label>
+        <input type="color" id="strokeColor" value="#000000"><br>
+        <label>Stroke Width:</label>
+        <input type="number" id="strokeWidth" value="2"><br>
+        <label>Opacity:</label>
+        <input type="number" id="opacity" step="0.1" min="0" max="1" value="0.5"><br>
+        <button onclick="addShape()">Add Shape</button>
+
+
+
+        <button onclick="closePanel()">Cancel</button>
+    </div>
+
+
+
+    {{-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA"></script> --}}
+    <script  async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&libraries=places"></script>
+    <script>
+
+        let map;
+        let markers = [];
+        let shapes = [];
+        let tempLatLng; 
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 13.4443, lng: 144.7937 }, // Guam
+                zoom: 12,
+                mapTypeId: "satellite", // Options: 'roadmap', 'satellite', 'hybrid', 'terrain'
+                // mapTypeControl: true, // Enable built-in control
+                // mapTypeControlOptions: {
+                //     style: google.maps.MapTypeControlStyle.DROPDOWN_MENU, // Dropdown menu
+                //     position: google.maps.ControlPosition.TOP_RIGHT, // Position of control
+                // }
+
+            });
+
+
+            // Change map type on dropdown selection
+            document.getElementById("mapType").addEventListener("change", function() {
+                map.setMapTypeId(this.value);
+            });
+
+
+            // // 🔹 Define multiple marker locations
+            // const locations = [
+            //     { lat: 13.4443, lng: 144.7937, title: "Guam Center" },
+            //     { lat: 13.4500, lng: 144.8000, title: "Location 1" },
+            //     { lat: 13.4600, lng: 144.8100, title: "Location 2" },
+            //     { lat: 13.4700, lng: 144.8200, title: "Location 3" },
+            // ];
+
+            // // 🔹 Add markers dynamically
+            // locations.forEach(location => {
+            //     const marker = new google.maps.Marker({
+            //         position: { lat: location.lat, lng: location.lng },
+            //         map: map,
+            //         title: location.title,
+            //         draggable: true, // Make marker draggable
+            //     });
+
+            //     // 🔹 Add InfoWindow to each marker
+            //     const infoWindow = new google.maps.InfoWindow({
+            //         content: `<h4>${location.title}</h4>`,
+            //     });
+
+            //     marker.addListener("click", () => {
+            //         infoWindow.open(map, marker);
+            //     });
+            // });
+
+
+
+            // // Array to store markers
+            // let markers = [];
+
+            // // Right-click event listener to add a new marker
+            // map.addListener("rightclick", function(event) {
+            //     const marker = new google.maps.Marker({
+            //         position: event.latLng,
+            //         map: map,
+            //         draggable: true, // Allows dragging the marker
+            //     });
+
+            //     markers.push(marker); // Store marker in array
+
+            //     // Optional: Show coordinates in console
+            //     console.log("Marker added at: ", event.latLng.lat(), event.latLng.lng());
+
+            //     // Optional: Add right-click event on marker to remove it
+            //     marker.addListener("rightclick", function() {
+            //         marker.setMap(null); // Remove marker
+            //         markers = markers.filter(m => m !== marker); // Remove from array
+            //     });
+            // });
+
+
+
+           // Right-click to open panel
+           map.addListener("rightclick", function(event) {
+                tempLatLng = event.latLng; // Store clicked location
+                openPanel();
+            });
+
+
+            
+
+
+            // Add Traffic Layer
+            const trafficLayer = new google.maps.TrafficLayer();
+            trafficLayer.setMap(map);
+
+            // Add Transit Layer
+            const transitLayer = new google.maps.TransitLayer();
+            transitLayer.setMap(map);
+
+            // Add Bicycling Layer
+            const bikeLayer = new google.maps.BicyclingLayer();
+            bikeLayer.setMap(map);
+        }
+
+
+       // Open panel
+       function openPanel() {
+            document.getElementById("markerPanel").style.display = "block";
+        }
+
+        // Close panel
+        function closePanel() {
+            document.getElementById("markerPanel").style.display = "none";
+        }
+
+        // Add marker with details
+        function addMarker() {
+            let title = document.getElementById("markerTitle").value;
+            let desc = document.getElementById("markerDesc").value;
+
+            if (!title) {
+                alert("Please enter a marker title!");
+                return;
+            }
+
+            let marker = new google.maps.Marker({
+                position: tempLatLng,
+                map: map,
+                draggable: true,
+                title: title
+            });
+
+            let infoWindow = new google.maps.InfoWindow({
+                content: `<strong>${title}</strong><br>${desc}`
+            });
+
+            marker.addListener("click", function() {
+                infoWindow.open(map, marker);
+            });
+
+            marker.addListener("rightclick", function() {
+                marker.setMap(null); // Remove marker
+                markers = markers.filter(m => m !== marker);
+            });
+
+            markers.push(marker); // Store marker
+
+            document.getElementById("markerTitle").value = "";
+            document.getElementById("markerDesc").value = "";
+            closePanel(); // Close the panel
+        }
+        
+
+        function addShape() {
+            let shapeType = document.getElementById("shapeType").value;
+            let fillColor = document.getElementById("fillColor").value;
+            let strokeColor = document.getElementById("strokeColor").value;
+            let strokeWidth = parseInt(document.getElementById("strokeWidth").value);
+            let opacity = parseFloat(document.getElementById("opacity").value);
+
+            if (shapeType === "circle") {
+                addCircle(tempLatLng, fillColor, strokeColor, strokeWidth, opacity);
+            } else if (shapeType === "square") {
+                addSquare(tempLatLng, fillColor, strokeColor, strokeWidth, opacity);
+            }
+            closePanel();
+        }
+
+        function addCircle(position, fillColor, strokeColor, strokeWidth, opacity) {
+            let circle = new google.maps.Circle({
+                center: position,
+                radius: 500,
+                map: map,
+                draggable: true,
+                editable: true,
+                fillColor: fillColor,
+                fillOpacity: opacity,
+                strokeColor: strokeColor,
+                strokeWeight: strokeWidth
+            });
+            addShapeListeners(circle);
+        }
+
+        function addSquare(position, fillColor, strokeColor, strokeWidth, opacity) {
+            let bounds = {
+                north: position.lat() + 0.01,
+                south: position.lat() - 0.01,
+                east: position.lng() + 0.01,
+                west: position.lng() - 0.01
+            };
+            let rectangle = new google.maps.Rectangle({
+                bounds: bounds,
+                map: map,
+                draggable: true,
+                editable: true,
+                fillColor: fillColor,
+                fillOpacity: opacity,
+                strokeColor: strokeColor,
+                strokeWeight: strokeWidth
+            });
+            addShapeListeners(rectangle);
+        }
+
+        function addShapeListeners(shape) {
+            shape.addListener("rightclick", function() {
+                shape.setMap(null);
+                shapes = shapes.filter(s => s !== shape);
+            });
+            shapes.push(shape);
+        }
+
+
+       window.onload = initMap;
+    </script>
+    
+
+    <h1>OpenLayers Map with Layers</h1>
+    <select id="mapType" class="map-control">
+        <option value="roadmap">Roadmap</option>
+        <option value="satellite">Satellite</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="terrain">Terrain</option>
+    </select>
+    <div id="map" style="width: 100%; height: 500px;"></div>
+
+    
+</div>
+ 

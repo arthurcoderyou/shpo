@@ -132,7 +132,7 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                         <div class="grow">
-                                            <span class="block text-sm text-gray-500 dark:text-neutral-500">{{ $role->name }}</span>
+                                            <span class="block text-sm text-gray-500 dark:text-neutral-500">{{ $role->name == "DSI God Admin" ? "Global Administrator" : $role->name   }}</span>
                                         </div>
                                         </div>
                                     </div>
