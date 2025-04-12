@@ -11,14 +11,14 @@
   <!-- Grid -->
   <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
     <!-- Card -->
-    <div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-800">
+    <div class="flex flex-col bg-white border shadow-sm rounded-xl ">
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
+          <p class="text-xs uppercase tracking-wide text-gray-500 ">
             Project Update Pending
           </p>
           <div class="mt-1 flex items-center gap-x-2">
-            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
+            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
               {{ $pending_update_projects ?? 0 }}
             </h3>
  
@@ -30,7 +30,7 @@
         </div>
       </div>
 
-      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" 
+      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
       href="{{ route('project.pending_project_update') }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -40,14 +40,14 @@
 
 
     <!-- Card -->
-    <div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-800">
+    <div class="flex flex-col bg-white border shadow-sm rounded-xl ">
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
+          <p class="text-xs uppercase tracking-wide text-gray-500 ">
             Projects
           </p>
           <div class="mt-1 flex items-center gap-x-2">
-            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
+            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
               {{ $all_projects ?? 0 }}
             </h3>
  
@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" 
+      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
       href="{{ route('project.index') }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -69,14 +69,14 @@
     <!-- End Card -->
 
     <!-- Card -->
-    <div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-800">
+    <div class="flex flex-col bg-white border shadow-sm rounded-xl ">
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
+          <p class="text-xs uppercase tracking-wide text-gray-500 ">
             Projects In Review
           </p>
           <div class="mt-1 flex items-center gap-x-2">
-            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
+            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
               {{ $in_review_projects ?? 0 }}
             </h3>
  
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" 
+      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
       href="{{ route('project.index',['project_status' => 'in_review']) }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -98,14 +98,14 @@
     <!-- End Card -->
 
     <!-- Card -->
-    <div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-800">
+    <div class="flex flex-col bg-white border shadow-sm rounded-xl ">
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
-          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
+          <p class="text-xs uppercase tracking-wide text-gray-500 ">
             Approved Projects
           </p>
           <div class="mt-1 flex items-center gap-x-2">
-            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
+            <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
               {{ $approved_projects ?? 0 }}
             </h3>
  
@@ -117,7 +117,7 @@
         </div>
       </div>
 
-      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" 
+      <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
       href="{{ route('project.index',['project_status' => 'approved']) }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>

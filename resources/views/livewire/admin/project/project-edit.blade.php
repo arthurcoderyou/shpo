@@ -13,13 +13,13 @@
 
     <form class=" col-span-12 sm:col-span-10" wire:submit="save">
         <!-- Card -->
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+        <div class="bg-white rounded-xl shadow ">
 
 
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                     Edit project
                     </h2>
                 </div>
@@ -39,7 +39,7 @@
                         autofocus autocomplete="location"
                         wire:model="location"
                           placeholder="Search location"
-                        id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
 
     
@@ -85,14 +85,14 @@
                 <div class="grid grid-cols-12 gap-x-2  ">
 
                     <div class="space-y-2 col-span-12 sm:col-span-4 ">
-                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Name
                         </label>
 
                         <input
                         autofocus autocomplete="name"
                         wire:model="name"
-                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('name')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -102,14 +102,14 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-4 ">
-                        <label for="federal_agency" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="federal_agency" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Federal Agency
                         </label>
 
                         <input
                         autofocus autocomplete="federal_agency"
                         wire:model="federal_agency"
-                        id="federal_agency" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="federal_agency" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('federal_agency')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -119,7 +119,7 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-4  ">
-                        <label for="type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Type
                         </label>
 
@@ -128,7 +128,7 @@
                         autocomplete="type"
                         wire:model="type"
                         id="type"
-                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                             <option selected="">Select type</option>
 
                             @if(!empty($project_types))
@@ -141,7 +141,7 @@
                         {{-- <input
                         autofocus autocomplete="type"
                         wire:model="type"
-                        id="type" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder=""> --}}
+                        id="type" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder=""> --}}
 
                         @error('type')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -154,14 +154,14 @@
 
 
                     <div class="space-y-2 col-span-12   ">
-                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Description
                         </label>
 
                         <textarea
                         autofocus autocomplete="description"
                         wire:model="description"
-                        id="description"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder=""></textarea>
+                        id="description"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder=""></textarea>
 
                         @error('description')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -188,7 +188,7 @@
                         <div class="border border-blue-200 rounded-lg p-2 my-2.5">
 
 
-                            <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                            <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                 Attachments
                             </label>
 
@@ -201,7 +201,7 @@
 
                                     <div class="hs-accordion  " id="attachment-{{ $index }}">
                                         <button type="button" class="hs-accordion-toggle   
-                                        @if( $index == 1) active @endif hs-accordion-active:text-blue-600 py-3 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:hs-accordion-active:text-blue-500 dark:text-neutral-200 dark:hover:text-neutral-400 dark:focus:text-neutral-400" aria-expanded="false" aria-controls="hs-basic-collapse-{{ $index }}">
+                                        @if( $index == 1) active @endif hs-accordion-active:text-blue-600 py-3 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 rounded-lg disabled:opacity-50 disabled:pointer-events-none " aria-expanded="false" aria-controls="hs-basic-collapse-{{ $index }}">
 
                                             <svg class="hs-accordion-active:hidden block  size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M5 12h14"></path>
@@ -232,13 +232,13 @@
 
                                                     @if(!empty($document ))
                                                         <div class="border border-black p-2 rounded-md mb-4 w-full">
-                                                            <label class="inline-block text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1">
+                                                            <label class="inline-block text-sm font-medium text-gray-800  mb-1">
                                                                 {{ $document->document_type->name }}
                                                             </label> 
 
                                                             @foreach ($document->project_attachments as $attachment)
                                                                 
-                                                                <div class="dz-flex dz-items-center dz-justify-between dz-gap-2 dz-border dz-rounded dz-border-gray-200 dz-w-full dz-h-auto dz-overflow-hidden dark:dz-border-gray-700">
+                                                                <div class="dz-flex dz-items-center dz-justify-between dz-gap-2 dz-border dz-rounded dz-border-gray-200 dz-w-full dz-h-auto dz-overflow-hidden ">
                                                                     <div class="dz-flex dz-items-center dz-gap-3">
 
                                                                         <?php 
@@ -251,14 +251,14 @@
                                                                                 <img src="{{ $attachment_file  }}" class="dz-object-fill dz-w-full dz-h-full" alt="{{ $attachment_file  }}">
                                                                             </div>
                                                                         @else
-                                                                            <div class="dz-flex dz-justify-center dz-items-center dz-w-14 dz-h-14 dz-bg-gray-100 dark:dz-bg-gray-700">
+                                                                            <div class="dz-flex dz-justify-center dz-items-center dz-w-14 dz-h-14 dz-bg-gray-100 ">
                                                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="dz-w-8 dz-h-8 dz-text-gray-500">
                                                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                                                                                 </svg>
                                                                             </div>
                                                                         @endif
                                                                         <div class="dz-flex dz-flex-col dz-items-start dz-gap-1">
-                                                                            <div class="dz-text-center dz-text-slate-900 dz-text-sm dz-font-medium dark:dz-text-slate-100">{{ $attachment->attachment }}</div>
+                                                                            <div class="dz-text-center dz-text-slate-900 dz-text-sm dz-font-medium ">{{ $attachment->attachment }}</div>
                                                                             </div>
                                                                     </div>
 
@@ -282,7 +282,7 @@
                                 
                                                                             
                                                                             >   
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="dz-w-6 dz-h-6 dz-text-black dark:dz-text-white">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="dz-w-6 dz-h-6 dz-text-black ">
                                                                                     <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
                                                                                 </svg>
                                                                                 
@@ -318,7 +318,7 @@
                         </div>
                         @endif
 
-                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Add New Attachments
                         </label>
 
@@ -327,11 +327,11 @@
                         <div class="space-y-2 col-span-12  mt-5">
                             @foreach($projectDocuments as $index => $document)
                                 <div class="border border-black p-2 rounded-md mb-4">
-                                    <label class="inline-block text-sm font-medium text-gray-800 dark:text-neutral-200">
+                                    <label class="inline-block text-sm font-medium text-gray-800 ">
                                         Submission Type
                                     </label>
                                     <select
-                                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
                                         wire:model.live="projectDocuments.{{ $index }}.document_type_id"
                                         
                                         >
@@ -349,13 +349,13 @@
                                         <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
                                     @enderror
 
-                                    <label class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                    <label class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                         Document Attachments ( Only PNG, JPEG, JPG, PDF, DOCX, XLSX, CSV, TXT, and ZIP files are allowed. )
                                     </label>
-                                    <input class="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 file:bg-gray-50 file:border-0
+                                    <input class="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none   file:bg-gray-50 file:border-0
                                     file:me-4
                                     file:py-3 file:px-4
-                                    dark:file:bg-neutral-700 dark:file:text-neutral-400"
+                                    "
                                     type="file" wire:model.live="projectDocuments.{{ $index }}.attachments" multiple>
 
                                     @error("projectDocuments.".$index.".attachments")
@@ -367,12 +367,12 @@
                                     <!-- Show Selected Files Before Upload -->
                                     <div class="my-2">
                                         @if(isset($projectDocuments[$index]['attachments']) && count($projectDocuments[$index]['attachments']) > 0) 
-                                            <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                                            <p class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                                 Selected Files: (Choose files again to change the uploaded list)
                                             </p>
                                             @foreach($projectDocuments[$index]['attachments'] as $file)
                                                 <div class="w-full mb-2 ">
-                                                    <span class="block py-3 px-4 text-sm font-medium bg-white border border-gray-200 text-gray-800 -mt-px first:rounded-t-lg first:mt-0 last:rounded-b-lg dark:bg-neutral-900 dark:border-neutral-700 dark:text-white">{{ $file->getClientOriginalName() }}</span>
+                                                    <span class="block py-3 px-4 text-sm font-medium bg-white border border-gray-200 text-gray-800 -mt-px first:rounded-t-lg first:mt-0 last:rounded-b-lg  ">{{ $file->getClientOriginalName() }}</span>
                                                 </div>
                                             @endforeach
 
@@ -416,7 +416,7 @@
                 ">
 
                     <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Submitter duration
                         </label>
 
@@ -425,7 +425,7 @@
                         autofocus autocomplete="submitter_response_duration"
                         wire:model.live="submitter_response_duration"
                         
-                        id="submitter_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="submitter_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('submitter_response_duration')
                             <p class="text-sm text-red-600 mt-2">{{ $message  }}</p>
@@ -435,7 +435,7 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="submitter_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="submitter_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Submitter duration type
                         </label>
 
@@ -443,7 +443,7 @@
                         autofocus autocomplete="submitter_response_duration_type"
                         wire:model.live="submitter_response_duration_type"
                         id="submitter_response_duration_type" 
-                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                             <option selected="">Select type</option>
                             <option value="day">Day</option>
                             <option value="week">Week</option>
@@ -458,7 +458,7 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                        <label for="submitter_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="submitter_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Submitter response due date
                         </label>
 
@@ -466,7 +466,7 @@
                         {{-- autofocus autocomplete="submitter_due_date"
                         wire:model.live="submitter_due_date" --}}
                         value="{{ \Carbon\Carbon::parse($submitter_due_date)->format('d M, h:i A') }}"
-                        id="submitter_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="submitter_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('submitter_due_date')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -488,7 +488,7 @@
                 ">
 
                     <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="reviewer_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="reviewer_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Reviewer duration
                         </label>
 
@@ -496,7 +496,7 @@
                         min="1"
                         autofocus autocomplete="reviewer_response_duration"
                         wire:model.live="reviewer_response_duration"
-                        id="reviewer_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="reviewer_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('reviewer_response_duration')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -506,7 +506,7 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="reviewer_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="reviewer_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Reviewer duration type
                         </label>
 
@@ -514,7 +514,7 @@
                         autofocus autocomplete="reviewer_response_duration_type"
                         wire:model.live="reviewer_response_duration_type"
                         id="reviewer_response_duration_type" 
-                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                             <option selected="">Select type</option>
                             <option value="day">Day</option>
                             <option value="week">Week</option>
@@ -530,7 +530,7 @@
 
 
                     <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                        <label for="reviewer_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="reviewer_due_date" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Reviewer response due date
                         </label>
 
@@ -538,7 +538,7 @@
                         {{-- autocomplete="reviewer_due_date"
                         wire:model.live="reviewer_due_date" --}}    
                         value="{{ \Carbon\Carbon::parse($reviewer_due_date)->format('d M, h:i A') }}"
-                        id="reviewer_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="reviewer_due_date" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('reviewer_due_date')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -604,21 +604,21 @@
 
 
     <aside class="col-span-12 md:col-span-2 mt-2 md:mt-0">
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900 ">
+        <div class="bg-white rounded-xl shadow  ">
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                         Project Subscribers  
                     </h2>
                     <p class="text-gray-500 text-xs">Users that will be notified on project updates</p>
                 </div> 
 
-                <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                     Search for User Name
                 </label>
 
-                <input type="text" wire:model.live="query" placeholder="Type to search..." class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                <input type="text" wire:model.live="query" placeholder="Type to search..." class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                 
                 <!-- Search Results Dropdown -->
                 @if(!empty($users))

@@ -10,13 +10,13 @@
 
     <form wire:submit="save">
         <!-- Card -->
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+        <div class="bg-white rounded-xl shadow ">
 
 
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                     Edit Permission
                     </h2>
                 </div>
@@ -26,14 +26,14 @@
                 <div class="grid grid-cols-12 gap-x-2  ">
 
                     <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Name
                         </label>
 
                         <input
                         autofocus autocomplete="name"
                         wire:model="name"
-                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none " placeholder="">
 
                         @error('name')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -45,7 +45,7 @@
 
 
                     <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                        <label for="module" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="module" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Module
                         </label>
  
@@ -53,7 +53,7 @@
                         wire:model="module" 
                         id="module"
                         name="module"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
                             <option value="">Sort By</option>
                             @if(!empty($modules))
                                 @foreach ($modules as $mod_key => $mod_value)

@@ -791,13 +791,13 @@
 
 <form class="col-span-12  sm:col-span-10" wire:submit="save">
 <!-- Card -->
-<div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+<div class="bg-white rounded-xl shadow ">
 
 
     <div class="  p-4">
 
         <div class="sm:col-span-12">
-            <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+            <h2 class="text-lg font-semibold text-gray-800 ">
             Submit new project
             </h2>
         </div>
@@ -815,7 +815,7 @@
                 autofocus autocomplete="location"
                 wire:model.live="location"
                   placeholder="Search location"
-                id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none " placeholder="">
                 
 
                 <input type="hidden" id="latitude" wire:model.live="latitude">
@@ -850,7 +850,7 @@
             <div class="space-y-1 col-span-12 sm:col-span-4  ">
                
                  <!-- Added Items -->
-                <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                <h2 class="text-lg font-semibold text-gray-800 ">
                     Added Items
                 </h2>
 
@@ -870,7 +870,7 @@
                             </button>
                             
 
-                            <input type="text" class="py-1.5 sm:py-2 px-3 pe-11 block w-full border-gray-200 border border-e-0  sm:text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                            <input type="text" class="py-1.5 sm:py-2 px-3 pe-11 block w-full border-gray-200 border border-e-0  sm:text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
 
                             <span class="px-2 inline-flex items-center rounded-e-lg min-w-fit  border  border-gray-200 ">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M32 464a48 48 0 0 0 48 48h288a48 48 0 0 0 48-48V128H32zm272-256a16 16 0 0 1 32 0v224a16 16 0 0 1 -32 0zm-96 0a16 16 0 0 1 32 0v224a16 16 0 0 1 -32 0zm-96 0a16 16 0 0 1 32 0v224a16 16 0 0 1 -32 0zM432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16z"/></svg>
@@ -906,8 +906,8 @@
     
                                 <div>
                                     
-                                    <input type="text" placeholder="Title" class="py-2 px-3 pe-11 block w-full border-gray-200 rounded-lg sm:text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
-                                    <input type="text" placeholder="Description" class="py-2 px-3 pe-11 block w-full border-gray-200 rounded-lg sm:text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                                    <input type="text" placeholder="Title" class="py-2 px-3 pe-11 block w-full border-gray-200 rounded-lg sm:text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
+                                    <input type="text" placeholder="Description" class="py-2 px-3 pe-11 block w-full border-gray-200 rounded-lg sm:text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
                                 </div>
                             </div>
     

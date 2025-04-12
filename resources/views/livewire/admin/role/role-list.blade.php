@@ -12,14 +12,14 @@
     <div class="flex flex-col">
         <div class="-m-1.5 overflow-x-auto">
         <div class="p-1.5 min-w-full inline-block align-middle">
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden ">
             <!-- Header -->
-            <div class="px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 dark:border-neutral-700">
+            <div class="px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 ">
                 <div>
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                <h2 class="text-xl font-semibold text-gray-800 ">
                     Roles
                 </h2>
-                <p class="text-sm text-gray-600 dark:text-neutral-400">
+                <p class="text-sm text-gray-600 ">
                     Listing of roles
                 </p>
                 </div>
@@ -29,13 +29,13 @@
 
 
                     <input type="text" wire:model.live="search"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                        class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
                         placeholder="Search">
 
 
                     <div class="inline-flex items-center gap-x-2">
 
-                        <select wire:model.live="sort_by" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                        <select wire:model.live="sort_by" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900  ">
                             <option value="">Sort By</option>
                             <option>Name A - Z</option>
                             <option>Name Z - A</option>
@@ -51,7 +51,7 @@
                             onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                             wire:click.prevent="deleteSelected"
                             {{ $count == 0 ? 'disabled' : '' }}
-                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-red-500 text-white shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-500 focus:outline-red-500 focus:text-red-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
+                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-red-500 text-white shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-500 focus:outline-red-500 focus:text-red-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900  dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             Delete ({{ $count }})
                         </button>
@@ -59,7 +59,7 @@
 
                     @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('role create'))
                     <a href="{{ route('role.create') }}"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
+                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900  dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" >
                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg>
                     </a>
                     @endif
@@ -87,7 +87,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Role
                             </span>
                         </div>
@@ -97,7 +97,7 @@
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Modified
                             </span>
                         </div>
@@ -198,7 +198,7 @@
                         <tr>
                             <th scope="col" class="px-6 py-3 text-start">
                                 <div class="flex items-center gap-x-2">
-                                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                                     No records found
                                     </span>
                                 </div>
@@ -210,15 +210,15 @@
             <!-- End Table -->
 
             <!-- Footer -->
-            <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 dark:border-neutral-700">
+            <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 ">
                 {{ $roles->links() }}
 
                 <div class="inline-flex items-center gap-x-2">
-                    <p class="text-sm text-gray-600 dark:text-neutral-400">
+                    <p class="text-sm text-gray-600 ">
                     Showing:
                     </p>
                     <div class="max-w-sm space-y-3">
-                    <select wire:model.live="record_count" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                    <select wire:model.live="record_count" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900  ">
                         <option>10</option>
                         <option>25</option>
                         <option>50</option>
@@ -226,7 +226,7 @@
                         <option>200</option>
                     </select>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-neutral-400">
+                    <p class="text-sm text-gray-600 ">
                         {{ count($roles) > 0 ? 'of '.$roles->total()  : '' }}
                     </p>
                 </div>

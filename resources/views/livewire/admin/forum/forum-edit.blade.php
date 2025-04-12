@@ -30,13 +30,13 @@ x-data="{
 
     <form wire:submit.prevent="save">
         <!-- Card -->
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+        <div class="bg-white rounded-xl shadow ">
 
 
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                     Edit Forum
                     </h2>
                 </div>
@@ -47,14 +47,14 @@ x-data="{
 
 
                     <div class="space-y-2 col-span-12   ">
-                        <label for="title" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="title" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Title
                         </label>
 
                         <input
                         
                         wire:model.defer="title"
-                        id="title" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="title" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('title')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -64,14 +64,14 @@ x-data="{
                     </div>
 
                     <div class="space-y-2 col-span-12  ">
-                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Description
                         </label>
 
                         <input
                         
                         wire:model.defer="description"
-                        id="description" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="description" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
 
                         
@@ -86,7 +86,7 @@ x-data="{
 
 
                     <div class="space-y-2 col-span-12    ">
-                        <label for="project_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="project_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Project
                         </label>
 
@@ -98,7 +98,7 @@ x-data="{
                         <button type="button"
                         @click="showModal = true" 
                         @keydown.window="handleKeydown"  
-                        class="py-2 px-3 pe-11 block w-full border-2 text-start border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                        class="py-2 px-3 pe-11 block w-full border-2 text-start border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                             {{ $selected_project ? $selected_project->name : 'Select Project' }}    
                         </button>
 
@@ -183,7 +183,7 @@ x-data="{
                                                             <div class="px-2 py-2   text-wrap">
                                                                 
 
-                                                                <span class="text-sm text-gray-600 dark:text-neutral-400">
+                                                                <span class="text-sm text-gray-600 ">
                                                                     <strong>{{ $result->name }}</strong>
                                                                     <hr>
                                                                     <span class="text-blue-500">{{ $result->project_reviews->count() ?? 0 }} reviews</span> 
@@ -202,7 +202,7 @@ x-data="{
 
                                                         <div class="max-w-full size-auto whitespace-nowrap  ">
                                                             <div class="px-2 py-2   max-h-52 text-wrap overflow-auto">
-                                                                <span class="text-sm text-gray-600 dark:text-neutral-400 ">
+                                                                <span class="text-sm text-gray-600  ">
                                                                     {{ $result->description ? $result->description : '' }}
                                                                 </span>
                                                             </div>
@@ -215,11 +215,11 @@ x-data="{
                                         @else
                                             <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
 
-                                                <div class="mb-2 bg-red-50 border-s-4 border-red-500 p-4 dark:bg-red-800/30" role="alert" tabindex="-1" aria-labelledby="hs-bordered-red-style-label">
+                                                <div class="mb-2 bg-red-50 border-s-4 border-red-500 p-4 " role="alert" tabindex="-1" aria-labelledby="hs-bordered-red-style-label">
                                                     <div class="flex">
                                                         <div class="shrink-0">
                                                             <!-- Icon -->
-                                                            <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-red-100 bg-red-200 text-red-800 dark:border-red-900 dark:bg-red-800 dark:text-red-400">
+                                                            <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-red-100 bg-red-200 text-red-800 ">
                                                                 <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                     <path d="M18 6 6 18"></path>
                                                                     <path d="m6 6 12 12"></path>
@@ -228,10 +228,10 @@ x-data="{
                                                             <!-- End Icon -->
                                                         </div>
                                                         <div class="ms-3">
-                                                            <h3 id="hs-bordered-red-style-label" class="text-gray-800 font-semibold dark:text-white">
+                                                            <h3 id="hs-bordered-red-style-label" class="text-gray-800 font-semibold ">
                                                             Project not found
                                                             </h3>
-                                                            <p class="text-sm text-gray-700 dark:text-neutral-400">
+                                                            <p class="text-sm text-gray-700 ">
 
                                                             Search for name, description, agency or related data
                                                             </p>

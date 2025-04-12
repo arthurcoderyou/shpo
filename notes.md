@@ -325,8 +325,6 @@ project section for User to see the projects that are pending of responses
 
 
 
-
-
 ### The roles and permissions is incomplete ###
 
 

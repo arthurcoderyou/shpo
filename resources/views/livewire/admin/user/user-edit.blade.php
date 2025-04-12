@@ -10,13 +10,13 @@
 
     <form wire:submit="save">
         <!-- Card -->
-        <div class="bg-white rounded-xl shadow dark:bg-neutral-900">
+        <div class="bg-white rounded-xl shadow ">
 
 
             <div class="  p-4">
 
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
                     Edit User
                     </h2>
                 </div>
@@ -26,14 +26,14 @@
                 <div class="grid grid-cols-12 gap-x-2  ">
 
                     <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Name
                         </label>
 
                         <input
                         autofocus autocomplete="name"
                         wire:model="name"
-                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                         @error('name')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
@@ -43,14 +43,14 @@
                     </div>
 
                     <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="email" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="email" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Email
                         </label>
 
                         <input
                         autofocus autocomplete="email"
                         wire:model="email"
-                        id="email" type="email"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm text-sm rounded-lg focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                        id="email" type="email"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm text-sm rounded-lg focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
                         @error('email')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
                         @enderror
@@ -58,14 +58,14 @@
 
 
                     <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="role" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        <label for="role" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Role
                         </label>
 
                         
                         
                         <select id="role" name="role" wire:model="role"
-                        class="py-2 px-3 pe-11 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
+                        class="py-2 px-3 pe-11 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
                         <option selected="">Select a role</option>
                             @if (!empty($roles))
                                 @foreach ($roles as $role)
@@ -89,14 +89,14 @@
                     <div class="space-y-2 col-span-12 sm:col-span-6">
 
 
-                        <label for="hs-trailing-icon" class="block text-sm font-medium mb-2 mt-2.5 dark:text-white">New Password</label>
+                        <label for="hs-trailing-icon" class="block text-sm font-medium mb-2 mt-2.5 ">New Password</label>
                         <div class="relative">
                             <input id="password"
                             autocomplete="password"
                             wire:model="password"
                             autocomplete="off"
                             type="{{ $password_hidden == 1 ? 'password' : 'text' }}"
-                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                             <div class="absolute inset-y-0 end-0 flex items-center  z-20 pe-4  cursor-pointer" >
                                 @if($password_hidden) <!-- eye open to click to hide password-->
@@ -119,14 +119,14 @@
                     <div class="space-y-2 col-span-12 sm:col-span-6">
 
 
-                        <label for="hs-trailing-icon" class="block text-sm font-medium mb-2 mt-2.5 dark:text-white">Confirm New Password</label>
+                        <label for="hs-trailing-icon" class="block text-sm font-medium mb-2 mt-2.5 ">Confirm New Password</label>
                         <div class="relative">
                             <input id="password_confirmation"
                             autofocus autocomplete="password_confirmation"
                             wire:model="password_confirmation"
                             id="password_confirmation"
                             type="{{ $password_hidden == 1 ? 'password' : 'text' }}"
-                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="">
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
 
                             <div class="absolute inset-y-0 end-0 flex items-center  z-20 pe-4  cursor-pointer" >
                                 @if($password_hidden) <!-- eye open to click to hide password-->
@@ -137,14 +137,14 @@
                             </div>
                         </div>
 
-                        {{-- <label for="password_confirmation" class="inline-block text-sm font-medium text-gray-800 mt-2.5 dark:text-neutral-200">
+                        {{-- <label for="password_confirmation" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Confirm Password
                         </label>
 
                         <input
                         autofocus autocomplete="password_confirmation"
                         wire:model="password_confirmation"
-                        id="password_confirmation" type="password" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm text-sm rounded-lg focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder=""> --}}
+                        id="password_confirmation" type="password" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm text-sm rounded-lg focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder=""> --}}
                         @error('password_confirmation')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
                         @enderror
