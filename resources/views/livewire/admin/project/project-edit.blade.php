@@ -1,6 +1,9 @@
 <!-- Card Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto grid grid-cols-12 gap-x-2">
-     
+    
+    {{-- The whole world belongs to you. --}}
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&libraries=places"></script>
+
     {{-- <div wire:loading class="loading-overlay"> --}}
         <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
             <div></div>
