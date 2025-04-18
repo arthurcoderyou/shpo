@@ -19,7 +19,9 @@
     }"
 >
 
- 
+{{-- The whole world belongs to you. --}}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&libraries=places"></script>
+
 
     <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
