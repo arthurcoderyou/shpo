@@ -21,7 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/resources/livewire/admin/project
+/resources/views/livewire/admin/project
 notes.md
 notes _ for _ codes.md
 Laravel google map integration.md
