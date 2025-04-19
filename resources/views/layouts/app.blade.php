@@ -242,7 +242,7 @@
 
         <div class="min-h-screen  ">
  
-            <div class="bg-gray-100 text-xs text-gray-700 py-1">
+            <div class="bg-gray-100 text-sm text-gray-700 py-2">
                 <div class="max-w-[85rem] mx-auto px-4   sm:px-6">
                     For feedback or comments, please email <a href="mailto:portal@khlgassociates.com" class="text-blue-600 underline">portal@khlgassociates.com</a>.
                 </div>

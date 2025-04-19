@@ -368,40 +368,46 @@
 
                                                 @endphp 
 
-                                                <span class="block text-sm text-gray-800 ">
-                                                    Reviewer: {{ $reviewer->user->name ? $reviewer->user->name : '' }}
-                                                </span>
-                                                
-                                                
-                                                <span class="block text-sm text-gray-500 ">
-                                                    Review Status: 
-                                                    @if($reviewer->review_status == "approved")
-                                                        <span class="font-bold text-lime-500">{{ ucfirst($reviewer->review_status) }} </span> 
-                                                    @elseif($reviewer->review_status == "rejected")
-                                                        <span class="font-bold text-red-500">{{ ucfirst($reviewer->review_status) }} </span> 
+                                                @if(!empty($project->reviewer))
+                                                    <span class="block text-sm text-gray-800 ">
+                                                        Reviewer: {{ $reviewer->user->name ? $reviewer->user->name : '' }}
+                                                    </span>
+                                                    
+                                                    
+                                                    <span class="block text-sm text-gray-500 ">
+                                                        Review Status: 
+                                                        @if($reviewer->review_status == "approved")
+                                                            <span class="font-bold text-lime-500">{{ ucfirst($reviewer->review_status) }} </span> 
+                                                        @elseif($reviewer->review_status == "rejected")
+                                                            <span class="font-bold text-red-500">{{ ucfirst($reviewer->review_status) }} </span> 
 
-                                                    @else 
-                                                        <span class="font-bold text-yellow-500">{{ ucfirst($reviewer->review_status) }} </span> 
+                                                        @else 
+                                                            <span class="font-bold text-yellow-500">{{ ucfirst($reviewer->review_status) }} </span> 
 
-                                                    @endif
-                                                      
-                                                </span>
+                                                        @endif
+                                                        
+                                                    </span>
 
-                                                <hr>
-                                                <span class="block text-sm text-gray-500   ">
-                                                    @if($reviewer->review_status == "pending") <!-- if review status is pending, it means the review due date must be seen here -->
-                                                        Expected <span class="font-bold text-blue-800 ">review</span> on or before <br>  
-                                                        <strong>
-                                                            {{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}
-                                                        </strong>
-                                                    @else  <!-- if review status is NOT pending, it means the review had been sent and the user response due date must be seen here -->
-                                                        Expected <span class="font-bold text-blue-800 ">user response</span> on or before <br>  
-                                                        <strong>
-                                                            {{ \Carbon\Carbon::parse($project->submitter_due_date)->format('M d, Y h:i A') }}
-                                                        </strong>
-                                                    @endif
-                                                </span>
+                                                    <hr>
+                                                    <span class="block text-sm text-gray-500   ">
+                                                        @if($reviewer->review_status == "pending") <!-- if review status is pending, it means the review due date must be seen here -->
+                                                            Expected <span class="font-bold text-blue-800 ">review</span> on or before <br>  
+                                                            <strong>
+                                                                {{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}
+                                                            </strong>
+                                                        @else  <!-- if review status is NOT pending, it means the review had been sent and the user response due date must be seen here -->
+                                                            Expected <span class="font-bold text-blue-800 ">user response</span> on or before <br>  
+                                                            <strong>
+                                                                {{ \Carbon\Carbon::parse($project->submitter_due_date)->format('M d, Y h:i A') }}
+                                                            </strong>
+                                                        @endif
+                                                    </span>
+                                                @else 
+                                                    <span class="block text-sm text-gray-800 ">
+                                                        Reviewer account had been deleted
+                                                    </span>
 
+                                                @endif
                                             @else 
                                                 <span class="block text-sm text-gray-800 ">
                                                     <span class="font-bold text-lime-500">Approved</span>
