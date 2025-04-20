@@ -53,7 +53,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @yield('script')
-
+        @auth
         <!-- Discussion Listeners -->
         <script type="module">
 
@@ -168,7 +168,7 @@
 
         </script>
         <!-- ./ Discussion Listeners -->
-
+        @endauth
          
 
 

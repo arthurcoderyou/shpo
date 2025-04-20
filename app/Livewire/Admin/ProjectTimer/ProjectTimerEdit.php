@@ -12,10 +12,17 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class ProjectTimerEdit extends Component
 {
-    public $submitter_response_duration_type = "day";
-    public $submitter_response_duration = 1; 
-    public $reviewer_response_duration = 1;
-    public $reviewer_response_duration_type = "day";  
+    public $submitter_response_duration_type = null;
+    public $submitter_response_duration = null; 
+    public $reviewer_response_duration = null;
+    public $reviewer_response_duration_type = null;  
+
+    public $project_submission_open_time = null;
+    public $project_submission_close_time = null;
+    public $project_submission_restrict_by_time = null;
+    public $message_on_open_close_time = null;
+    
+
 
     public $project_timer;
 
@@ -37,6 +44,11 @@ class ProjectTimerEdit extends Component
             $this->submitter_response_duration = $project_timer->submitter_response_duration ;
             $this->reviewer_response_duration = $project_timer->reviewer_response_duration ;
             $this->reviewer_response_duration_type = $project_timer->reviewer_response_duration_type ;  
+
+            $this->project_submission_open_time = $project_timer->project_submission_open_time ;
+            $this->project_submission_close_time = $project_timer->project_submission_close_time ;
+            $this->message_on_open_close_time = $project_timer->message_on_open_close_time ;
+            $this->project_submission_restrict_by_time = $project_timer->project_submission_restrict_by_time ;  
             
         }
 

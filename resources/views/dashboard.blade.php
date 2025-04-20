@@ -19,7 +19,7 @@
     {{-- <livewire:dashboard.guest-dashboard /> --}}
     @if (Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('dashboard view'))
 
-     
+        <livewire:dashboard.project-requirements-panel />
 
         @if (Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('dashboard counters'))
             

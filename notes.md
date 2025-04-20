@@ -983,3 +983,37 @@ Data Visualization – Overlay data on maps using markers, heatmaps, and polygon
 Routing and Navigation – Provide directions and route optimization.
 
 Geocoding & Reverse Geocoding – Convert addresses into coordinates and vice versa.
+
+
+
+
+
+Apply the features needed first then we will fix the bugs later on 
+
+
+
+
+# Bugs found 
+
+There is no notification for the admin if the project reviewer, project timer and document types are setup already .
+    - 0 document types 
+    - 0 project reviewers 
+    - project timers incomplete setup (submission timer, closing and starting timer)
+
+    => Add it on the dashboard for it to be fully added to the website before any submissions is applied 
+
+
+Create full messages on teh deletion and if possible, only provide the idea to disable the values instead of deleting it completely 
+
+Everytime a user is deleted, the data or project reviewing that connected into it must be updated to have the updated details about the reviewer and notifications for the user as well 
+
+User 
+    ProjectReviewer 
+
+
+
+
+
+
+
+

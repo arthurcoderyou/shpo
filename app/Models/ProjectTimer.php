@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectTimer extends Model
 {
+
+    /**
+     * $table->time('project_submission_open_time')->nullable();
+     * $table->time('project_submission_close_time')->nullable();
+     * $table->longText('message_on_open_close_time')->nullable();
+     * $table->boolean('project_submission_restrict_by_time')->default(false);
+     *  
+     */
     protected $table = "project_timers";
     protected $fillable = [
         
@@ -17,6 +25,11 @@ class ProjectTimer extends Model
         'updated_by',
         'created_at',
         'updated_at',
+        'project_submission_open_time',
+        'project_submission_close_time',
+        'message_on_open_close_time',
+        'project_submission_restrict_by_time'
+        
     ];
 
 
