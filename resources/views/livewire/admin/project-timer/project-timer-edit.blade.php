@@ -134,6 +134,90 @@
                     @endif
 
 
+                    <div class="space-y-2 col-span-12 sm:col-span-4  ">
+                        <label for="project_submission_open_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Open Time
+                        </label>
+
+                        <input 
+                            id="project_submission_open_time"
+                            autofocus autocomplete="project_submission_open_time"
+                            wire:model.live="project_submission_open_time"
+                            type="text"
+                            placeholder="HH:MM AM/PM"
+                        class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
+
+                        @error('project_submission_open_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+ 
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4  ">
+                        <label for="project_submission_close_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Close Time
+                        </label>
+
+                        <input 
+                            id="project_submission_close_time"
+                            autofocus autocomplete="project_submission_close_time"
+                            wire:model.live="project_submission_close_time"
+                            type="text"
+                            placeholder="HH:MM AM/PM"
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
+
+                        @error('project_submission_close_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4  ">
+                        <label for="project_submission_restrict_by_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Enable time submission restriction 
+                        </label>
+
+                        <select 
+                            autofocus autocomplete="project_submission_restrict_by_time"
+                            wire:model.live="project_submission_restrict_by_time"
+                            id="project_submission_restrict_by_time" 
+                            class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
+                            <option selected="">Select status</option>
+                            <option value="true">Enable</option>
+                            <option value="false">Disable</option> 
+                        </select>
+
+                        @error('project_submission_restrict_by_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+                    <div class="space-y-2 col-span-12    ">
+                        <label for="message_on_open_close_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Close Time
+                        </label>
+
+                        <textarea 
+                        id="message_on_open_close_time"
+                        autofocus autocomplete="message_on_open_close_time"
+                        wire:model="message_on_open_close_time" name=""
+                        class="py-2 px-3 sm:py-3 sm:px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" rows="3" placeholder="Message"></textarea>
+                        @error('message_on_open_close_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>    
+ 
+
+
                 </div>
                 <!-- End Grid -->
 
@@ -161,3 +245,41 @@
     <!-- End Card --> 
 </div>
 <!-- End Card Section -->
+
+
+@push('scripts')
+    
+
+    <script>
+        $(document).ready(function() {
+            flatpickr("#project_submission_open_time", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K",
+
+                minuteIncrement: 30,
+                onChange: function(selectedDates, dateStr, instance) {
+                    @this.set('project_submission_open_time', dateStr);
+                }
+            });
+        });
+
+        $(document).ready(function() {
+            flatpickr("#project_submission_close_time", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K",
+
+                minuteIncrement: 30,
+                onChange: function(selectedDates, dateStr, instance) {
+                    @this.set('project_submission_close_time', dateStr);
+                }
+            });
+        });
+    </script>
+
+
+
+
+@endpush
+
