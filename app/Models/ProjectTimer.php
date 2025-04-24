@@ -3,9 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectTimer extends Model
 {
+    use SoftDeletes;
+    protected $casts = [
+        // 'project_submission_open_time' => 'datetime',
+        // 'project_submission_close_time' => 'datetime',
+    ];
+    
 
     /**
      * $table->time('project_submission_open_time')->nullable();
@@ -31,6 +38,23 @@ class ProjectTimer extends Model
         'project_submission_restrict_by_time'
         
     ];
+
+
+    protected static function booted()
+    {
+
+        parent::boot();
+
+        static::created(function ($projectTimer) {
+            event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        });
+    
+        static::updated(function ($projectTimer) {
+            event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        });
+    }
+
+
 
 
     /**

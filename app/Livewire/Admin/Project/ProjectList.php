@@ -8,12 +8,14 @@ use App\Models\Project;
 use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
+use App\Models\DocumentType;
+use App\Models\ProjectTimer;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use App\Models\ProjectReviewer;
+ 
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Support\Facades\Route;
- 
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert; 
 use Illuminate\Support\Facades\Notification; 
@@ -440,16 +442,97 @@ class ProjectList extends Component
     }
 
 
+    /** Project Submission restriction  */
+    private function checkProjectRequirements()
+    {
+        $projectTimer = ProjectTimer::first();
+    
+        return [
+            'response_duration' => !$projectTimer || (
+                !$projectTimer->submitter_response_duration_type ||
+                !$projectTimer->submitter_response_duration ||
+                !$projectTimer->reviewer_response_duration ||
+                !$projectTimer->reviewer_response_duration_type
+            ),
+            'project_submission_times' => !$projectTimer || (
+                !$projectTimer->project_submission_open_time ||
+                !$projectTimer->project_submission_close_time ||
+                !$projectTimer->message_on_open_close_time
+            ),
+            'no_reviewers' => Reviewer::count() === 0,
+            'no_document_types' => DocumentType::count() === 0,
+        ];
+    }
+
+
+    /**Check if project is within open and close hours */
+    private function isProjectSubmissionAllowed()
+    {
+        $projectTimer = ProjectTimer::first();
+
+        if ($projectTimer->project_submission_restrict_by_time) {
+            $currentTime = now();
+            $openTime = $projectTimer->project_submission_open_time;
+            $closeTime = $projectTimer->project_submission_close_time;
+
+            if ($currentTime < $openTime || $currentTime > $closeTime) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
 
     public function submit_project($project_id){
 
-        // check if there are existing project reviewers 
-        if(Reviewer::count() == 0){
-            Alert::error('Error','Project reviewers are not added yet to the system');
-            return redirect()->route('project.index');
 
+        $errors = $this->checkProjectRequirements();
+        $errorMessages = [];
+
+        foreach ($errors as $key => $error) {
+            if ($error) {
+                switch ($key) {
+                    case 'response_duration':
+                        $errorMessages[] = 'Response duration settings are not yet configured.';
+                        break;
+                    case 'project_submission_times':
+                        $errorMessages[] = 'Project submission times are not set.';
+                        break;
+                    case 'no_reviewers':
+                        $errorMessages[] = 'No reviewers have been set.';
+                        break;
+                    case 'no_document_types':
+                        $errorMessages[] = 'Document types have not been added.';
+                        break;
+                }
+            }
         }
+
+
+        if (!$this->isProjectSubmissionAllowed()) {
+            $openTime = ProjectTimer::first()->project_submission_open_time;
+            $closeTime = ProjectTimer::first()->project_submission_close_time;
+
+            $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . $openTime->format('h:i A') . ' and ' . $closeTime->format('h:i A');
+        }
+
+        if (!empty($errorMessages)) {
+            $message = 'The project cannot be submitted because: ';
+            $message .= implode(', ', $errorMessages);
+            $message .= '. Please wait for the admin to configure these settings.';
+            Alert::error('Error', $message);
+            return redirect()->route('project.index');
+        }
+
+
+
+        // // check if there are existing project reviewers 
+        // if(Reviewer::count() == 0){
+        //     Alert::error('Error','Project reviewers are not added yet to the system');
+        //     return redirect()->route('project.index');
+
+        // }
 
 
         

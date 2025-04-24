@@ -102,7 +102,7 @@
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
                             <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
-                            Created
+                            Logged at
                             </span>
                         </div>
                     </th>
@@ -142,11 +142,17 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="size-auto whitespace-nowrap">
+                                <td class="size-auto whitespace-nowrap hs-tooltip hs-tooltip-toggle">
                                     <div class="px-2 py-2">
-                                        <span class="block text-sm text-gray-500 ">{{ $activity_log->log_action }}</span>
+                                        <span class="block text-sm text-gray-500 text-wrap max-w-xl">{{ $activity_log->log_action }}</span>
                                     </div>
+
+                                    <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs max-w-md text-wrap" role="tooltip">
+                                        {{ $activity_log->log_action }}
+                                    </span>
+
                                 </td>
+                                
 
                                 <td class="size-auto whitespace-nowrap">
                                     <div class="px-2 py-2">
@@ -216,3 +222,18 @@
     <!-- End Card -->
 </div>
 <!-- End Table Section -->
+
+@section('script')
+    <script type="module">
+        // handler for activity logs
+        window.Echo.private("activitylog")
+            .listen('.created', (e) => {
+
+                console.log('Received update event:', e.message);
+
+                Livewire.dispatch('activitylogCreated');
+
+
+            });
+    </script>
+@endsection

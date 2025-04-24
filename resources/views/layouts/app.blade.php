@@ -68,14 +68,14 @@
         <!-- Discussion Listeners -->
         <script type="module">
 
-            function showNewDiscussionAlert(message, link) {
+            function showNewDiscussionAlert(message, link, linkText) {
                 const alertElement = document.getElementById('discussion-alert');
                 const messageElement = alertElement.querySelector('h3');
                 messageElement.innerHTML = `${message}`;
 
                 const linkElement = alertElement.querySelector('a');
                 linkElement.href = link;
-                linkElement.innerHTML = 'View Project';
+                linkElement.innerHTML = linkText;
                 
                 alertElement.classList.remove('hidden');
                 alertElement.classList.add('opacity-100');
@@ -112,7 +112,7 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
                     }
                 }).listen('.edited', (e) => {
 
@@ -132,7 +132,7 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
                     }
                 }).listen('.deleted', (e) => {
 
@@ -152,7 +152,7 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
                     }
                 }).listen('.reply', (e) => {
 
@@ -170,11 +170,119 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                    }
+                });
+
+            window.Echo.private("project.timer")
+                .listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('projectTimerUpdated');
+
+ 
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_timer_url, "View Project Timer");
                     }
                 });
 
 
+                
+            window.Echo.private("document.type")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('documentTypeCreated');
+
+  
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('documentTypeUpdated');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('documentTypeDeleted');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
+                    }
+                });
+
+
+            window.Echo.private("reviewer")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('reviewerCreated');
+
+  
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('reviewerUpdated');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('reviewerDeleted');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
+                    }
+                });
 
 
         </script>
@@ -187,6 +295,9 @@
         @livewireStyles
     </head>
     <body class="font-sans antialiased bg-white">
+ 
+
+
         <!-- Notification Alert -->
         <div id="dismiss-alert" class="hidden transition duration-300 bg-teal-50 border border-teal-200 text-sm text-teal-800 rounded-lg p-4 fixed top-4 right-4 z-50" role="alert" tabindex="-1" aria-labelledby="hs-dismiss-button-label">
 
@@ -283,7 +394,7 @@
                 {{ $slot }}
             </main>
         </div>
-
+        {{--
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 if (window.Livewire) {
@@ -291,7 +402,7 @@
                 }
             });
         </script>
-
+  --}}
         @include('sweetalert::alert')
         <!-- Push custom scripts from views -->
         @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
@@ -321,6 +432,11 @@
 
 
             });
+
+
+             
+
+
         </script>
 
         <!-- Before the closing </body> tag -->

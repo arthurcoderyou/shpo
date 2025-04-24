@@ -20,7 +20,7 @@
 
                 <div class="sm:col-span-12">
                     <h2 class="text-lg font-semibold text-gray-800 ">
-                    Submit new project
+                        Submit new project
                     </h2>
                 </div>
                 <!-- End Col -->
@@ -463,6 +463,13 @@
 
                     @endforeach 
                 @endif 
+
+
+                @if (session()->has('error'))
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 mt-5" role="alert">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
 
                 <div class="mt-5 flex justify-center gap-x-2">

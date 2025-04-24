@@ -28,6 +28,13 @@ class DocumentTypeList extends Component
     public $lastOrder;
 
 
+    protected $listeners = [
+        'documentTypeCreated' => '$refresh',
+        'documentTypeUpdated' => '$refresh',
+        'documentTypeDeleted' => '$refresh',
+    ];
+
+
     public function mount(){ 
     }
 
@@ -42,14 +49,14 @@ class DocumentTypeList extends Component
         $this->selected_records = []; // Clear selected records
 
 
-        ActivityLog::create([
-            'log_action' => "Document type list deleted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Document type list deleted ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
-        Alert::success('Success','Selected Document types deleted successfully');
-        return redirect()->route('document_type.index');
+        // Alert::success('Success','Selected Document types deleted successfully');
+        // return redirect()->route('document_type.index');
     }
 
     // This method is called automatically when selected_records is updated
@@ -77,108 +84,70 @@ class DocumentTypeList extends Component
 
         $document_type->delete();
  
-        ActivityLog::create([
-            'log_action' => "Global Project reviewer '".$document_type->name."' on list deleted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Global Project reviewer '".$document_type->name."' on list deleted ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
-        Alert::success('Success','Document type deleted successfully');
-        return redirect()->route('document_type.index');
+        // Alert::success('Success','Document type deleted successfully');
+        // return redirect()->route('document_type.index');
 
     }
 
+    public function getDocumentTypesProperty()
+    {
+        $query = DocumentType::select('document_types.*');
 
+        if (!empty($this->search)) {
+            $query = $query->where(function ($q) {
+                $q->whereHas('creator', function ($q2) {
+                    $q2->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%");
+                })
+                ->orWhereHas('updator', function ($q2) {
+                    $q2->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%");
+                });
+            });
+        }
+
+        switch ($this->sort_by) {
+            case "Name A - Z":
+                $query = $query->orderBy('name', 'ASC');
+                break;
+            case "Name Z - A":
+                $query = $query->orderBy('name', 'DESC');
+                break;
+            case "Latest Added":
+                $query = $query->orderBy('document_types.created_at', 'DESC');
+                break;
+            case "Oldest Added":
+                $query = $query->orderBy('document_types.created_at', 'ASC');
+                break;
+            case "Latest Updated":
+                $query = $query->orderBy('document_types.updated_at', 'DESC');
+                break;
+            case "Oldest Updated":
+                $query = $query->orderBy('document_types.updated_at', 'ASC');
+                break;
+            default:
+                $query = $query->orderBy('document_types.updated_at', 'DESC');
+        }
+
+        return $query->paginate($this->record_count);
+    }
 
     public function render()
     {
 
-        $document_types = DocumentType::select('document_types.*');
-
-
-        if (!empty($this->search)) {
-            $search = $this->search;
+         
 
  
-
-            $document_types = $document_types->where(function ($query) {
-                $query->whereHas('creator', function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%");
-                });
-            });
-
-            $document_types = $document_types->where(function ($query) {
-                $query->whereHas('updator', function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%");
-                });
-            });
-
-
-        }
-
-        
-
-
-        // dd($this->sort_by);
-        if(!empty($this->sort_by) && $this->sort_by != ""){
-            // dd($this->sort_by);
-            switch($this->sort_by){
-
-                case "Name A - Z":
-                    $document_types = $document_types->orderBy('name', 'ASC');
-                    break;
-            
-                case "Name Z - A":
-                    $document_types = $document_types->orderBy('name', 'DESC');
-                    break;
- 
-
-
-                /**
-                 * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
-                 * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
-                 */
-
-                case "Latest Added":
-                    $document_types =  $document_types->orderBy('document_types.created_at','DESC');
-                    break;
-
-                case "Oldest Added":
-                    $document_types =  $document_types->orderBy('document_types.created_at','ASC');
-                    break;
-
-                case "Latest Updated":
-                    $document_types =  $document_types->orderBy('document_types.updated_at','DESC');
-                    break;
-
-                case "Oldest Updated":
-                    $document_types =  $document_types->orderBy('document_types.updated_at','ASC');
-                    break;
-                default:
-                    $document_types =  $document_types->orderBy('document_types.updated_at','DESC');
-                    break;
-
-            }
-
-
-        }else{
-            $document_types =  $document_types->orderBy('document_types.updated_at','DESC');
-
-        }
-
-
-
-
-
-        $document_types = $document_types->paginate($this->record_count);
-
-
 
 
         return view('livewire.admin.document-type.document-type-list',[
-            'document_types' => $document_types 
+            'document_types' => $this->document_types 
         ]);
     }
     // public function render()

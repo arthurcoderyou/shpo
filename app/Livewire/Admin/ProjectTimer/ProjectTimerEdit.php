@@ -3,10 +3,13 @@
 namespace App\Livewire\Admin\ProjectTimer;
 
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Project;
 use Livewire\Component;
+use App\Models\ActiveDays;
 use App\Models\ActivityLog;
 use App\Models\ProjectTimer;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 
@@ -26,31 +29,41 @@ class ProjectTimerEdit extends Component
 
     public $project_timer;
 
+    public $DaysOfTheWeek;
+
+    public $days;
+
+    // protected $listeners = ['projectTimerUpdated' => '$refresh'];
+    protected $listeners = ['projectTimerUpdated' => 'refreshProjectTimerData'];
+    
+
 
 
     public function mount(){
 
 
         //get the first record from the project_timers
-        $project_timer = ProjectTimer::first();
-        
+        $this->loadProjectTimer();
 
-        if(!empty($project_timer)){
+        $this->loadDaysOfTheWeek(); /// loads the days of the week in realtime
+
+        $this->days = ActiveDays::all()->keyBy('id')->toArray();
+
+        if(!empty($this->project_timer)){
 
             
-            // if there is an existing record
-            $this->project_timer = $project_timer;
-            $this->submitter_response_duration_type = $project_timer->submitter_response_duration_type ;
-            $this->submitter_response_duration = $project_timer->submitter_response_duration ;
-            $this->reviewer_response_duration = $project_timer->reviewer_response_duration ;
-            $this->reviewer_response_duration_type = $project_timer->reviewer_response_duration_type ;  
+            // if there is an existing record 
+            $this->submitter_response_duration_type = $this->project_timer->submitter_response_duration_type ;
+            $this->submitter_response_duration = $this->project_timer->submitter_response_duration ;
+            $this->reviewer_response_duration = $this->project_timer->reviewer_response_duration ;
+            $this->reviewer_response_duration_type = $this->project_timer->reviewer_response_duration_type ;  
 
-            $this->project_submission_open_time = Carbon::createFromFormat('H:i:s', $project_timer->project_submission_open_time)->format('h:i A');
-            $this->project_submission_close_time = Carbon::createFromFormat('H:i:s', $project_timer->project_submission_close_time)->format('h:i A');
+            $this->project_submission_open_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_open_time)->format('h:i A');
+            $this->project_submission_close_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_close_time)->format('h:i A');
 
 
-            $this->message_on_open_close_time = $project_timer->message_on_open_close_time ;
-            $this->project_submission_restrict_by_time = filter_var($project_timer->project_submission_restrict_by_time, FILTER_VALIDATE_BOOLEAN); 
+            $this->message_on_open_close_time = $this->project_timer->message_on_open_close_time ;
+            $this->project_submission_restrict_by_time = filter_var($this->project_timer->project_submission_restrict_by_time, FILTER_VALIDATE_BOOLEAN); 
 
             // dd($this->project_submission_open_time);
             $this->validateCloseTime();
@@ -61,6 +74,71 @@ class ProjectTimerEdit extends Component
         
 
     }
+
+
+
+    public function refreshProjectTimerData()
+    {
+        $this->loadProjectTimer();
+
+        if (!empty($this->project_timer)) {
+            $this->submitter_response_duration_type = $this->project_timer->submitter_response_duration_type;
+            $this->submitter_response_duration = $this->project_timer->submitter_response_duration;
+            $this->reviewer_response_duration = $this->project_timer->reviewer_response_duration;
+            $this->reviewer_response_duration_type = $this->project_timer->reviewer_response_duration_type;
+
+            $this->project_submission_open_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_open_time)->format('h:i A');
+            $this->project_submission_close_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_close_time)->format('h:i A');
+
+            $this->message_on_open_close_time = $this->project_timer->message_on_open_close_time;
+            $this->project_submission_restrict_by_time = filter_var($this->project_timer->project_submission_restrict_by_time, FILTER_VALIDATE_BOOLEAN);
+
+            $this->validateCloseTime();
+        }
+
+        $this->loadDaysOfTheWeek();
+        $this->days = ActiveDays::all()->keyBy('id')->toArray();
+    }
+
+
+    public function loadProjectTimer(){
+        $this->project_timer = ProjectTimer::first();
+    }
+
+
+
+    // loader of the days in the week in realtime
+    public function loadDaysOfTheWeek()
+    {
+        $this->DaysOfTheWeek = ActiveDays::all();
+    }
+
+
+    public function getAllDaysActiveProperty()
+    {
+        return count(array_filter($this->days, function($day) {
+            return $day['is_active'];
+        })) === count($this->days);
+    }
+
+    public function selectAll($checked)
+    {
+        foreach ($this->days as $id => $day) {
+            $this->days[$id]['is_active'] = $checked;
+            // ActiveDays::find($id)->update(['is_active' => $checked]);
+        }
+    }
+
+    public function updatedDays()
+    {
+        foreach ($this->days as $id => $day) {
+            // ActiveDays::find($id)->update(['is_active' => $day['is_active']]);
+        }
+    }
+
+
+ 
+
 
     public function updatedProjectSubmissionOpenTime($value)
     {
@@ -220,14 +298,27 @@ class ProjectTimerEdit extends Component
         
         $project_timer->save();
 
-        ActivityLog::create([
-            'log_action' => "Project timer  updated ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
 
-        Alert::success('Success','Project timer updated successfully');
-        return redirect()->route('project_timer.index');
+        // ✅ Update ActiveDays only here
+        foreach ($this->days as $id => $day) {
+            $model = ActiveDays::find($id);
+        
+            if ($model && $model->is_active != $day['is_active']) {
+                $model->update([
+                    'is_active' => $day['is_active']
+                ]);
+            }
+        }
+
+
+        // ActivityLog::create([
+        //     'log_action' => "Project timer  updated ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
+
+        // Alert::success('Success','Project timer updated successfully');
+        // return redirect()->route('profile');
         
 
     }

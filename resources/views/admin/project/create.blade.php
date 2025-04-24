@@ -4,6 +4,7 @@
             {{ __('Projects') }}
         </h2>
     </x-slot>
+    <livewire:dashboard.project-requirements-panel />
     <livewire:admin.project.project-create /> 
 
 

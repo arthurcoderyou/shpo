@@ -4,9 +4,18 @@
             {{ __('Reviewers') }}
         </h2>
     </x-slot>
+
+
+    <livewire:dashboard.project-requirements-panel />
+
     @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer create') )
         <livewire:admin.reviewer.reviewer-create />
     @endif
+
+
+
+
+
     @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer list view') )
         <livewire:admin.reviewer.reviewer-list />
     @endif

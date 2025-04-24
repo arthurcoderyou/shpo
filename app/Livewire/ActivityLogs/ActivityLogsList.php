@@ -27,6 +27,10 @@ class ActivityLogsList extends Component
 
     public $file;
 
+    protected $listeners = ['activitylogCreated' => '$refresh']; 
+
+
+
      // Method to delete selected records
      public function deleteSelected()
      {
@@ -124,7 +128,12 @@ class ActivityLogsList extends Component
         // }
 
         // Adjust the query
-        if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+        if(Auth::user()->hasRole('DSI God Admin'))
+        {
+
+
+        }
+        elseif (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
             $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
         }elseif(!Auth::user()->hasRole('Admin')){
             $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);

@@ -14,12 +14,27 @@ class DocumentTypeEdit extends Component
 
     public string $name;
 
+    protected $listeners = ['documentTypeUpdated' => 'refreshDocumentTypeData'];
+
     public function mount($id){
         $document_type = DocumentType::findOrFail($id);
         $this->name = $document_type->name;
         $this->document_type_id = $document_type->id;
 
     }
+
+
+
+
+    public function refreshDocumentTypeData(){
+
+        
+        $document_type = DocumentType::findOrFail($this->document_type_id);
+        $this->name = $document_type->name;
+
+    }
+
+ 
 
     public function save(){
         $this->validate([
@@ -42,8 +57,11 @@ class DocumentTypeEdit extends Component
             'created_by' => Auth::user()->id,
         ]);
 
-        Alert::success('Success','Document type updated successfully');
-        return redirect()->route('document_type.index');
+
+
+
+        // Alert::success('Success','Document type updated successfully');
+        // return redirect()->route('document_type.index');
     }
 
 

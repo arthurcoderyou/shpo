@@ -3,7 +3,10 @@
 use App\Livewire\Actions\Logout;
 use Livewire\Volt\Component;
 use App\Models\UserDeviceLog;
+use App\Models\Reviewer;
 use App\Models\ActivityLog;
+use App\Models\ProjectTimer;
+use App\Models\DocumentType;
 use RealRashid\SweetAlert\Facades\Alert;
 
 
@@ -12,6 +15,9 @@ new class extends Component
 
    
     public $show_device_trust_section = false;
+    public $reviewer_exists = false;
+    public $document_types_exists = false;
+    public $time_setup = false;
 
     public function mount()
     {
@@ -19,7 +25,29 @@ new class extends Component
 
         // Only show the section if the device is NOT trusted
         $this->show_device_trust_section = !$user_device_log->trusted;
+
+        // Check if reviewer exists
+        $this->reviewer_exists = Reviewer::count() > 0;
+        $this->document_types_exists = DocumentType::count() > 0;
+        $this->time_setup = $this->isProjectTimerSetup();
+
     }
+
+
+    private function isProjectTimerSetup()
+    {
+        $projectTimer = ProjectTimer::first();
+        return $projectTimer && 
+            $projectTimer->project_submission_open_time && 
+            $projectTimer->project_submission_close_time && 
+            $projectTimer->message_on_open_close_time &&
+            $projectTimer->submitter_response_duration_type &&
+            $projectTimer->submitter_response_duration &&
+            $projectTimer->reviewer_response_duration &&
+            $projectTimer->reviewer_response_duration_type;
+    }
+
+
 
     public function markDeviceAsTrusted($answer)
     {
@@ -211,7 +239,7 @@ new class extends Component
     <header class="flex flex-wrap  lg:justify-start lg:flex-nowrap z-50 w-full bg-white border-b border-gray-200 ">
         <nav class="relative max-w-[85rem] w-full mx-auto lg:flex lg:items-center lg:justify-between lg:gap-3 py-2 px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center gap-x-1">
-            <a class="flex-none font-semibold text-xl text-black focus:outline-none focus:opacity-80 " href="#" aria-label="Brand">
+            <a class="flex-none font-semibold text-xl text-black focus:outline-none focus:opacity-80 " href="{{ route('dashboard') }}" aria-label="Brand">
                 <input type="image" src="{{ asset('images/logo-ghrd.png') }}" class="max-w-52 sm:max-w-72" alt="">
             </a>
 
@@ -349,9 +377,17 @@ new class extends Component
                                         @endif
 
                                         @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('reviewer list view'))
-                                            <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('reviewer.index')  ? $active : $inactive }}" 
+                                            <a class="p-2 md:px-3 flex   items-center text-sm {{ request()->routeIs('reviewer.index')  ? $active : $inactive }}" 
                                             href="{{ route('reviewer.index') }}">
-                                                Project Reviewer
+                                                Project Reviewer 
+                                                @if($reviewer_exists)
+                                                    <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#63E6BE" d="M504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zM227.3 387.3l184-184c6.2-6.2 6.2-16.4 0-22.6l-22.6-22.6c-6.2-6.2-16.4-6.2-22.6 0L216 308.1l-70.1-70.1c-6.2-6.2-16.4-6.2-22.6 0l-22.6 22.6c-6.2 6.2-6.2 16.4 0 22.6l104 104c6.2 6.2 16.4 6.2 22.6 0z"/></svg>
+                                                @else
+                                                    <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ff0059" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                                                @endif
+
+
+
                                             </a>
                                         @endif
 
@@ -361,13 +397,26 @@ new class extends Component
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project_timer.index')  ? $active : $inactive }}" 
                                             href="{{ route('project_timer.index') }}">
                                                 Time Settings
+                                                
+                                                @if($time_setup)
+                                                    <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#63E6BE" d="M504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zM227.3 387.3l184-184c6.2-6.2 6.2-16.4 0-22.6l-22.6-22.6c-6.2-6.2-16.4-6.2-22.6 0L216 308.1l-70.1-70.1c-6.2-6.2-16.4-6.2-22.6 0l-22.6 22.6c-6.2 6.2-6.2 16.4 0 22.6l104 104c6.2 6.2 16.4 6.2 22.6 0z"/></svg>
+                                                @else
+                                                    <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ff0059" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                                                @endif
+
                                             </a>
                                         @endif
 
                                         @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('document type list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('document_type.index')  ? $active : $inactive }}" 
                                             href="{{ route('document_type.index') }}">
-                                                Document Types
+                                                Document Types  
+                                                @if($document_types_exists)
+                                                    <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#63E6BE" d="M504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zM227.3 387.3l184-184c6.2-6.2 6.2-16.4 0-22.6l-22.6-22.6c-6.2-6.2-16.4-6.2-22.6 0L216 308.1l-70.1-70.1c-6.2-6.2-16.4-6.2-22.6 0l-22.6 22.6c-6.2 6.2-6.2 16.4 0 22.6l104 104c6.2 6.2 16.4 6.2 22.6 0z"/></svg>
+                                                @else
+                                                    <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ff0059" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>
+                                                @endif
+
                                             </a>
                                         @endif
                                         
@@ -502,6 +551,15 @@ new class extends Component
                 <!-- End Button Group -->
 
 
+                
+                    <button type="button" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent   text-white hover:bg--700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-panel" data-hs-overlay="#notification-panel">
+                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 25.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416l400 0c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4l0-25.4c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm0 96c61.9 0 112 50.1 112 112l0 25.4c0 47.9 13.9 94.6 39.7 134.6L72.3 368C98.1 328 112 281.3 112 233.4l0-25.4c0-61.9 50.1-112 112-112zm64 352l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7s18.7-28.3 18.7-45.3z"/></svg>
+    
+                    </button>
+
+                    <livewire:layout.notification-panel />
+                    
+
 
                 <div class="my-2 md:my-0 md:mx-2">
                     <div class="w-full h-px md:w-px md:h-4 bg-gray-100 md:bg-gray-300 "></div>
@@ -527,5 +585,5 @@ new class extends Component
 
 
    
-
+    
 </nav>

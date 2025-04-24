@@ -751,7 +751,7 @@ Let me know if you need modifications or additional details! 😊
 ### NOTES ON MEETING AT 12 March 2025
 
 
-# Document Types 
+#### Document Types Categories
 
 Work Plan
 
@@ -947,6 +947,7 @@ Added errors
     Reply Control, only users part of the project can send a reply. Admin is excemplted on this condition 
 
 3. Project Timer Process Adjustment: The rules is updated on the time reset
+    -- add working days 
 4. Project Review Process Adjustment: New request on review options such as temporary reject that rejects the project but the timer is not stopped
 5. Project Report to PDF 
 6. Project Report Additional Metrics: Project Status with time date metrics.
@@ -956,6 +957,9 @@ Added errors
 10. Project review export
 11. Project Cut Off Time
 
+
+-- add que on the submission of the projects if the project is not sent yet 
+-- add soft delete to everything and make it only on the audit trail so that they are all on the website and all show in the history of everything. 
 
 
 
@@ -1015,5 +1019,76 @@ User
 
 
 
+
+### STEP BY STEP PROCESS AND ADJUSTMENTS TO BE MADE ###
+
+First is to hide review at the momment. It will only be shown when it is needed 
+
+
+Add an audit trail 
+- Change history page 
+
+
+
+Add softdelete after the creation of the new processes 
+
+
+Another idea that come to my mind is that 
+Make the creation of new Document types to another page and then the reviewing is based on that document and not just based on its project itself 
+
+
+Then when all of the projects are good and verified, make an option for the final administrator to verify the project itself
+
+
+On the project list, there is an option to add one or more projects documents with there document types 
+
+THe page will be project_document/{project_id}/create
+
+
+
+There is also a new idea on the website signup that when a user is part of the government website or their email is a governemtn email, then signing up will tell that they are signing up for reviewer
+
+
+
+
+
+-- Activity logs to have more table columns but it is hidden and only acceptable when filtering 
+
+
+
+
+
+
+
+
+### CURRENT WORK 
+
+The adjustment will be that the project create must have the validation 
+
+Adjustment is that the project is created and save then before submission, they must then process to add documents 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### ALWAYS AT THE BOTTOM 
+
+Document Types Categories -> search to find the categories 
+
+
+### PATTERN ON THE GOVERNMENT CODE 
+
+firstname.lastname@dpr.guam.gov
+-> every using signing up with this email is considered signing up as reviewer
 
 

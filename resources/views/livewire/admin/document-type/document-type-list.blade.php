@@ -55,7 +55,7 @@
             <table class="min-w-full divide-y divide-gray-200 ">
                 <thead class="bg-gray-50 ">
                 <tr>
-                    <th scope="col" class="px-2 py-3 text-start">
+                    {{-- <th scope="col" class="px-2 py-3 text-start">
                         <label for="hs-at-with-checkboxes-main" class="flex">
                             <input
                                 type="checkbox"
@@ -67,7 +67,7 @@
                             <span class="sr-only">Checkbox</span>
                         </label>
  
-                    </th>
+                    </th> --}}
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
@@ -79,17 +79,11 @@
 
 
 
-                    <th scope="col" class="px-2 py-3 text-start">
-                        <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
-                            Order
-                            </span>
-                        </div>
-                    </th>
+                    
 
 
 
-                    <th scope="col" class="px-2 py-3 text-start">
+                    <th scope="col" class="px-2 py-3 ">
                         <div class="flex items-center gap-x-2">
                             <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Modified
@@ -97,7 +91,9 @@
                         </div>
                     </th>
 
-                    <th scope="col" class="px-6 py-3 text-end"></th>
+                    <th scope="col" class="px-2 py-3 text-end"> 
+                    </th>
+ 
                 </tr>
                 </thead>
 
@@ -106,7 +102,7 @@
                     @if(!empty($document_types) && count($document_types) > 0)
                         @foreach ($document_types as $document_type)
                             <tr>
-                                <td class="w-10 whitespace-nowrap  ">
+                                {{-- <td class="w-10 whitespace-nowrap  ">
                                     <div class="px-2 py-2 align-self-center">
                                         <label for="document_type_{{ $document_type->id }}" class="flex">
                                             <input type="checkbox"
@@ -121,7 +117,7 @@
                                     </div>
  
 
-                                </td>
+                                </td> --}}
 
                                 <td class="size-auto whitespace-nowrap">
                                     <div class="px-2 py-2">

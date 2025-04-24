@@ -3,15 +3,36 @@
 namespace App\Livewire\Dashboard;
 
 use Livewire\Component;
-use App\Models\ProjectTimer;
 use App\Models\Reviewer;
+use App\Models\DocumentType;
+use App\Models\ProjectTimer;
 
 class ProjectRequirementsPanel extends Component
 {
+
+    protected $listeners = [
+        'projectTimerUpdated' => '$refresh',
+        'documentTypeCreated' => '$refresh',
+        'documentTypeUpdated' => '$refresh',
+        'documentTypeDeleted' => '$refresh',
+        'reviewerCreated' => '$refresh',
+        'reviewerUpdated' => '$refresh',
+        'reviewerDeleted' => '$refresh',
+    ];
+
+
     public function render()
     {
 
         $projectTimer = ProjectTimer::first();
+
+        // DocumentTypes that don't have any reviewers
+        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+
+        // Check if all document types have at least one reviewer
+        $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
+
+
 
         $errors = [
             'response_duration' => !$projectTimer || (
@@ -26,9 +47,15 @@ class ProjectRequirementsPanel extends Component
                 !$projectTimer->message_on_open_close_time
             ),
             'no_reviewers' => Reviewer::count() === 0,
+            'no_document_types' => DocumentType::count() === 0, // Add a new error condition
+            'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
         ];
         
         // dd(Reviewer::count() === 0);
-        return view('livewire.dashboard.project-requirements-panel',compact('errors','projectTimer'));
+        return view('livewire.dashboard.project-requirements-panel',compact(
+            'errors',
+            'projectTimer',
+                'documentTypesWithoutReviewers'
+        ));
     }
 }

@@ -11,11 +11,14 @@ use RealRashid\SweetAlert\Facades\Alert;
 class DocumentTypeCreate extends Component
 {
 
+
+    protected $listeners = ['documentTypeCreated' => '$refresh'];
+    
     public string $name;
 
     public function save(){
         $this->validate([
-            'name' => 'required',
+            'name' => 'required|unique:document_types,name',
         ]);
 
         $document_type = new DocumentType();
@@ -24,14 +27,18 @@ class DocumentTypeCreate extends Component
         $document_type->updated_by = Auth::user()->id; 
         $document_type->save();
 
-        ActivityLog::create([
-            'log_action' => "Document type '".$document_type->name."' created",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Document type '".$document_type->name."' created",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
-        Alert::success('Success','Document type created successfully');
-        return redirect()->route('document_type.index');
+        
+        $this->reset(['name']);
+
+
+        // Alert::success('Success','Document type created successfully');
+        // return redirect()->route('document_type.index');
     }
 
 

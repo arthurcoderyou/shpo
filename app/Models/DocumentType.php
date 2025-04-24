@@ -1,11 +1,17 @@
 <?php
 
 namespace App\Models;
-
+ 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DocumentType extends Model
 {
+
+    use SoftDeletes;
+
+    
+    
     //
     // /*
     // /**
@@ -32,6 +38,26 @@ class DocumentType extends Model
         'created_by',
         'updated_by',
     ];
+
+
+    protected static function booted()
+    {
+
+        parent::boot();
+        
+        static::created(function ($documentType) {
+            event(new  \App\Events\DocumentTypeCreated($documentType));
+        });
+
+        static::updated(function ($documentType) {
+            event(new  \App\Events\DocumentTypeUpdated($documentType));
+        });
+
+        static::deleted(function ($documentType) {
+            event(new  \App\Events\DocumentTypeDeleted($documentType));
+        });
+    }
+
 
 
     /**
@@ -66,5 +92,9 @@ class DocumentType extends Model
     }
 
 
+    public function reviewers()
+    {
+        return $this->hasMany(Reviewer::class, 'document_type_id');
+    }
 
 }
