@@ -134,6 +134,130 @@
                     @endif
 
 
+                    
+
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4  ">
+                        <label for="project_submission_open_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Open Time
+                        </label>
+
+                        <input 
+                            id="project_submission_open_time"
+                            autofocus autocomplete="project_submission_open_time"
+                            wire:model.live="project_submission_open_time"
+                            type="text"
+                            placeholder="HH:MM AM/PM"
+                        class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
+
+                        @error('project_submission_open_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+ 
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4  ">
+                        <label for="project_submission_close_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Close Time
+                        </label>
+
+                        <input 
+                            id="project_submission_close_time"
+                            autofocus autocomplete="project_submission_close_time"
+                            wire:model.live="project_submission_close_time"
+                            type="text"
+                            placeholder="HH:MM AM/PM"
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
+
+                        @error('project_submission_close_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4  ">
+                        <label for="project_submission_restrict_by_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Enable time submission restriction 
+                        </label>
+
+                        <select 
+                            autofocus autocomplete="project_submission_restrict_by_time"
+                            wire:model.live="project_submission_restrict_by_time"
+                            id="project_submission_restrict_by_time" 
+                            class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
+                            <option selected="">Select status</option>
+                            <option value="true">Enable</option>
+                            <option value="false">Disable</option> 
+                        </select>
+
+                        @error('project_submission_restrict_by_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+                    <div class="space-y-2 col-span-12    ">
+                        <label for="message_on_open_close_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Close Time
+                        </label>
+
+                        <textarea 
+                        id="message_on_open_close_time"
+                        autofocus autocomplete="message_on_open_close_time"
+                        wire:model="message_on_open_close_time" name=""
+                        class="py-2 px-3 sm:py-3 sm:px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none   " rows="3" placeholder="Message"></textarea>
+                        @error('message_on_open_close_time')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>    
+ 
+
+
+                    <div class="space-y-2 col-span-12">
+                        <label for="message_on_open_close_time" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Project Submissions Active Days
+                        </label>
+
+                        <ul class="flex flex-col sm:flex-row">
+        
+                            <div class="grid sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                                <label for="select_all" class="flex p-3 w-full bg-white border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500  ">
+                                    <span class="text-sm text-black ">Select All</span>
+                                    <input wire:click="selectAll($event.target.checked)" type="checkbox" value="select_all" class="shrink-0 ms-auto mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
+                                    id="select_all" {{ $this->allDaysActive ? 'checked' : '' }}>
+                                </label>
+                            
+                                @foreach ($DaysOfTheWeek as $day)
+                                    <label for="{{ $day->day }}" class="flex  p-3 w-full bg-white border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500  ">
+                                        <span class="text-sm text-black ">{{ $day->day }}</span>
+                                        <input wire:model.live="days.{{ $day->id }}.is_active" type="checkbox" value="1" class="shrink-0 ms-auto mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
+                                        id="{{ $day->day }}" {{ $day->is_active ? 'checked' : '' }}>
+                                    </label>
+                                @endforeach
+                            </div>
+        
+        
+                        </ul>
+        
+                        @error('day')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+        
+                    </div>
+                    <!-- End Col -->
+                    
+
+
+
+
                 </div>
                 <!-- End Grid -->
 
@@ -161,3 +285,41 @@
     <!-- End Card --> 
 </div>
 <!-- End Card Section -->
+
+
+@push('scripts')
+    
+
+    <script>
+        $(document).ready(function() {
+            flatpickr("#project_submission_open_time", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K",
+
+                minuteIncrement: 30,
+                onChange: function(selectedDates, dateStr, instance) {
+                    @this.set('project_submission_open_time', dateStr);
+                }
+            });
+        });
+
+        $(document).ready(function() {
+            flatpickr("#project_submission_close_time", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K",
+
+                minuteIncrement: 30,
+                onChange: function(selectedDates, dateStr, instance) {
+                    @this.set('project_submission_close_time', dateStr);
+                }
+            });
+        });
+    </script>
+
+
+
+
+@endpush
+

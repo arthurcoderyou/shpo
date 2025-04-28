@@ -10,6 +10,7 @@ use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
+use App\Models\ProjectTimer;
 use Livewire\WithFileUploads;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
@@ -431,6 +432,26 @@ class ProjectEdit extends Component
 
     }
 
+    /**Check if project is within open and close hours */
+    private function isProjectSubmissionAllowed()
+    {
+        $projectTimer = ProjectTimer::first();
+
+        if ($projectTimer->project_submission_restrict_by_time) {
+            $currentTime = now();
+            $openTime = $projectTimer->project_submission_open_time;
+            $closeTime = $projectTimer->project_submission_close_time;
+
+            if ($currentTime < $openTime || $currentTime > $closeTime) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+
 
     public function submit_project($project_id){
 
@@ -694,12 +715,70 @@ class ProjectEdit extends Component
     //     // }
     // }
 
+
+    /** Project Submission restriction  */
+    private function checkProjectRequirements()
+    {
+        $projectTimer = ProjectTimer::first();
+    
+        return [
+            'response_duration' => !$projectTimer || (
+                !$projectTimer->submitter_response_duration_type ||
+                !$projectTimer->submitter_response_duration ||
+                !$projectTimer->reviewer_response_duration ||
+                !$projectTimer->reviewer_response_duration_type
+            ),
+            'project_submission_times' => !$projectTimer || (
+                !$projectTimer->project_submission_open_time ||
+                !$projectTimer->project_submission_close_time ||
+                !$projectTimer->message_on_open_close_time
+            ),
+            'no_reviewers' => Reviewer::count() === 0,
+            'no_document_types' => DocumentType::count() === 0,
+        ];
+    }
+
+
+
     /**
-     * Handle an incoming registration request.
+     * Handle project update.
      */
     public function save()
     {
          
+
+        $errors = $this->checkProjectRequirements();
+        $errorMessages = [];
+
+        foreach ($errors as $key => $error) {
+            if ($error) {
+                switch ($key) {
+                    case 'response_duration':
+                        $errorMessages[] = 'Response duration settings are not yet configured. Please wait for the admin to set it up.';
+                        break;
+                    case 'project_submission_times':
+                        $errorMessages[] = 'Project submission times are not set. Please wait for the admin to configure them.';
+                        break;
+                    case 'no_reviewers':
+                        $errorMessages[] = 'No reviewers have been set. Please wait for the admin to assign them.';
+                        break;
+                    case 'no_document_types':
+                        $errorMessages[] = 'Document types have not been added. Please wait for the admin to set them up.';
+                        break;
+                }
+            }
+        }
+        
+        if (!$this->isProjectSubmissionAllowed()) {
+            $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . ProjectTimer::first()->project_submission_open_time . ' and ' . ProjectTimer::first()->project_submission_close_time;
+        }
+        
+
+        if (!empty($errorMessages)) {
+            session()->flash('error', implode(' ', $errorMessages));
+            return;
+        }
+
 
         $this->validate([
             'name' => [

@@ -25,7 +25,7 @@
                 <!-- Grid -->
                 <div class="grid grid-cols-12 gap-x-2  ">
 
-                    <div class="space-y-2 col-span-12 sm:col-span-6 ">
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
                         <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             User
                         </label>
@@ -53,7 +53,7 @@
 
                     </div>
 
-                    <div class="space-y-2 col-span-12 sm:col-span-6 ">
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
                         <label for="order" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Order
                         </label>
@@ -74,6 +74,35 @@
 
 
                     </div>
+
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <label for="document_type_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Document Type
+                        </label>
+
+                        <select autofocus autocomplete="document_type_id"
+                        wire:model="document_type_id" 
+                        id="document_type_id"
+                        name="document_type_id"
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
+                            <option value="">Select Document Type</option>
+                            @if(!empty($document_types))
+                                @foreach ($document_types as $document_type)
+                                    <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
+                                @endforeach
+                            @endif
+                            
+                        </select>
+
+                        @error('document_type_id')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+
 
                     {{-- <div class="space-y-2 col-span-12 sm:col-span-4 ">
                         <label for="status" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">

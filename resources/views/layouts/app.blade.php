@@ -18,8 +18,19 @@
         <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
         <link rel="stylesheet" href="{{ asset('vendor/livewire-dropzone/livewire-dropzone.css') }}"> 
 
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+        <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+
+
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+
+        <!-- Include Flatpickr CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+        <!-- Include Flatpickr JS -->
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
  
 
 
@@ -53,18 +64,18 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @yield('script')
-
+        @auth
         <!-- Discussion Listeners -->
         <script type="module">
 
-            function showNewDiscussionAlert(message, link) {
+            function showNewDiscussionAlert(message, link, linkText) {
                 const alertElement = document.getElementById('discussion-alert');
                 const messageElement = alertElement.querySelector('h3');
                 messageElement.innerHTML = `${message}`;
 
                 const linkElement = alertElement.querySelector('a');
                 linkElement.href = link;
-                linkElement.innerHTML = 'View Project';
+                linkElement.innerHTML = linkText;
                 
                 alertElement.classList.remove('hidden');
                 alertElement.classList.add('opacity-100');
@@ -101,7 +112,7 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
                     }
                 }).listen('.edited', (e) => {
 
@@ -121,7 +132,7 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
                     }
                 }).listen('.deleted', (e) => {
 
@@ -141,7 +152,7 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
                     }
                 }).listen('.reply', (e) => {
 
@@ -159,16 +170,124 @@
                     const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url);
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                    }
+                });
+
+            window.Echo.private("project.timer")
+                .listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('projectTimerUpdated');
+
+ 
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_timer_url, "View Project Timer");
                     }
                 });
 
 
+                
+            window.Echo.private("document.type")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('documentTypeCreated');
+
+  
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('documentTypeUpdated');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('documentTypeDeleted');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
+                    }
+                });
+
+
+            window.Echo.private("reviewer")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('reviewerCreated');
+
+  
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('reviewerUpdated');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    Livewire.dispatch('reviewerDeleted');
+
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+
+                    const shouldNotify =  (isAdmin || isReviewer) ;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
+                    }
+                });
 
 
         </script>
         <!-- ./ Discussion Listeners -->
-
+        @endauth
          
 
 
@@ -176,6 +295,9 @@
         @livewireStyles
     </head>
     <body class="font-sans antialiased bg-white">
+ 
+
+
         <!-- Notification Alert -->
         <div id="dismiss-alert" class="hidden transition duration-300 bg-teal-50 border border-teal-200 text-sm text-teal-800 rounded-lg p-4 fixed top-4 right-4 z-50" role="alert" tabindex="-1" aria-labelledby="hs-dismiss-button-label">
 
@@ -211,31 +333,31 @@
         <div id="discussion-alert" class="hidden transition duration-300 bg-blue-50 border border-blue-200 text-sm text-blue-800 rounded-lg p-4 fixed top-4 right-4 z-50" role="alert" tabindex="-1" aria-labelledby="hs-dismiss-button-label">
 
             <div class="flex">
-              <div class="shrink-0">
-                <svg class="shrink-0 size-4 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                  <path d="m9 12 2 2 4-4"></path>
-                </svg>
-              </div>
-              <div class="ms-3 flex-1">
-                <h3 id="hs-dismiss-button-label" class="text-sm font-medium">
-                    <!-- JS inserts message here -->
-                </h3>
-                <a href="" target="_blank" class="inline-block mt-2 text-blue-700 font-medium underline hover:text-blue-900">
-                    View Project →
-                </a>
-            </div>
-              <div class="ps-3 ms-auto">
-                <div class="-mx-1.5 -my-1.5">
-                  <button type="button" class="inline-flex bg-blue-50 rounded-lg p-1.5 text-blue-500 hover:bg-blue-100 focus:outline-hidden focus:bg-blue-100 " data-hs-remove-element="#discussion-alert">
-                    <span class="sr-only">Dismiss</span>
-                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M18 6 6 18"></path>
-                      <path d="m6 6 12 12"></path>
+                <div class="shrink-0">
+                    <svg class="shrink-0 size-4 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                    <path d="m9 12 2 2 4-4"></path>
                     </svg>
-                  </button>
                 </div>
-              </div>
+                <div class="ms-3 flex-1">
+                    <h3 id="hs-dismiss-button-label" class="text-sm font-medium">
+                        <!-- JS inserts message here -->
+                    </h3>
+                    <a href="" target="_blank" class="inline-block mt-2 text-blue-700 font-medium underline hover:text-blue-900">
+                        View Project →
+                    </a>
+                </div>
+                <div class="ps-3 ms-auto">
+                    <div class="-mx-1.5 -my-1.5">
+                    <button type="button" class="inline-flex bg-blue-50 rounded-lg p-1.5 text-blue-500 hover:bg-blue-100 focus:outline-hidden focus:bg-blue-100 " data-hs-remove-element="#discussion-alert">
+                        <span class="sr-only">Dismiss</span>
+                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                        </svg>
+                    </button>
+                    </div>
+                </div>
             </div>
         </div>
         <!-- ./ Discussion Alert -->
@@ -272,7 +394,7 @@
                 {{ $slot }}
             </main>
         </div>
-
+        {{--
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 if (window.Livewire) {
@@ -280,7 +402,7 @@
                 }
             });
         </script>
-
+  --}}
         @include('sweetalert::alert')
         <!-- Push custom scripts from views -->
         @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
@@ -310,9 +432,20 @@
 
 
             });
+
+
+             
+
+
         </script>
 
         <!-- Before the closing </body> tag -->
         @livewireScripts
+
+
+         <!-- Push custom scripts from views -->
+         @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
+
+
     </body>
 </html>

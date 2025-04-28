@@ -20,6 +20,10 @@ use App\Http\Controllers\TwoFactorVerificationController;
 
 Route::view('/', 'welcome');
 
+
+// THIS IS UPDATED
+
+
 Route::middleware(['throttle:60,1','auth' ,'log_user_device'])->group(function () {
 
     # 2fA Verify

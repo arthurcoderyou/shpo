@@ -3,9 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectTimer extends Model
 {
+    use SoftDeletes;
+    protected $casts = [
+        // 'project_submission_open_time' => 'datetime',
+        // 'project_submission_close_time' => 'datetime',
+    ];
+    
+
+    /**
+     * $table->time('project_submission_open_time')->nullable();
+     * $table->time('project_submission_close_time')->nullable();
+     * $table->longText('message_on_open_close_time')->nullable();
+     * $table->boolean('project_submission_restrict_by_time')->default(false);
+     *  
+     */
     protected $table = "project_timers";
     protected $fillable = [
         
@@ -17,7 +32,29 @@ class ProjectTimer extends Model
         'updated_by',
         'created_at',
         'updated_at',
+        'project_submission_open_time',
+        'project_submission_close_time',
+        'message_on_open_close_time',
+        'project_submission_restrict_by_time'
+        
     ];
+
+
+    protected static function booted()
+    {
+
+        parent::boot();
+
+        static::created(function ($projectTimer) {
+            event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        });
+    
+        static::updated(function ($projectTimer) {
+            event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        });
+    }
+
+
 
 
     /**

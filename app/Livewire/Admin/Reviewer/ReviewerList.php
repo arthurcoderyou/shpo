@@ -8,9 +8,11 @@ use App\Models\Project;
 use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
+use App\Models\DocumentType;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use App\Models\ProjectReviewer;
+use App\Models\DocumentTypeReviewer;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
@@ -36,96 +38,154 @@ class ReviewerList extends Component
 
     public $file;
 
-    public $lastOrder;
+    // public $lastOrder;
+    public $document_types;
+
+    public $document_type_id;
+
+    public $documentTypesWithoutReviewers;
+    public $allDocumentTypesHaveReviewers;
+    
+    protected $listeners = [
+        'reviewerCreated' => '$refresh', 
+        'reviewerUpdated' => '$refresh',
+        'reviewerDeleted' => '$refresh',
+        
+    ];
+     
 
 
     public function mount(){
+
+        // DocumentTypes that don't have any reviewers
+        $this->documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+
+        // Check if all document types have at least one reviewer
+        $this->allDocumentTypesHaveReviewers = empty($this->documentTypesWithoutReviewers);
+
+        $this->errors = [
+            'document_types_missing_reviewers' => !$this->allDocumentTypesHaveReviewers,
+        ];
+
         // Get the last order number
-        $this->lastOrder = Reviewer::max('order') ?? 0;
+        // $this->lastOrder = Reviewer::max('order') ?? 0;
+
+        $this->document_types = DocumentType::all();
+        
+
+        // check the first document type
+        $this->document_type_id = DocumentType::first()->id ?? null;
+        
+        // check the get request if it has one 
+        $this->document_type_id = request('document_type_id') ?? $this->document_type_id;
+
+        
+
+        // dd($this->lastOrder);
+
     }
 
 
-    public function updateOrder($reviewer_id, $order, $direction){
+    /**
+     * Computed (live) property for last order
+     */
+    public function getLastOrderProperty()
+    {
+        return Reviewer::where('document_type_id', $this->document_type_id)->count();
+    }
 
-        if($direction == "move_up"){
+    public function updateOrder($reviewer_id, $order, $direction, $document_type_id)
+    {
+        if ($direction == "move_up") {
+            // Find the reviewer with the closest order that is less than the current order
+            $prev_reviewer = Reviewer::where('document_type_id', $document_type_id)
+                ->where('order', '<', $order)
+                ->orderBy('order', 'DESC')
+                ->first();
+
+            if ($prev_reviewer) {
+                // Swap the orders
+                $prev_reviewer->order = $order;
+                $prev_reviewer->save();
+
+                $reviewer = Reviewer::find($reviewer_id);
+                $reviewer->order = $prev_reviewer->order - 1;
+                $reviewer->save();
+            }
+        } elseif ($direction == "move_down") {
+            // Find the reviewer with the closest order that is greater than the current order
+            $next_reviewer = Reviewer::where('document_type_id', $document_type_id)
+                ->where('order', '>', $order)
+                ->orderBy('order', 'ASC')
+                ->first();
+
+                // dd($next_reviewer);
+
+            if ($next_reviewer) {
+                // Swap the orders
+                $next_reviewer->order = $order;
+                $next_reviewer->save();
+
+                $reviewer = Reviewer::find($reviewer_id);
+                $reviewer->order = $next_reviewer->order + 1;
+                $reviewer->save();
+            }
+        }
 
 
-            $new_order = $order - 1; // minus because the direction is 1 to 100
+        $this->resetOrder($document_type_id);
 
-            //Updated
-            $prev_reviewer = Reviewer::where('order', $new_order)->first();
-            $prev_reviewer->order = $order;
-            $prev_reviewer->save();
 
-            /**update the value  */
+    }
 
-            $reviewer = Reviewer::find($reviewer_id);
-            $reviewer->order = $new_order;
+
+    public function resetOrder($document_type_id)
+    {
+        $reviewers = Reviewer::where('document_type_id', $document_type_id)
+            ->orderBy('order', 'ASC')
+            ->get();
+
+        foreach ($reviewers as $index => $reviewer) {
+            $reviewer->order = $index + 1;
             $reviewer->save();
-
-
-
-
-
-        }else if($direction == "move_down"){
-
-
-            $new_order = $order + 1;  // add because the direction is 1 to 100
-
-            //Updated
-            $prev_reviewer = Reviewer::where('order', $new_order)->first();
-            $prev_reviewer->order = $order;
-            $prev_reviewer->save();
-
-            /**update the value  */
-
-            $reviewer = Reviewer::find($reviewer_id);
-            $reviewer->order = $new_order;
-            $reviewer->save();
-
-
-
         }
     }
 
 
-    // Method to delete selected records
-    public function deleteSelected()
+    public function updateDocumentTypeReviewerOrder($reviewer_id, $direction)
     {
-        Reviewer::whereIn('id', $this->selected_records)->delete(); // Delete the selected records
+        // $reviewer = DocumentTypeReviewer::find($document_type_reviewer_id);
 
 
-        $this->selected_records = []; // Clear selected records
+        $reviewer = Reviewer::find($reviewer_id);
 
 
-        ActivityLog::create([
-            'log_action' => "Global Project reviewer list deleted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        if (!$reviewer) return;
 
-        Alert::success('Success','Selected reviewers deleted successfully');
-        return redirect()->route('reviewer.index');
-    }
+        $reviewer_id = $reviewer->reviewer_id;
+        $current_order = $reviewer->order;
 
-    // This method is called automatically when selected_records is updated
-    public function updateSelectedCount()
-    {
-        // Update the count when checkboxes are checked or unchecked
-        $this->count = count($this->selected_records);
-    }
+        $new_order = $direction === 'move_up' 
+            ? $current_order - 1 
+            : $current_order + 1;
 
-    public function toggleSelectAll()
-    {
-        if ($this->selectAll) {
-            $this->selected_records = Reviewer::pluck('id')->toArray(); // Select all records
-        } else {
-            $this->selected_records = []; // Deselect all
+        // Find the reviewer at the new order in the same document type
+        $swapReviewer = DocumentTypeReviewer::where('document_type_id', $document_type_id)
+            ->where('review_order', $new_order)
+            ->first();
+
+        if ($swapReviewer) {
+            // Swap their orders
+            $swapReviewer->review_order = $current_order;
+            $swapReviewer->save();
         }
 
-        $this->count = count($this->selected_records);
+        $reviewer->review_order = $new_order;
+        $reviewer->save();
     }
 
+ 
+   
 
     public function apply_to_all(){
 
@@ -358,54 +418,123 @@ class ReviewerList extends Component
     public function delete($id){
         $reviewer = Reviewer::find($id);
 
+        $document_type_id = $reviewer->document_type_id;
+
 
         $reviewer->delete();
 
-        $order_start_number = $reviewer->order;
+        // $order_start_number = $reviewer->order;
 
-        $reviewers = Reviewer::orderBy('order','ASC')->get();
-
-        $index = 1;
-        foreach($reviewers as $reviewer_user){
-
-
-            
-
-            $reviewer_user->order =  $index;
-            $reviewer_user->save();
-
-            $index++;
-        }
-
-
-        ActivityLog::create([
-            'log_action' => "Global Project reviewer '".$reviewer->user->name."' on list deleted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Reviewer deleted successfully');
-        return redirect()->route('reviewer.index');
+        $this->resetOrder($document_type_id);
+ 
+       
+        // Alert::success('Success','Reviewer deleted successfully');
+        // return redirect()->route('reviewer.index');
 
     }
 
 
 
-    public function render()
-    {
+    // public function render()
+    // {
+    //     $query = DocumentTypeReviewer::with('reviewer.user');
 
-        $reviewers = Reviewer::select('reviewers.*');
+
+    //     // dd($query);
+
+
+    //     // Filter by document_type_id or show default reviewers (where null)
+    //     if (!empty($this->document_type_id)) {
+    //         $query = $query->where(function ($q) {
+    //             $q->where('document_type_id', $this->document_type_id)
+    //             ->orWhereNull('document_type_id');
+    //         });
+    //     } else {
+    //         $query = $query->whereNull('document_type_id');
+    //     }
+
+    //     // Filter by search (on user.name or user.email)
+    //     if (!empty($this->search)) {
+    //         $query = $query->whereHas('reviewer.user', function ($q) {
+    //             $q->where('name', 'like', "%{$this->search}%")
+    //             ->orWhere('email', 'like', "%{$this->search}%");
+    //         });
+    //     }
+
+    //     // Role-based filtering (example kept, optional)
+    //     if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+    //         $query = $query->whereHas('reviewer', function ($q) {
+    //             $q->where('created_by', Auth::id());
+    //         });
+    //     }
+
+    //     // Sorting logic
+    //     if (!empty($this->sort_by)) {
+    //         switch ($this->sort_by) {
+    //             case "Name A - Z":
+    //                 $query = $query->orderBy(User::select('name')
+    //                     ->whereColumn('users.id', 'reviewers.user_id'), 'ASC');
+    //                 break;
+
+    //             case "Name Z - A":
+    //                 $query = $query->orderBy(User::select('name')
+    //                     ->whereColumn('users.id', 'reviewers.user_id'), 'DESC');
+    //                 break;
+
+    //             case "Order Ascending":
+    //                 $query = $query->orderBy('review_order', 'ASC');
+    //                 break;
+
+    //             case "Order Descending":
+    //                 $query = $query->orderBy('review_order', 'DESC');
+    //                 break;
+
+    //             case "Latest Added":
+    //                 $query = $query->orderBy('created_at', 'DESC');
+    //                 break;
+
+    //             case "Oldest Added":
+    //                 $query = $query->orderBy('created_at', 'ASC');
+    //                 break;
+
+    //             case "Latest Updated":
+    //                 $query = $query->orderBy('updated_at', 'DESC');
+    //                 break;
+
+    //             case "Oldest Updated":
+    //                 $query = $query->orderBy('updated_at', 'ASC');
+    //                 break;
+
+    //             default:
+    //                 $query = $query->orderBy('updated_at', 'DESC');
+    //         }
+    //     } else {
+    //         $query = $query->orderBy('review_order', 'ASC');
+    //     }
+
+    //     $document_type_reviewers = $query->paginate($this->record_count);
+
+    //     return view('livewire.admin.reviewer.reviewer-list', [
+    //         'document_type_reviewers' => $document_type_reviewers,
+    //     ]);
+    // }
+
+
+
+    public function getReviewersProperty(){
+
+        $query = Reviewer::select('reviewers.*');
 
 
         if (!empty($this->search)) {
             $search = $this->search;
 
 
-            // $reviewers = $reviewers->where(function($query) use ($search){
+            // $query = $query->where(function($query) use ($search){
             //     $query =  $query->where('reviewers.name','LIKE','%'.$search.'%');
             // });
 
-            $reviewers = $reviewers->where(function ($query) {
+            $query = $query->where(function ($query) {
                 $query->whereHas('user', function ($q) {
                     $q->where('name', 'like', "%{$this->search}%")
                         ->orWhere('email', 'like', "%{$this->search}%");
@@ -414,6 +543,13 @@ class ReviewerList extends Component
 
 
         }
+
+        // Filter by document_type_id or show default reviewers (where null)
+        if (!empty($this->document_type_id)) {
+            $query = $query->where(function ($q) {
+                $q->where('document_type_id', $this->document_type_id);
+            });
+        }  
 
         /*
             // Find the role
@@ -429,14 +565,14 @@ class ReviewerList extends Component
 
 
             // if(!Auth::user()->hasRole('DSI God Admin')){
-            //     $reviewers =  $reviewers->where('reviewers.created_by','=',Auth::user()->id);
+            //     $query =  $query->where('reviewers.created_by','=',Auth::user()->id);
             // }
 
             // Adjust the query
             if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
-                $reviewers = $reviewers->where('reviewers.created_by', '=', Auth::user()->id);
+                $query = $query->where('reviewers.created_by', '=', Auth::user()->id);
             }elseif(Auth::user()->hasRole('Admin')){
-                $reviewers = $reviewers->whereNotIn('reviewers.created_by', $dsiGodAdminUserIds);
+                $query = $query->whereNotIn('reviewers.created_by', $dsiGodAdminUserIds);
             } else {
 
             }
@@ -449,23 +585,23 @@ class ReviewerList extends Component
             switch($this->sort_by){
 
                 case "Name A - Z":
-                    $reviewers = Reviewer::with('user')
+                    $query = Reviewer::with('user')
                         ->whereHas('user') // Ensures the reviewer has a related user
                         ->orderBy(User::select('name')->whereColumn('users.id', 'reviewers.user_id'), 'ASC');
                     break;
             
                 case "Name Z - A":
-                    $reviewers = Reviewer::with('user')
+                    $query = Reviewer::with('user')
                         ->whereHas('user') 
                         ->orderBy(User::select('name')->whereColumn('users.id', 'reviewers.user_id'), 'DESC');
                     break;
 
                 case "Order Ascending":
-                    $reviewers =  $reviewers->orderBy('reviewers.order','ASC');
+                    $query =  $query->orderBy('reviewers.order','ASC');
                     break;
 
                 case "Order Descending":
-                    $reviewers =  $reviewers->orderBy('reviewers.order','DESC');
+                    $query =  $query->orderBy('reviewers.order','DESC');
                     break;
 
 
@@ -475,29 +611,29 @@ class ReviewerList extends Component
                  */
 
                 case "Latest Added":
-                    $reviewers =  $reviewers->orderBy('reviewers.created_at','DESC');
+                    $query =  $query->orderBy('reviewers.created_at','DESC');
                     break;
 
                 case "Oldest Added":
-                    $reviewers =  $reviewers->orderBy('reviewers.created_at','ASC');
+                    $query =  $query->orderBy('reviewers.created_at','ASC');
                     break;
 
                 case "Latest Updated":
-                    $reviewers =  $reviewers->orderBy('reviewers.updated_at','DESC');
+                    $query =  $query->orderBy('reviewers.updated_at','DESC');
                     break;
 
                 case "Oldest Updated":
-                    $reviewers =  $reviewers->orderBy('reviewers.updated_at','ASC');
+                    $query =  $query->orderBy('reviewers.updated_at','ASC');
                     break;
                 default:
-                    $reviewers =  $reviewers->orderBy('reviewers.updated_at','DESC');
+                    $query =  $query->orderBy('reviewers.updated_at','DESC');
                     break;
 
             }
 
 
         }else{
-            $reviewers =  $reviewers->orderBy('reviewers.order','ASC');
+            $query =  $query->orderBy('reviewers.order','ASC');
 
         }
 
@@ -505,13 +641,142 @@ class ReviewerList extends Component
 
 
 
-        $reviewers = $reviewers->paginate($this->record_count);
+        return $query->paginate($this->record_count);
 
 
 
+    }
+
+
+    public function render()
+    {
+
+        // $reviewers = Reviewer::select('reviewers.*');
+
+
+        // if (!empty($this->search)) {
+        //     $search = $this->search;
+
+
+        //     // $reviewers = $reviewers->where(function($query) use ($search){
+        //     //     $query =  $query->where('reviewers.name','LIKE','%'.$search.'%');
+        //     // });
+
+        //     $reviewers = $reviewers->where(function ($query) {
+        //         $query->whereHas('user', function ($q) {
+        //             $q->where('name', 'like', "%{$this->search}%")
+        //                 ->orWhere('email', 'like', "%{$this->search}%");
+        //         });
+        //     });
+
+
+        // }
+
+        // // Filter by document_type_id or show default reviewers (where null)
+        // if (!empty($this->document_type_id)) {
+        //     $reviewers = $reviewers->where(function ($q) {
+        //         $q->where('document_type_id', $this->document_type_id);
+        //     });
+        // }  
+
+        // /*
+        //     // Find the role
+        //     $role = Role::where('name', 'DSI God Admin')->first();
+
+        //     if ($role) {
+        //         // Get user IDs only if role exists
+        //         $dsiGodAdminUserIds = $role->reviewers()->pluck('id');
+        //     } else {
+        //         // Set empty array if role doesn't exist
+        //         $dsiGodAdminUserIds = [];
+        //     }
+
+
+        //     // if(!Auth::user()->hasRole('DSI God Admin')){
+        //     //     $reviewers =  $reviewers->where('reviewers.created_by','=',Auth::user()->id);
+        //     // }
+
+        //     // Adjust the query
+        //     if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+        //         $reviewers = $reviewers->where('reviewers.created_by', '=', Auth::user()->id);
+        //     }elseif(Auth::user()->hasRole('Admin')){
+        //         $reviewers = $reviewers->whereNotIn('reviewers.created_by', $dsiGodAdminUserIds);
+        //     } else {
+
+        //     }
+        // */
+
+
+        // // dd($this->sort_by);
+        // if(!empty($this->sort_by) && $this->sort_by != ""){
+        //     // dd($this->sort_by);
+        //     switch($this->sort_by){
+
+        //         case "Name A - Z":
+        //             $reviewers = Reviewer::with('user')
+        //                 ->whereHas('user') // Ensures the reviewer has a related user
+        //                 ->orderBy(User::select('name')->whereColumn('users.id', 'reviewers.user_id'), 'ASC');
+        //             break;
+            
+        //         case "Name Z - A":
+        //             $reviewers = Reviewer::with('user')
+        //                 ->whereHas('user') 
+        //                 ->orderBy(User::select('name')->whereColumn('users.id', 'reviewers.user_id'), 'DESC');
+        //             break;
+
+        //         case "Order Ascending":
+        //             $reviewers =  $reviewers->orderBy('reviewers.order','ASC');
+        //             break;
+
+        //         case "Order Descending":
+        //             $reviewers =  $reviewers->orderBy('reviewers.order','DESC');
+        //             break;
+
+
+        //         /**
+        //          * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
+        //          * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
+        //          */
+
+        //         case "Latest Added":
+        //             $reviewers =  $reviewers->orderBy('reviewers.created_at','DESC');
+        //             break;
+
+        //         case "Oldest Added":
+        //             $reviewers =  $reviewers->orderBy('reviewers.created_at','ASC');
+        //             break;
+
+        //         case "Latest Updated":
+        //             $reviewers =  $reviewers->orderBy('reviewers.updated_at','DESC');
+        //             break;
+
+        //         case "Oldest Updated":
+        //             $reviewers =  $reviewers->orderBy('reviewers.updated_at','ASC');
+        //             break;
+        //         default:
+        //             $reviewers =  $reviewers->orderBy('reviewers.updated_at','DESC');
+        //             break;
+
+        //     }
+
+
+        // }else{
+        //     $reviewers =  $reviewers->orderBy('reviewers.order','ASC');
+
+        // }
+
+
+
+
+
+        // $reviewers = $reviewers->paginate($this->record_count);
+ 
 
         return view('livewire.admin.reviewer.reviewer-list',[
-            'reviewers' => $reviewers 
+            'reviewers' => $this->reviewers ,
+            'lastOrder' => $this->lastOrder,
         ]);
     }
+
+
 }

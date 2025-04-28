@@ -14,6 +14,7 @@ class Review extends Model
         'project_id',
         'reviewer_id',
         'review_status',
+        
         # ['pending','approved','rejected']
         # 'submitted' is the special review status for users 
         # re_submitted for resubmission
