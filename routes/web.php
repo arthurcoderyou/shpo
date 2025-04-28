@@ -22,6 +22,7 @@ Route::view('/', 'welcome');
 
 
 // THIS IS UPDATED
+// ANOTHER TEST
 
 
 Route::middleware(['throttle:60,1','auth' ,'log_user_device'])->group(function () {
