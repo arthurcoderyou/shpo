@@ -18,7 +18,7 @@
 
                 <div class="sm:col-span-12">
                     <h2 class="text-lg font-semibold text-gray-800 ">
-                    Submit new project UPDATED
+                    Submit new project
                     </h2>
                 </div>
                 <!-- End Col -->
