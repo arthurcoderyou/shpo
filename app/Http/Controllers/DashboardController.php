@@ -18,12 +18,16 @@ class DashboardController extends Controller
 
 
         $user = User::where('id',Auth::user()->id)->first();
- 
+        
+        // For new database
+        /**  
         if(Auth::user()->roles->isEmpty()){
             // dd("true");
             // notify the admin about the new user that had registered on the website
             // Get all users with the "Admin" role
             $admin_users = User::role('Admin')->get();
+
+
 
             // Send notification to all admins
             if ($admin_users->isNotEmpty()) {
@@ -60,6 +64,31 @@ class DashboardController extends Controller
 
  
 
+        }*/
+
+
+        // for old database
+        if (Auth::user()->roles->isEmpty()) {
+            // Get all users with the "Admin" role
+            $admin_users = User::role('Admin')->get();
+
+            if ($admin_users->isNotEmpty()) {
+                foreach ($admin_users as $admin) {
+                    // Manual LIKE query because JSON_CONTAINS doesn't work in MariaDB 10.1
+                    $alreadyNotified = $admin->notifications()
+                        ->where('type', NewUserRegisteredNotificationDB::class)
+                        ->where('data', 'like', '%"user_id":' . $user->id . '%')
+                        ->exists();
+
+                    if (!$alreadyNotified) {
+                        // email notification
+                        Notification::send($admin, new NewUserRegisteredNotification($user));
+
+                        // db notification
+                        Notification::send($admin, new NewUserRegisteredNotificationDB($user));
+                    }
+                }
+            }
         }
 
         
