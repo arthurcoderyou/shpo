@@ -22,10 +22,15 @@ class TwoFactorMiddleware
             $user = Auth::user();
 
             // If the user has the role Admin or DSI God Admin, skip 2FA
-            if ($user->hasRole('Admin') || $user->hasRole('DSI God Admin')) {
+            if ($user->hasRole('Admin') ) {
                 return $next($request);
             }
 
+             // If the user has the role Admin or DSI God Admin, skip 2FA
+             if ($user->hasRole('DSI God Admin') ) {
+                return $next($request);
+            }
+ 
             // If the user does not have 2FA verified, redirect to verification page
             if (!session()->has('2fa_verified')) {
                 return redirect()->route('2fa.verify');

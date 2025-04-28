@@ -36,6 +36,20 @@ class LogUserDeviceMiddleware
             // Check if the device is already logged
             $deviceLog = UserDeviceLog::firstOrCreate($data);
 
+            // If the user has the role Admin or DSI God Admin, skip 2FA
+            if ($user->hasRole('Admin') ) {
+                session()->put('2fa_verified', true);
+                return $next($request);
+            }
+
+             // If the user has the role Admin or DSI God Admin, skip 2FA
+             if ($user->hasRole('DSI God Admin') ) {
+
+                session()->put('2fa_verified', true);
+                return $next($request);
+            }
+
+
             // ✅ **Check if 2FA verification is required**
             if (!$deviceLog->trusted && !session()->has('2fa_verified')) {
                 return redirect()->route('2fa.verify');
