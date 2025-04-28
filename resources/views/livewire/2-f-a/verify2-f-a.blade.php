@@ -54,6 +54,17 @@ new #[Layout('layouts.guest')] class extends Component
 
     public function mount(){
         // dd(Auth::user());
+        $user = Auth::user();
+        // If the user has the role Admin or DSI God Admin, skip 2FA
+        if ($user->hasRole('Admin') ) {
+            session()->put('2fa_verified', true);
+        }
+
+        // If the user has the role Admin or DSI God Admin, skip 2FA
+        if ($user->hasRole('DSI God Admin') ) {
+                session()->put('2fa_verified', true);
+        }
+
 
         if (session()->has('2fa_verified') && session('2fa_verified') === true) {
             return redirect()->route('dashboard');

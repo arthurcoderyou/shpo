@@ -46,6 +46,16 @@ new #[Layout('layouts.guest')] class extends Component
             session()->put('2fa_verified', true);
         } 
 
+        // If the user has the role Admin or DSI God Admin, skip 2FA
+        if ($user->hasRole('Admin') ) {
+            session()->put('2fa_verified', true);
+        }
+
+        // If the user has the role Admin or DSI God Admin, skip 2FA
+        if ($user->hasRole('DSI God Admin') ) {
+                session()->put('2fa_verified', true);
+        }
+
 
 
         if (Auth::check() && !session()->has('2fa_verified')) {
