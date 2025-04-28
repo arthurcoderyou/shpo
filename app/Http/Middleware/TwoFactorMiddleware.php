@@ -16,11 +16,20 @@ class TwoFactorMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // return $next($request);
+        // Check if the user is authenticated
+        if (Auth::check()) {
 
-        // Check if the user is authenticated and 2FA verification is required
-        if (Auth::check() && !session()->has('2fa_verified')) {
-            return redirect()->route('2fa.verify');
+            $user = Auth::user();
+
+            // If the user has the role Admin or DSI God Admin, skip 2FA
+            if ($user->hasRole('Admin') || $user->hasRole('DSI God Admin')) {
+                return $next($request);
+            }
+
+            // If the user does not have 2FA verified, redirect to verification page
+            if (!session()->has('2fa_verified')) {
+                return redirect()->route('2fa.verify');
+            }
         }
 
         return $next($request);
