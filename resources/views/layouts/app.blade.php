@@ -16,15 +16,15 @@
 
         <link rel="icon" type="image/png" href="{{ asset('images/GEPA_LOGO.png') }}">
         <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
-        <link rel="stylesheet" href="{{ asset('vendor/livewire-dropzone/livewire-dropzone.css') }}"> 
+        {{-- <link rel="stylesheet" href="{{ asset('vendor/livewire-dropzone/livewire-dropzone.css') }}">  --}}
 
         <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
         <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
         <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
 
 
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+        {{-- <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script> --}}
 
         <!-- Include Flatpickr CSS -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -93,6 +93,7 @@
                 myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
             };
         
+           
             window.Echo.private("project.discussions.global")
                 .listen('.create', (e) => {
 
@@ -284,7 +285,7 @@
                     }
                 });
 
-
+            
         </script>
         <!-- ./ Discussion Listeners -->
         @endauth

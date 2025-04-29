@@ -1,5 +1,5 @@
 import './bootstrap';
 import 'preline';
 
-import './forum-listeners';
+// import './forum-listeners';
 
