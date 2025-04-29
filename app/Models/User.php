@@ -17,6 +17,26 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles, SoftDeletes;
 
+    protected static function booted()
+    {
+
+        parent::boot();
+        
+        static::created(function ($user) {
+            event(new  \App\Events\UserCreated($user));
+        });
+
+        static::updated(function ($user) {
+            // event(new  \App\Events\DocumentTypeUpdated($user));
+        });
+
+        static::deleted(function ($user) {
+            // event(new  \App\Events\DocumentTypeDeleted($user));
+        });
+    }
+
+
+
     // find CustomVerifyEmail because it is the custom notification for the verify email
     public function sendEmailVerificationNotification()
     {

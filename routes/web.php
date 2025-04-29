@@ -159,26 +159,26 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
 
 
 
-            # forum 
+            // # forum 
 
-                Route::get('forum',[ForumController::class,'index'])->name('forum.index');
-                // Route::get('forum/create',[ForumController::class,'create'])->name('forum.create');
-                Route::get('forum/{forum}/edit',[ForumController::class, 'edit'])
-                    // ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
-                    ->name('forum.edit');
+            //     Route::get('forum',[ForumController::class,'index'])->name('forum.index');
+            //     // Route::get('forum/create',[ForumController::class,'create'])->name('forum.create');
+            //     Route::get('forum/{forum}/edit',[ForumController::class, 'edit'])
+            //         // ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
+            //         ->name('forum.edit');
                 
-            # ./ forum
+            // # ./ forum
 
 
-            # discussion 
+            // # discussion 
 
-                Route::get('discussion',[DiscussionController::class,'index'])->name('discussion.index');
-                // Route::get('discussion/create',[DiscussionController::class,'create'])->name('discussion.create');
-                Route::get('discussion/{discussion}/edit',[DiscussionController::class, 'edit'])
-                    // ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
-                    ->name('discussion.edit');
+            //     Route::get('discussion',[DiscussionController::class,'index'])->name('discussion.index');
+            //     // Route::get('discussion/create',[DiscussionController::class,'create'])->name('discussion.create');
+            //     Route::get('discussion/{discussion}/edit',[DiscussionController::class, 'edit'])
+            //         // ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
+            //         ->name('discussion.edit');
                 
-            # ./ discussion
+            // # ./ discussion
 
 
             
