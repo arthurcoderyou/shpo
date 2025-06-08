@@ -185,9 +185,9 @@ class UserList extends Component
         }
 
         // Check notifications (optional, based on your usage)
-        if ($user->notifications()->exists()) {
-            return true;
-        }
+        // if ($user->notifications()->exists()) {
+        //     return true;
+        // }
 
         return false;
     }
