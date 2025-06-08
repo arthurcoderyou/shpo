@@ -39,11 +39,11 @@ new #[Layout('layouts.guest')] class extends Component
 
         $user = User::where('email',$this->email)->first();
 
-        ActivityLog::create([
-            'log_action' => "User \"".$user->email."\" has requested a password reset.",
-            'log_username' => $user->email, // Email since user may not be logged in
-            'created_by' => null, // No user is logged in
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "User \"".$this->email."\" has requested a password reset.",
+        //     'log_username' => $this->email, // Email since user may not be logged in
+        //     'created_by' => null, // No user is logged in
+        // ]);
 
     }
 }; ?>
