@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\UserCreated;
 use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
@@ -24,7 +25,7 @@ class UserCreatedListener
     {
         $user = $event->user;
 
-        if(auth()::check() && !empty($user)){
+        if(Auth::check() && !empty($user)){
             ActivityLog::create([
                 'created_by' => auth()::user->id,
                 'log_username' => $user->name,
