@@ -23,7 +23,7 @@ class DocumentTypeCreate extends Component
 
         $document_type = new DocumentType();
         $document_type->name = $this->name;
-        $document_type->order = DocumentType::max('order') ? DocumentType::max('order') + 1 : 0;
+        $document_type->order = DocumentType::max('order') ? DocumentType::max('order') + 1 : 1;
         $document_type->created_by = Auth::user()->id; 
         $document_type->updated_by = Auth::user()->id; 
         $document_type->save();
