@@ -108,7 +108,7 @@ class UserList extends Component
             return redirect()->route('user.index');
         }
 
-        dd("All Goods");
+        // dd("All Goods");
 
         // Fetch all projects created by the selected users
         $projects = Project::where('created_by', $user->id)->get();
