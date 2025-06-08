@@ -24,11 +24,13 @@ class UserCreatedListener
     {
         $user = $event->user;
 
-
-        ActivityLog::create([
-            'created_by' => $user->created_by,
-            'log_username' => $user->name,
-            'log_action' => "New User '".$user->name."' created",
-        ]);
+        if(auth()::check() && !empty($user)){
+            ActivityLog::create([
+                'created_by' => auth()::user->id,
+                'log_username' => $user->name,
+                'log_action' => "New User '".$user->name."' created",
+            ]);
+        }
+        
     }
 }
