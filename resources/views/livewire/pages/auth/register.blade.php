@@ -51,11 +51,11 @@ new #[Layout('layouts.guest')] class extends Component
         event(new Registered($user = User::create($validated)));
 
 
-        ActivityLog::create([
-            'log_action' => "New user \"".$user->name."\" has registered.",
-            'log_username' => $user->name,
-            'created_by' => $user->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "New user \"".$user->name."\" has registered.",
+        //     'log_username' => $user->name,
+        //     'created_by' => $user->id,
+        // ]);
 
 
         Auth::login($user);
