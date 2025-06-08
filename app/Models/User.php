@@ -107,6 +107,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Project::class, 'created_by');
     }
 
+
+    /**
+     * Document Reviewer that this user is part of .
+     */
+    public function document_reviewers()
+    {
+        return $this->hasMany(Reviewer::class, 'user_id');
+    }
+
+
     /**
      * Projects that this user is a reviewer of.
      */
@@ -172,8 +182,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
 
 
-
-
+    
 
 
 

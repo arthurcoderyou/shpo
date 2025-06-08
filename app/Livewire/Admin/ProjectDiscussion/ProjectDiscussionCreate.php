@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\ProjectDiscussion;
 
 use App\Models\Project;
+use App\Models\ProjectDocument;
 use Livewire\Component;
 use App\Models\ProjectDiscussion;
 
@@ -11,6 +12,8 @@ class ProjectDiscussionCreate extends Component
 
     public Project $project;
     public ?ProjectDiscussion $parent = null;
+    public ?ProjectDocument $project_document = null;
+     
     public $title = '';
     public $body = '';
     public $is_private = false;
@@ -32,6 +35,7 @@ class ProjectDiscussionCreate extends Component
             'title' => $this->parent ? null : $this->title,
             'body' => $this->body,
             'parent_id' => $this->parent?->id,
+            'project_document_id' => $this->project_document?->id,
             'is_private' => $this->is_private,
         ]);
 

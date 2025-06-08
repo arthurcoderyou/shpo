@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Project;
 
+use App\Models\ActiveDays;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Review;
@@ -9,8 +10,12 @@ use App\Models\Project;
 use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
+use App\Models\DocumentType;
+use App\Models\ProjectTimer;
+use App\Events\ProjectQueued;
 use Livewire\WithFileUploads;
 use App\Models\ProjectReviewer;
+use App\Events\ProjectSubmitted;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -21,10 +26,24 @@ use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
+use App\Helpers\ProjectHelper;
 
 class ProjectShow extends Component
 {
     use WithFileUploads;
+
+    protected $listeners = [
+        'projectCreated' => '$refresh',
+        'projectUpdated' => '$refresh',
+        'projectDeleted' => '$refresh',
+        'projectSubmitted' => '$refresh',
+        'projectQueued' => '$refresh',
+        'projectDocumentCreated' => '$refresh',
+        'projectDocumentUpdated' => '$refresh',
+        'projectDocumentDeleted' => '$refresh',
+        
+    ];
+    
     public string $name = '';
     public string $description = '';
     public string $federal_agency = ''; 
@@ -34,8 +53,7 @@ class ProjectShow extends Component
 
     public $attachments = []; // Initialize with one phone field
     public $uploadedFiles = []; // Store file names
-
-    public $existingFiles = [];
+ 
 
     public $project_id;
 
@@ -91,26 +109,7 @@ class ProjectShow extends Component
 
         //     // dd($this->existingFiles);
         // }
-
-        if (!empty($project->project_documents)) {
-            $this->existingFiles = $project->project_documents
-                ->sortByDesc('created_at') // Ensure newest files appear first
-                ->groupBy(function ($document) {
-                    return $document->created_at->format('M d, Y h:i A'); // Group by date
-                })
-                // ->map(function ($attachments) {
-                //     return $attachments->map(function ($attachment) {
-                //         return [
-                //             'id' => $attachment->id,
-                //             'name' => basename($attachment->attachment), // File name
-                //             'path' => asset('storage/uploads/project_attachments/' . $attachment->attachment), // Public URL
-                //         ];
-                //     })->toArray();
-                // })
-                
-                ->toArray();
-        }
-
+ 
 
 
         if($project->status == "submitted"){
@@ -149,8 +148,7 @@ class ProjectShow extends Component
 
 
     }
-
-
+ 
     public function updated($fields){
         $this->validateOnly($fields,[
             'name' => [
@@ -200,8 +198,83 @@ class ProjectShow extends Component
     }
 
     
-    
     public function submit_project($project_id){
+
+        ProjectHelper::submit_project($project_id);
+
+    }
+
+
+
+    /** Project Submission restriction  */
+    private function checkProjectRequirements()
+    {
+        $projectTimer = ProjectTimer::first();
+
+        // DocumentTypes that don't have any reviewers
+        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+
+        // Check if all document types have at least one reviewer
+        $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
+
+        // Check if there are reviewers by type
+        $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
+        $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
+
+    
+        return [
+            'response_duration' => !$projectTimer || (
+                !$projectTimer->submitter_response_duration_type ||
+                !$projectTimer->submitter_response_duration ||
+                !$projectTimer->reviewer_response_duration ||
+                !$projectTimer->reviewer_response_duration_type
+            ),
+            'project_submission_times' => !$projectTimer || (
+                !$projectTimer->project_submission_open_time ||
+                !$projectTimer->project_submission_close_time ||
+                !$projectTimer->message_on_open_close_time
+            ),
+            'no_reviewers' => Reviewer::count() === 0,
+            'no_document_types' => DocumentType::count() === 0, // Add a new error condition
+            'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
+            'no_initial_reviewers' => !$hasInitialReviewers,
+            'no_final_reviewers' => !$hasFinalReviewers,
+        ];
+    }
+
+
+    /**Check if project is within open and close hours */
+    private function isProjectSubmissionAllowed()
+    {
+        $projectTimer = ProjectTimer::first();
+
+        // Check time restriction
+        if (!empty($projectTimer) && $projectTimer->project_submission_restrict_by_time) {
+            $currentTime = now();
+            $openTime = Carbon::parse($projectTimer->project_submission_open_time);
+            $closeTime = Carbon::parse($projectTimer->project_submission_close_time);
+
+            if ($currentTime->lt($openTime) || $currentTime->gt($closeTime)) {
+                return false;
+            }
+        }
+
+        // Check active day restriction
+        $today = now()->format('l'); // e.g., "Monday"
+        $isTodayActive = ActiveDays::where('day', $today)->where('is_active', true)->exists();
+
+        if (!$isTodayActive) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+
+
+
+    public function submit_project_v1($project_id){
         
         $project = Project::find($project_id);
          
@@ -421,11 +494,7 @@ class ProjectShow extends Component
 
         }
 
-
-
-        
-        
-
+ 
 
         ActivityLog::create([
             'log_action' => "Project \"".$project->name."\" submitted ",
@@ -443,7 +512,8 @@ class ProjectShow extends Component
 
 
     public function render()
-    {
-        return view('livewire.admin.project.project-show');
+    { 
+        return view('livewire.admin.project.project-show',[ 
+        ]);
     }
 }

@@ -19,6 +19,8 @@ new class extends Component
     public $document_types_exists = false;
     public $time_setup = false;
 
+    public $unread_count;
+
     public function mount()
     {
         $user_device_log = UserDeviceLog::getUserDeviceLog();
@@ -30,6 +32,10 @@ new class extends Component
         $this->reviewer_exists = Reviewer::count() > 0;
         $this->document_types_exists = DocumentType::count() > 0;
         $this->time_setup = $this->isProjectTimerSetup();
+
+        $this->unread_count = auth()->user()->notifications()
+            ->whereNull('read_at') // Unread notifications
+            ->count();
 
     }
 
@@ -255,7 +261,7 @@ new class extends Component
         <!-- Collapse -->
         <div id="hs-header-base" class="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow lg:block "  aria-labelledby="hs-header-base-collapse" >
             <div class="overflow-hidden overflow-y-auto max-h-[75vh] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 ">
-            <div class="py-2 lg:py-0  flex flex-col lg:flex-row lg:items-center gap-0.5 lg:gap-1">
+            <div class="py-2 lg:py-0  flex flex-col lg:flex-row lg:items-center gap-0.5 lg:gap-1 my-2">
                 <div class="grow">
                     <div class="flex flex-col lg:flex-row lg:justify-end lg:items-center gap-0.5 lg:gap-1">
                         @php
@@ -552,10 +558,22 @@ new class extends Component
 
 
                 
-                    <button type="button" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent   text-white hover:bg--700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-panel" data-hs-overlay="#notification-panel">
+                    {{-- <button type="button" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent   text-white hover:bg--700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-panel" data-hs-overlay="#notification-panel">
                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 25.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416l400 0c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4l0-25.4c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm0 96c61.9 0 112 50.1 112 112l0 25.4c0 47.9 13.9 94.6 39.7 134.6L72.3 368C98.1 328 112 281.3 112 233.4l0-25.4c0-61.9 50.1-112 112-112zm64 352l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7s18.7-28.3 18.7-45.3z"/></svg>
     
+                    </button> --}}
+
+                    <button type="button" class="relative overflow-visible inline-flex justify-center items-center size-8 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
+                    aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-panel" data-hs-overlay="#notification-panel"
+                    
+                    >
+                        <svg class="shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+                        </svg>
+                        <span class="absolute top-0 end-0 inline-flex items-center py-0.5 px-1.5 rounded-full text-xs font-medium transform -translate-y-1/2 translate-x-1/2 bg-red-500 text-white">{{ $unread_count ?? 0 }}</span>
                     </button>
+
 
                     <livewire:layout.notification-panel />
                     

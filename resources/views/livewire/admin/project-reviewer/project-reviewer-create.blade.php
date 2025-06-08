@@ -15,9 +15,12 @@
 
             <div class="  p-4">
 
+
+
+
                 <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 ">
-                    Add Reviewer for  "{{ $project->name }}"
+                    <h2 class="text-xl font-semibold text-gray-800 ">
+                        Add Project Reviewers for <a href="{{ route('project.show',['project'=> $project->id]) }}" class="text-sky-500 font-bold hover:text-sky-800">"{{ $project->name }}" </a> 
                     </h2>
                 </div>
                 <!-- End Col -->
@@ -25,13 +28,17 @@
                 <!-- Grid -->
                 <div class="grid grid-cols-12 gap-x-2  ">
 
-                    <div class="space-y-2 col-span-12 sm:col-span-6 ">
+                    <!-- reviewer type -->
+                    <x-reviewer-type-info :type="$reviewer_type" />
+
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4 ">
                         <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             User
                         </label>
 
                         <select autofocus autocomplete="user_id"
-                        wire:model="user_id" 
+                        wire:model.live="user_id" 
                         id="user_id"
                         name="user_id"
                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
@@ -53,13 +60,13 @@
 
                     </div>
 
-                    <div class="space-y-2 col-span-12 sm:col-span-6 ">
+                    <div class="space-y-2 col-span-12 sm:col-span-4 ">
                         <label for="order" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Order
                         </label>
 
                         <select autofocus autocomplete="order"
-                        wire:model="order" 
+                        wire:model.live="order" 
                         id="order"
                         name="order"
                          class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
@@ -74,6 +81,60 @@
 
 
                     </div>
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <label for="reviewer_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Reviewer Type
+                        </label>
+
+                        <select autofocus autocomplete="reviewer_type"
+                        wire:model.live="reviewer_type" 
+                        id="reviewer_type"
+                        name="reviewer_type"
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
+                            <option value="initial">Initial Reviewers</option>
+                            <option value="document">Document</option>
+                            <option value="final">Final Reviewers</option>
+                            
+                        </select>
+
+                        @error('reviewer_type')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+
+                    @if($reviewer_type == "document")
+                        <div class="space-y-2 col-span-12 ">
+                            <label for="project_document_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                                Document
+                            </label>
+
+                            <select autofocus autocomplete="project_document_id"
+                            wire:model.live="project_document_id" 
+                            id="project_document_id"
+                            name="project_document_id"
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "> 
+                                @if(!empty($project_documents))
+                                    @foreach ($project_documents as $project_document)
+                                        <option value="{{ $project_document->id }}">{{ $project_document->document_type->name }}</option> 
+                                    @endforeach
+                                @endif
+                                
+                            </select>
+
+                            @error('project_document_id')
+                                <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                            @enderror
+
+
+                        </div>
+                    @endif
+
+
+
 
                     {{-- <div class="space-y-2 col-span-12 sm:col-span-4 ">
                         <label for="status" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">

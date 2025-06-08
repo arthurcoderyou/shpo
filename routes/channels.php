@@ -48,3 +48,32 @@ Broadcast::channel('reviewer', function ($user) {
     return Auth::check();
 
 });
+
+Broadcast::channel('project', function ($project) { 
+    
+    return Auth::check();
+
+});
+
+Broadcast::channel('project_document', function ($project) { 
+    
+    return Auth::check();
+
+});
+Broadcast::channel('project_attachment', function ($project) { 
+    
+    return Auth::check();
+
+});
+
+Broadcast::channel('project_reviewer', function ($project) { 
+    
+    return Auth::check();
+
+});
+
+Broadcast::channel('review', function ($review) { 
+    
+    return Auth::check();
+
+});

@@ -60,6 +60,21 @@ return [
             'report' => false,
         ],
 
+        'ftp' => [
+            'driver'   => 'ftp',
+            'host'     => env('FTP_HOST', false),
+            'username' => env('FTP_USERNAME', false),
+            'password' => env('FTP_PASSWORD', false),
+
+            // Optional FTP Settings
+            'port'     => 21,
+            'root'     => env('FTP_ROOT', false), 
+            'passive'  => true,
+            'ssl'      => false,
+            'timeout'  => 30,
+        ],
+        
+
     ],
 
     /*

@@ -19,8 +19,15 @@ Hello {{ $user->name }},
 The reviewer list for the project **{{ $project->name }}** has been updated. Below is the new list of assigned reviewers:
 
 ## **Updated Reviewer List and Order:**
-@foreach ($project->getProjectReviewersSortByOrder() as $project_reviewer)
+@foreach ($project->project_documents as $project_document)
+
+{{ $project_document->document_type->name }}
+
+@foreach ($project_document->project_reviewers as $project_reviewer)
 - **{{ $project_reviewer->order }}.** {{ $project_reviewer->user->name }} || Review Status: {{ ucfirst($project_reviewer->review_status) }}
+@endforeach
+
+
 @endforeach
 
 

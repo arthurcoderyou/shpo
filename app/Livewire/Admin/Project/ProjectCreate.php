@@ -4,7 +4,7 @@ namespace App\Livewire\Admin\Project;
 
 use Carbon\Carbon;
 use App\Models\User;
-use App\Models\Forum;
+// use App\Models\Forum;
 use App\Models\Review;
 use App\Models\Project;
 use Livewire\Component;
@@ -13,11 +13,13 @@ use App\Models\ActivityLog;
 use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Validation\Rule;
 use App\Models\ProjectSubscriber;
 use App\Models\ProjectAttachments;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -37,8 +39,8 @@ class ProjectCreate extends Component
     public string $federal_agency = ''; 
     public $type;
 
-    // public $attachments = []; // Initialize with one phone field
-    // public $uploadedFiles = []; // Store file names
+    public $document_type_id;
+    public $attachments = []; // Attachments 
 
 
     public $project_number;
@@ -81,8 +83,8 @@ class ProjectCreate extends Component
     //     session()->flash('message', 'Location saved successfully!');
     // }
 
-    public $selected_document_type_id;
-    public $projectDocuments = []; // Array of project documents
+    // public $selected_document_type_id;
+    // public $projectDocuments = []; // Array of project documents
     public $documentTypes = [];
 
 
@@ -122,8 +124,7 @@ class ProjectCreate extends Component
         // $this->shpo_number = Project::generateProjectNumber(rand(10, 99));
 
 
-        $this->documentTypes = DocumentType::all();
-        $this->addProjectDocument();
+        $this->documentTypes = DocumentType::orderBy('order','ASC')->get(); 
 
 
     }
@@ -164,96 +165,8 @@ class ProjectCreate extends Component
     // ./// For the Search Subscriber Functionality
 
 
-    // protected $listeners = ['updateLocation'];
-
-    // public function updateLocation($lat, $lng, $name)
-    // {
-    //     $this->latitude = $lat;
-    //     $this->longitude = $lng;
-    //     $this->location = $name;
-    // }
-
-    // Add a new Project Document with Dropzone Support
-    public function addProjectDocument()
-    {
-        $this->projectDocuments[] = [
-            'document_type_id' => null,
-            'attachments' => [],
-            'uploaded_files' => [] // To track selected files
-        ];
-    }
-
-    public function removeFile($docIndex, $fileIndex)
-    {
-        unset($this->projectDocuments[$docIndex]['uploaded_files'][$fileIndex]);
-        $this->projectDocuments[$docIndex]['uploaded_files'] = array_values($this->projectDocuments[$docIndex]['uploaded_files']);
-    }
-
-
-    // Remove a specific Project Document
-    public function removeProjectDocument($index)
-    {
-        unset($this->projectDocuments[$index]);
-        $this->projectDocuments = array_values($this->projectDocuments);
-    }
-
-    public function updatedProjectDocuments($value, $key)
-    {
-        // // dd($key);
-        // if (str_contains($key, 'document_type_id')) {
-
-           
-
-
-        //     $index = explode('.', $key)[1]; 
-        //     $selectedType = $this->projectDocuments[$index]['document_type_id'] ?? null;
-    
-        //     if (!$selectedType) {
-        //         $this->addError("projectDocuments.{$index}.document_type_id", "Please select a document type.");
-        //         // dd("Please select a document type.");
-        //         return;
-        //     } elseif ($this->isDuplicateSelection($selectedType, $index)) {
-        //         $this->addError("projectDocuments.{$index}.document_type_id", "This document type has already been selected.");
-        //         $this->projectDocuments[$index]['document_type_id'] = null; // Reset selection
-        //         return;
-        //     } else {
-        //         $this->resetErrorBag("projectDocuments.{$index}.document_type_id"); // Clear error
-        //     }
-        // }
-
-
-
-        // Extract index and field name (e.g., projectDocuments.0.attachments)
-        $keys = explode('.', $key);
-        if (count($keys) === 3 && $keys[2] === 'attachments') {
-            $index = $keys[1];
-
-            // Append new files
-            if (is_array($this->projectDocuments[$index]['attachments'])) {
-                foreach ($this->projectDocuments[$index]['attachments'] as $file) {
-                    $this->projectDocuments[$index]['uploaded_files'][] = [
-                        'name' => $file->getClientOriginalName(),
-                        'temp_path' => $file->getRealPath()
-                    ];
-                }
-            }
-
-            // Clear attachments input after storing them in uploaded_files
-            $this->projectDocuments[$index]['attachments'] = [];
-        }
-    }
-
-
-    private function isDuplicateSelection($selectedType, $currentIndex)
-    {
-        foreach ($this->projectDocuments as $index => $document) {
-            if ($index != $currentIndex && ($document['document_type_id'] ?? null) == $selectedType) {
-                return true;
-            }
-        }
-        return false;
-    }
-
+     
+ 
 
 
     public function updated($fields){
@@ -310,7 +223,15 @@ class ProjectCreate extends Component
                 'required',
                 'date', 
             ],
-
+            
+            'document_type_id' => [
+                'required',
+            ],
+            'attachments' => [
+                'required',
+                'array',
+                'min:1', // Ensure at least one attachment
+            ],
 
         ],[
             'latitude.required' => 'Location is required.',
@@ -349,62 +270,33 @@ class ProjectCreate extends Component
 
     }
 
-    // // Method to add a new attachment input
-    // public function addAttachment()
-    // {
-    //     $this->attachments[] = ''; // Add a new empty attachment input
-    // }
-
- 
-    // public function updatedAttachments($value, $key)
-    // {
-
-    //     // dd($value);
-
-    //     // if ($value) {
-    //     //     // Store the uploaded file
-    //     //     $fileName = Carbon::now()->timestamp . '-' . uniqid() . '.' . $value->extension();
-    //     //     $value->storeAs('uploads/product_reviewers', $fileName, 'public');
-
-    //     //     // Store filename in uploadedFiles array
-    //     //     $this->uploadedFiles[$key] = $fileName;
-    //     // }
-    // }
+   
 
     /**
-     * Handle an incoming registration request.
+     * Project save.
      */
     public function save()
     {
 
-        $errors = $this->checkProjectRequirements();
-        $errorMessages = [];
 
-        foreach ($errors as $key => $error) {
-            if ($error) {
-                switch ($key) {
-                    case 'response_duration':
-                        $errorMessages[] = 'Response duration settings are not yet configured. Please wait for the admin to set it up.';
-                        break;
-                    case 'project_submission_times':
-                        $errorMessages[] = 'Project submission times are not set. Please wait for the admin to configure them.';
-                        break;
-                    case 'no_reviewers':
-                        $errorMessages[] = 'No reviewers have been set. Please wait for the admin to assign them.';
-                        break;
-                    case 'no_document_types':
-                        $errorMessages[] = 'Document types have not been added. Please wait for the admin to set them up.';
-                        break;
-                }
-            }
+        // Check FTP connection before processing
+        try {
+            Storage::disk('ftp')->exists('/'); // Basic check
+            // dd("ftp works");
+
+        } catch (\Exception $e) {
+            // Handle failed connection
+            logger()->error("FTP connection failed: " . $e->getMessage());
+            // return; // Exit or show error as needed
+
+            Alert::error('Error','Connection cannot be stablished with the FTP server');
+            return redirect()->route('project.create' );
+
         }
-        
+        // dd("ftp does not work");
 
-        if (!empty($errorMessages)) {
-            session()->flash('error', implode(' ', $errorMessages));
-            return;
-        }
-
+        // $errors = $this->checkProjectRequirements(); // only required on project submission
+         
 
 
         // dd($this->all());
@@ -465,6 +357,16 @@ class ProjectCreate extends Component
                 'date', 
             ],
 
+            'document_type_id' => [
+                'required',
+            ],
+            'attachments' => [
+                'required',
+                'array',
+                'min:1', // Ensure at least one attachment
+            ],
+
+
         ],[
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
@@ -473,28 +375,7 @@ class ProjectCreate extends Component
         ]);
 
 
-        if (!empty($this->projectDocuments)) {
-            $this->validate([
-                'projectDocuments.*.document_type_id' => [
-                    'required', 
-                    'exists:document_types,id', 
-                    function ($attribute, $value, $fail) {
-                        $selectedTypes = array_column($this->projectDocuments, 'document_type_id');
-                        if (count(array_filter($selectedTypes)) !== count(array_unique(array_filter($selectedTypes)))) {
-                            $fail('Each document type must be unique.');
-                        }
-                    },
-                ],
-                'projectDocuments.*.attachments.*' => 'file|mimes:png,jpeg,jpg,pdf,docx,xlsx,csv,txt,zip|max:20480',
-            ], [
-                'projectDocuments.*.document_type_id.required' => 'Please select a document type.',
-                'projectDocuments.*.document_type_id.exists' => 'The selected document type is invalid.',
-                
-                'projectDocuments.*.attachments.*.file' => 'Each attachment must be a valid file.',
-                'projectDocuments.*.attachments.*.mimes' => 'Only PNG, JPEG, JPG, PDF, DOCX, XLSX, CSV, TXT, and ZIP files are allowed.',
-                'projectDocuments.*.attachments.*.max' => 'Each file must not exceed 20MB.',
-            ]);
-        }
+        
         
 
         
@@ -526,6 +407,151 @@ class ProjectCreate extends Component
 
         
 
+        if (!empty($this->attachments)) {
+
+            try {
+                Storage::disk('ftp')->exists('/'); // Basic check
+                // dd("ftp works");
+
+            } catch (\Exception $e) {
+                // Handle failed connection
+                logger()->error("FTP connection failed: " . $e->getMessage());
+                // return; // Exit or show error as needed
+
+                Alert::error('Error','Connection cannot be stablished with the FTP server');
+                return redirect()->route('project.create' );
+
+            }
+
+
+            //create the project document 
+            $project_document = new ProjectDocument();
+            $project_document->project_id = $project->id;
+            $project_document->document_type_id = $this->document_type_id;
+            $project_document->created_by = Auth::user()->id;
+            $project_document->updated_by = Auth::user()->id;
+            $project_document->save();
+
+
+
+           
+            $date = now(); // to ensure that only one date time will be used 
+
+            // try {
+            //     event(new \App\Events\ProjectCreated($project));
+            // } catch (\Throwable $e) {
+            //     // Log the error without interrupting the flow
+            //     Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
+            //         'project_id' => $project->id,
+            //         'trace' => $e->getTraceAsString(),
+            //     ]);
+            // }
+
+            // event(new  \App\Events\ProjectDocumentCreated($project_document));
+
+
+            foreach ($this->attachments as $file) {
+        
+                // // Store the original file name
+                // $originalFileName = $file->getClientOriginalName(); 
+
+                // // Generate a unique file name
+                // $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
+
+                // // Generate a unique file name
+                // $fileName = Carbon::now()->timestamp . '-' . $review->id . '-' . uniqid() . '.' . $file['extension'];
+
+
+                /*
+                    $originalFileName = $file['name'] ?? 'attachment';
+                    $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
+
+                    $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . pathinfo($originalFileName, PATHINFO_FILENAME) . '.' . $extension;
+
+
+            
+                    // Move the file manually from temporary storage
+                    $sourcePath = $file['path'];
+                    $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
+            
+                    // Ensure the directory exists
+                    if (!file_exists(dirname($destinationPath))) {
+                        mkdir(dirname($destinationPath), 0777, true);
+                    }
+            
+                    // Move the file to the destination
+                    if (file_exists($sourcePath)) {
+                        rename($sourcePath, $destinationPath);
+                    } else {
+                        // Log or handle the error (file might not exist at the temporary path)
+                        continue;
+                    }
+                */
+
+                $originalFileName = $file['name'] ?? 'attachment';
+                $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
+                $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
+
+                $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id. '-pdt' .$project_document->document_type->name. '-' . $baseName . '.' . $extension;
+
+                $sourcePath = $file['path'];
+
+                if (!file_exists($sourcePath)) {
+                    logger()->warning("Source file does not exist: $sourcePath");
+                    continue;
+                }
+
+                // Read the file content
+                $fileContents = file_get_contents($sourcePath);
+
+                // Destination path on FTP
+                $ftpPath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
+
+                // Create directory if not exists (Flysystem handles this automatically when uploading a file)
+                $uploadSuccess = Storage::disk('ftp')->put($ftpPath, $fileContents);
+
+                if (!$uploadSuccess) {
+                    logger()->error("Failed to upload file to FTP: $ftpPath");
+                    continue;
+                }
+
+                // Delete local temp file
+                unlink($sourcePath);
+
+ 
+        
+                // Save to the database
+                // ProjectAttachments::create([
+                //     'attachment' => $fileName,
+                //     'project_id' => $project->id,
+                //     'project_document_id' => $project_document->id,
+                //     'created_by' => Auth::user()->id,
+                //     'updated_by' => Auth::user()->id,
+                //     'created_at' => $date ,
+                //     'updated_at' => $date ,
+                // ]);
+
+                $attachment = new ProjectAttachments([
+                    'attachment' => $fileName,
+                    'project_id' => $project->id,
+                    'project_document_id' => $project_document->id,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
+                ]);
+
+                $attachment->timestamps = false;
+                $attachment->created_at = $date;
+                $attachment->updated_at = $date;
+                $attachment->save();
+
+
+
+
+            }
+        }
+
+
+       
 
         // project timer 
         
@@ -635,51 +661,6 @@ class ProjectCreate extends Component
         // }
 
 
-
-        if (!empty($this->projectDocuments) && count($this->projectDocuments) > 0) {
-
-
-            // Save Project Documents
-            foreach ($this->projectDocuments as $doc) {
-
-                if(!empty($doc['document_type_id'])){
-
-                    $projectDocument = ProjectDocument::create([
-                        'project_id' => $project->id,
-                        'document_type_id' => $doc['document_type_id'],
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                    ]);
-
-                    // Handle Attachments (if any)
-                    if (!empty($doc['attachments'])) {
-                        foreach ($doc['attachments'] as $file) {
-                            // Store the original file name
-                            $originalFileName = $file->getClientOriginalName(); 
-
-                            // Generate a unique file name
-                            $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
-
-                            // Move file to storage/app/public/uploads/project_attachments
-                            $filePath = $file->storeAs('uploads/project_attachments', $fileName, 'public');
-
-
-
-                            // Save to ProjectAttachments table
-                            ProjectAttachments::create([
-                                'attachment' => $fileName,  // Stored file name 
-                                'project_id' => $project->id,
-                                'project_document_id' => $projectDocument->id, // Link to Project Document
-                                'created_by' => Auth::id(),
-                                'updated_by' => Auth::id(),
-                            ]);
-                        }
-                    }
-                
-                }
-            }
-        }
-
         // Save Project Subscribers (if any)
         if (!empty($this->selectedUsers)) {
             foreach ($this->selectedUsers as $user) {
@@ -695,27 +676,39 @@ class ProjectCreate extends Component
 
 
 
-        //create the project forum for this project 
-        Forum::create([
-            'project_id' => $project->id,   
-            'description' => "This forum serves as a central hub for both project \"".$this->name."\" collaborators and users. Team members can coordinate and share updates, while users can ask questions, provide feedback, and engage in discussions related to the project. It’s a space built for communication, clarity, and community around your project. ",
-            'title' => "Community Forum for Project Collaboration\"".$this->name."\"",
-            'created_by' => Auth::user()->id,
-            'updated_by' => Auth::user()->id,
-        ]);
+        // //create the project forum for this project 
+        // Forum::create([
+        //     'project_id' => $project->id,   
+        //     'description' => "This forum serves as a central hub for both project \"".$this->name."\" collaborators and users. Team members can coordinate and share updates, while users can ask questions, provide feedback, and engage in discussions related to the project. It’s a space built for communication, clarity, and community around your project. ",
+        //     'title' => "Community Forum for Project Collaboration\"".$this->name."\"",
+        //     'created_by' => Auth::user()->id,
+        //     'updated_by' => Auth::user()->id,
+        // ]);
 
 
  
 
 
-        ActivityLog::create([
-            'log_action' => "Project \"".$this->name."\" created ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Project \"".$this->name."\" created ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
+
+        
+        // try {
+        //     event(new \App\Events\ProjectCreated($project));
+        // } catch (\Throwable $e) {
+        //     // Log the error without interrupting the flow
+        //     Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
+        //         'project_id' => $project->id,
+        //         'trace' => $e->getTraceAsString(),
+        //     ]);
+        // }
+
 
         Alert::success('Success','Project created successfully');
-        return redirect()->route('project.index');
+        return redirect()->route('project.show',['project'=> $project->id]);
     }
 
 
@@ -724,6 +717,17 @@ class ProjectCreate extends Component
     private function checkProjectRequirements()
     {
         $projectTimer = ProjectTimer::first();
+
+        // DocumentTypes that don't have any reviewers
+        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+
+        // Check if all document types have at least one reviewer
+        $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
+
+        // Check if there are reviewers by type
+        $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
+        $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
+
     
         return [
             'response_duration' => !$projectTimer || (
@@ -738,7 +742,10 @@ class ProjectCreate extends Component
                 !$projectTimer->message_on_open_close_time
             ),
             'no_reviewers' => Reviewer::count() === 0,
-            'no_document_types' => DocumentType::count() === 0,
+            'no_document_types' => DocumentType::count() === 0, // Add a new error condition
+            'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
+            'no_initial_reviewers' => !$hasInitialReviewers,
+            'no_final_reviewers' => !$hasFinalReviewers,
         ];
     }
 
@@ -805,11 +812,7 @@ class ProjectCreate extends Component
             return;
         }
 
-
-
-
-
-
+ 
 
         $this->validate([
             'name' => [
@@ -989,241 +992,9 @@ class ProjectCreate extends Component
 
         
         $project = Project::find($project->id);
-        $response_time_hours = 0;
-        
-        /** Update the response time */
+         
+        ProjectHelper::submit_project($project);
 
-            // Ensure updated_at is after created_at
-            if ($project->updated_at && now()->greaterThan($project->updated_at)) {
-                // Calculate time difference in hours
-                // $response_time_hours = $project->updated_at->diffInHours(now()); 
-                $response_time_hours = $project->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
-            }
- 
-        /** ./ Update the response time */
-
-        
-        // if the project is a draft, create the default values
-        if($project->status == "draft"){
-            // Fetch all reviewers in order
-            $reviewers = Reviewer::orderBy('order')->get();
-
-            foreach ($reviewers as $reviewer) {
-                ProjectReviewer::create([
-                    'order' => $reviewer->order,
-                    'review_status' => 'pending',
-                    'project_id' => $project->id,
-                    'user_id' => $reviewer->user_id,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
-                ]);
-
-                
-            }
-            
-            // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-            $reviewer = ProjectReviewer::where('project_id', $project->id)
-                ->where('review_status', 'pending') 
-                ->orderBy('order', 'asc')
-                ->first();
-
-
-            // update the first reviewer as the current reviewer
-            $reviewer->status = true;
-            $reviewer->save();
-
-
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            Review::create([
-                'viewed' => true,
-                'project_review' => 'The project had been submitted', // message for draft projects
-                'project_id' => $project->id,
-                'reviewer_id' =>  $project->created_by,
-                'review_status' => 'submitted',
-                'created_by' => $project->created_by,
-                'updated_by' => $project->created_by,
-                'response_time_hours' => $response_time_hours,
-                
-            ]);
-
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                Notification::send($user, new ProjectReviewNotification($project, $reviewer));
-
-                //send notification to the database
-                Notification::send($user, new ProjectReviewNotificationDB($project, $reviewer));
-                
-
-                 // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been submitted by '".Auth::user()->name."'";
-            
-
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_submitted',$message ));
-                                /**
-                                 * Message type : 
-                                 * @case('project_submitted')
-                                        @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                        @break
-
-                                    @case('project_reviewed')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                        @break
-
-                                    @case('project_resubmitted')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                        @break
-
-                                    @case('project_reviewers_updated')
-                                        @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                        @break
-
-                                    @default
-                                        @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                */
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers 
-
-
-            }
-
-
-
-
-
-        }else{ // if not, get the current reviewer
-
-            $reviewer = $project->getCurrentReviewer();
-            $reviewer->review_status = "pending";
-            $reviewer->save();
-
-
-            
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            Review::create([
-                'viewed' => true,
-                'project_review' => 'The project had been re-submitted', // message for draft projects
-                'project_id' => $project->id,
-                'reviewer_id' =>  $project->created_by,
-                'review_status' => 're_submitted',
-                'created_by' => $project->created_by,
-                'updated_by' => $project->created_by,
-                'response_time_hours' => $response_time_hours,
-                
-            ]);
-
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                Notification::send($user, new ProjectReviewFollowupNotification($project, $reviewer));
-
-                //send notification to the database
-                Notification::send($user, new ProjectReviewFollowupNotificationDB($project, $reviewer));
-
-
-                // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been re-submitted by '".Auth::user()->name."'";
-            
-
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_resubmitted',$message ));
-                                /**
-                                 * Message type : 
-                                 * @case('project_submitted')
-                                        @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                        @break
-
-                                    @case('project_reviewed')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                        @break
-
-                                    @case('project_resubmitted')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                        @break
-
-                                    @case('project_reviewers_updated')
-                                        @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                        @break
-
-                                    @default
-                                        @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                */
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers
-
-
-            }
-        }
-
-
-
-        $project->status = "submitted";
-        $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-        $project->updated_at = now();
-        $project->save();
-        
-
-        //create the project forum for this project 
-        Forum::create([
-            'project_id' => $project->id,   
-            'description' => "This forum serves as a central hub for both project \"".$this->name."\" collaborators and users. Team members can coordinate and share updates, while users can ask questions, provide feedback, and engage in discussions related to the project. It’s a space built for communication, clarity, and community around your project. ",
-            'title' => "Community Forum for Project Collaboration\"".$this->name."\"",
-            'created_by' => Auth::user()->id,
-            'updated_by' => Auth::user()->id,
-        ]);
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" submitted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Project submitted successfully');
-        return redirect()->route('project.index');
 
 
     }

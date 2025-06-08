@@ -6,7 +6,151 @@
         <div></div>
     </div>
  
+    {{-- <form wire:submit="save"> --}}
+    <div>
+        <!-- Card -->
+        <div class="bg-white rounded-xl shadow mb-2">
 
+
+            <div class="  p-4">
+
+                <div class="sm:col-span-12">
+                    <h2 class="text-lg font-semibold text-gray-800 ">
+                    Add Reviewer
+                    </h2>
+                </div>
+                <!-- End Col -->
+
+                <!-- Grid -->
+                <div class="grid grid-cols-12 gap-x-2  ">
+
+                    <!-- reviewer type -->
+                    <x-reviewer-type-info :type="$reviewer_type" />
+ 
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            User
+                        </label>
+
+                        <select autofocus autocomplete="user_id"
+                        wire:model="user_id" 
+                        id="user_id"
+                        name="user_id"
+                        class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
+
+                            @if(!empty($users) && count($users) > 0) 
+                                <option value="">Select User</option>
+                                @foreach ($users as $user_name => $user_id)
+                                    <option value="{{ $user_id }}">{{ $user_name }}</option>
+                                @endforeach
+                                 
+                            @else  
+                                <option disabled >No Users found</option>
+                            @endif
+                        </select>
+                        @error('user_id')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <label for="order" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Order
+                        </label>
+
+                        <select autofocus autocomplete="order"
+                        wire:model="order" 
+                        id="order"
+                        name="order"
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
+                            <option value="">Select Order</option>
+                            <option value="top">Add at the beginning of the order</option>
+                            <option value="end">Add at the end of the order</option> 
+                        </select>
+
+                        @error('order')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div>
+
+                    {{-- <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <label for="reviewer_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Reviewer Type
+                        </label>
+
+                        <select autofocus autocomplete="reviewer_type"
+                        wire:model.live="reviewer_type" 
+                        id="reviewer_type"
+                        name="reviewer_type"
+                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
+                            <option value="initial">Initial Reviewers</option>
+                            <option value="document">Document</option>
+                            <option value="final">Final Reviewers</option>
+                            
+                        </select>
+
+                        @error('reviewer_type')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+
+
+                    </div> --}}
+
+
+                    @if($reviewer_type == "document")
+                        {{-- <div class="space-y-2 col-span-12 "> --}}
+                        <div class="space-y-2 col-span-12 sm:col-span-4">
+                            <label for="document_type_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                                Document Type
+                            </label>
+
+                            <select autofocus autocomplete="document_type_id"
+                            wire:model.live="document_type_id" 
+                            id="document_type_id"
+                            name="document_type_id"
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "> 
+                                @if(!empty($document_types))
+                                    @foreach ($document_types as $document_type)
+                                        <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
+                                    @endforeach
+                                @endif
+                                
+                            </select>
+
+                            @error('document_type_id')
+                                <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                            @enderror
+
+
+                        </div>
+                    @endif
+
+                    
+
+
+
+
+                </div>
+                <!-- End Grid -->
+
+                <div class="mt-5 flex justify-center gap-x-2">
+                    {{-- <a href="{{ route('role.index') }}" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                        Cancel
+                    </a> --}}
+                    <button type="button" wire:click="add" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-sky-600 text-white hover:bg-sky-700 focus:outline-none focus:bg-sky-700 disabled:opacity-50 disabled:pointer-events-none">
+                        Add 
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- End Card -->
+    </div>
+    {{-- </form> --}}
 
 
     <!-- Card -->
@@ -20,33 +164,46 @@
                 <h2 class="text-xl font-semibold text-gray-800 ">
                     Reviewers
                 </h2>
-                <p class="text-sm text-gray-600 ">
-                    Listing of Reviewers
+                <p class="text-sm text-blue-600 mt-1">
+                    <strong>Note:</strong> Please make sure to <span class="font-semibold">save your changes</span> before selecting another document type or leaving the page. Unsaved changes will be lost, and updates will only be applied once saved. Saved reviewers will be visible to all users. 
                 </p>
                 </div>
 
                 <div>
                 <div class="inline-flex gap-x-2">
 
-
+                    {{-- 
                     <input type="text" wire:model.live="search"
                         class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
                         placeholder="Search">
 
-
                     <div class="inline-flex items-center gap-x-2">
 
-                        <select wire:model.live="document_type_id" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
-                            <option value="">Sort By Document Type</option>
-                            @if(!empty($document_types))
-                                @foreach ($document_types as $document_type)
-                                    <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
-                                @endforeach
-                            @endif
+                        <select wire:model.live="reviewer_type" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">  
+                            <option value="initial">Initial Reviewers</option>
+                            <option value="document">Document Reviewers</option>
+                            <option value="final">Final Reviewers</option>
                             
                         </select>
                     </div>
+                    --}}
 
+                    @if($reviewer_type == "document")
+                        <div class="inline-flex items-center gap-x-2">
+
+                            <select wire:model.live="document_type_id" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
+                                <option value="">Document Type</option>
+                                @if(!empty($document_types))
+                                    @foreach ($document_types as $document_type)
+                                        <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
+                                    @endforeach
+                                @endif
+                                
+                            </select>
+                        </div>
+                    @endif
+                    
+                    {{--  
 
                     <div class="inline-flex items-center gap-x-2">
 
@@ -72,7 +229,7 @@
                             
                             APPLY TO ALL 
                         </button>
-                    @endif
+                    @endif --}}
 
                     <a href="{{ route('reviewer.index') }}"
                         class="hs-tooltip hs-tooltip-toggle py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
@@ -139,17 +296,17 @@
                 <tbody class="divide-y divide-gray-200 ">
 
                     @if(!empty($reviewers) && count($reviewers) > 0)
-                        @foreach ($reviewers as $reviewer)
+                        @foreach ($reviewers as $key => $reviewer)
                             <tr>
                                 <td class="w-10 whitespace-nowrap flex flex-row items-center">
                                     {{-- <div class="px-2 py-2 align-self-center">
-                                        <label for="reviewer_{{ $reviewer->id }}" class="flex">
+                                        <label for="reviewer_{{ $reviewer['id'] }}" class="flex">
                                             <input type="checkbox"
                                             wire:model="selected_records"
                                             wire:change="updateSelectedCount"
                                             class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
-                                            id="reviewer_{{ $reviewer->id }}"
-                                            value="{{ $reviewer->id }}"
+                                            id="reviewer_{{ $reviewer['id'] }}"
+                                            value="{{ $reviewer['id'] }}"
                                             >
                                             <span class="sr-only">Checkbox</span>
                                         </label>
@@ -157,8 +314,9 @@
 
 
                                     <div class="flex flex-col">
-                                        <button {{ $reviewer->order  == 1 ? 'disabled' : '' }} type="button" 
-                                            wire:click="updateOrder({{ $reviewer->id }},{{ $reviewer->order }},'move_up',{{ $reviewer->document_type_id }})" 
+                                        <button {{ $reviewer['order']  == 1 ? 'disabled' : '' }} type="button" 
+                                            {{-- wire:click="updateOrder( {{ $reviewer['id'] }},{{ $reviewer['order'] }},'move_up',{{ $reviewer['document_type_id'] ?? 0 }}, '{{ $reviewer['reviewer_type'] }}' )"  --}}
+                                            wire:click="updateOrder( {{ $key }},{{ $reviewer['order'] }},'move_up',{{ $reviewer['document_type_id'] ?? 0 }}, '{{ $reviewer['reviewer_type'] }}' )"
                                             class="p-1 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " >
             
                                             <div class="hs-tooltip flex">
@@ -176,8 +334,9 @@
             
             
                                         
-                                        <button {{ $reviewer->order == $lastOrder ? 'disabled' : '' }} type="button" 
-                                            wire:click="updateOrder( {{ $reviewer->id }},{{ $reviewer->order }},'move_down',{{ $reviewer->document_type_id }})" 
+                                        <button {{ $reviewer['order'] == $lastOrder ? 'disabled' : '' }} type="button" 
+                                            {{-- wire:click="updateOrder( {{ $reviewer['id'] }},{{ $reviewer['order'] }},'move_down',{{ $reviewer['document_type_id'] ?? 0 }} , '{{ $reviewer['reviewer_type'] }}' )"  --}}
+                                            wire:click="updateOrder( {{ $key }},{{ $reviewer['order'] }},'move_down',{{ $reviewer['document_type_id'] ?? 0 }} , '{{ $reviewer['reviewer_type'] }}' )" 
                                             class="p-1 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " >
                                             <div class="hs-tooltip flex">
             
@@ -204,8 +363,12 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
-                                                <span class="block text-sm text-gray-500 ">{{ $reviewer->user ? $reviewer->user->name : '' }}</span>
-                                                <span class="block text-sm text-gray-500 ">{{ $reviewer->user ? $reviewer->user->email : '' }}</span>
+                                                @php   
+                                                    $user =  getUser($reviewer['user_id']);
+                                                @endphp 
+
+                                                <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
+                                                <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -215,7 +378,7 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
-                                                <span class="block text-sm text-gray-500 ">{{ $reviewer->order }}</span>
+                                                <span class="block text-sm text-gray-500 ">{{ $reviewer['order'] }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -228,7 +391,7 @@
                                         <div class="flex items-center gap-x-3">
                                         <div class="grow">
                                             <span class="block text-sm text-gray-500 ">
-                                                {{ \Carbon\Carbon::parse($reviewer->updated_at)->format('d M, H:i') }}
+                                                {{ $reviewer['updated_at'] ? \Carbon\Carbon::parse($reviewer['updated_at'])->format('d M, h:i A') : \Carbon\Carbon::now()->format('d M, h:i A') }}
                                             </span>
                                         </div>
                                         </div>
@@ -247,7 +410,8 @@
                                          
                                         <button
                                         onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
-                                        wire:click.prevent="delete({{ $reviewer->id }})"
+                                        {{-- wire:click.prevent="delete({{ $reviewer['id'] }})" --}}
+                                        wire:click.prevent="delete({{ $key }})" 
                                         type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"/></svg>
                                         </button>
@@ -261,7 +425,23 @@
 
 
                             </tr>
+
+                            
                         @endforeach
+
+                        <tr>
+                            <td colspan="5" class=" text-center px-2 py-2">
+                                <button type="button" 
+                                    onclick="confirm('Are you sure you want to save the reviewer order? This will be reflected system-wide.') || event.stopImmediatePropagation()" 
+                                {{-- wire:click.prevent="delete({{ $reviewer['id'] }})" --}}
+                                    wire:click.prevent="save" 
+                                class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+                                    Save
+                                </button>
+                            </td>
+                        </tr>
+
+
                     @else
                         <tr>
                             <th scope="col" class="px-6 py-3 text-start">
@@ -279,7 +459,7 @@
 
             <!-- Footer -->
             <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 ">
-                {{ $reviewers->links() }}
+                {{-- {{ $reviewers->links() }} --}}
 
                 <div class="inline-flex items-center gap-x-2">
                     <p class="text-sm text-gray-600 ">
@@ -294,9 +474,9 @@
                         <option>200</option>
                     </select>
                     </div>
-                    <p class="text-sm text-gray-600 ">
+                    {{-- <p class="text-sm text-gray-600 ">
                         {{ count($reviewers) > 0 ? 'of '.$reviewers->total()  : '' }}
-                    </p>
+                    </p> --}}
                 </div>
 
 
@@ -311,3 +491,26 @@
     <!-- End Card -->
 </div>
 <!-- End Table Section -->
+@push('scripts')
+<script>
+    let formDirty = false;
+
+    // Watch for changes in inputs to mark form as dirty
+    document.addEventListener('input', () => {
+        formDirty = true;
+    });
+
+    // Ask before leaving if form is dirty
+    window.addEventListener('beforeunload', function (e) {
+        if (formDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Optional: Reset dirty flag after save
+    Livewire.on('formSaved', () => {
+        formDirty = false;
+    });
+</script>
+@endpush

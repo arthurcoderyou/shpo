@@ -23,3 +23,4 @@ yarn-error.log
 /.zed
 /resources/views/livewire/admin/project 
 /project_and_notes
+/resources/views/livewire/admin/project_document 

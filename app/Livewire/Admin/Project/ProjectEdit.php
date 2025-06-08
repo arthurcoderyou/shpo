@@ -12,6 +12,7 @@ use App\Models\ActivityLog;
 use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Validation\Rule;
@@ -37,8 +38,8 @@ class ProjectEdit extends Component
 
     public $type;
 
-    // public $attachments = []; // Initialize with one phone field
-    // public $uploadedFiles = []; // Store file names
+    public $attachments = []; // Attachments 
+    public $document_type_id;
 
     public $existingFiles = [];
 
@@ -116,54 +117,10 @@ class ProjectEdit extends Component
                 ->where('id', $id) 
                 ->get()
                 ->toArray();
+ 
 
-        // Load existing attachments
-
-        // if(!empty($project->attachments)){
-        //     $this->existingFiles = $project->attachments->map(function ($attachment) {
-        //         return [
-        //             'id' => $attachment->id,
-        //             'name' => basename($attachment->attachment), // File name
-        //             'path' => asset('storage/uploads/project_attachments/' . $attachment->attachment), // Public URL
-        //         ];
-        //     })->toArray();
-
-
-        //     // dd($this->existingFiles);
-        // }
-
-
-        if (!empty($project->project_documents)) {
-            $this->existingFiles = $project->project_documents
-                ->sortByDesc('created_at') // Ensure newest files appear first
-                ->groupBy(function ($document) {
-                    return $document->created_at->format('M d, Y h:i A'); // Group by date
-                })
-                // ->map(function ($attachments) {
-                //     return $attachments->map(function ($attachment) {
-                //         return [
-                //             'id' => $attachment->id,
-                //             'name' => basename($attachment->attachment), // File name
-                //             'path' => asset('storage/uploads/project_attachments/' . $attachment->attachment), // Public URL
-                //         ];
-                //     })->toArray();
-                // })
-                
-                ->toArray();
-        }
-        // dd($project->project_documents);
-
-        // if (!empty($project->project_documents)) {
-        //     $this->existingFiles = ProjectDocument::with('project_attachments')
-        //         ->where('project_id', $project->id)
-        //         ->orderBy('created_at', 'desc')
-        //         ->get()
-        //         ->groupBy(function ($document) {
-        //             return Carbon::parse($document->created_at)->format('Y-m-d'); // Groups by date (YYYY-MM-DD)
-        //         });
-        // }
-
-
+       
+        
 
 
         // check if user is admin to know if project name can be overriden without being a draft.
@@ -182,12 +139,17 @@ class ProjectEdit extends Component
             
         }
 
+        // Get used document_type_ids from the project's documents
+        $usedDocumentTypeIds = $project->project_documents->pluck('document_type_id')->toArray();
 
-        $this->documentTypes = DocumentType::all();
-        $this->addProjectDocument();
+        // Get only document types that are NOT used yet
+        $this->documentTypes = DocumentType::whereNotIn('id', $usedDocumentTypeIds)->orderBy('order','ASC')->get();
+  
         
-
+        // dd($this->project->project_documents);
     }
+
+    
 
 
 
@@ -227,88 +189,9 @@ class ProjectEdit extends Component
 
 
 
-
-    // Add a new Project Document with Dropzone Support
-    public function addProjectDocument()
-    {
-        $this->projectDocuments[] = [
-            'document_type_id' => null,
-            'attachments' => [],
-            'uploaded_files' => [] // To track selected files
-        ];
-    }
-
-    public function removeFile($docIndex, $fileIndex)
-    {
-        unset($this->projectDocuments[$docIndex]['uploaded_files'][$fileIndex]);
-        $this->projectDocuments[$docIndex]['uploaded_files'] = array_values($this->projectDocuments[$docIndex]['uploaded_files']);
-    }
-
-
-    // Remove a specific Project Document
-    public function removeProjectDocument($index)
-    {
-        unset($this->projectDocuments[$index]);
-        $this->projectDocuments = array_values($this->projectDocuments);
-    }
-
-    public function updatedProjectDocuments($value, $key)
-    {
-        // // dd($key);
-        // if (str_contains($key, 'document_type_id')) {
-
-           
-
-
-        //     $index = explode('.', $key)[1]; 
-        //     $selectedType = $this->projectDocuments[$index]['document_type_id'] ?? null;
-    
-        //     if (!$selectedType) {
-        //         $this->addError("projectDocuments.{$index}.document_type_id", "Please select a document type.");
-        //         // dd("Please select a document type.");
-        //         return;
-        //     } elseif ($this->isDuplicateSelection($selectedType, $index)) {
-        //         $this->addError("projectDocuments.{$index}.document_type_id", "This document type has already been selected.");
-        //         $this->projectDocuments[$index]['document_type_id'] = null; // Reset selection
-        //         return;
-        //     } else {
-        //         $this->resetErrorBag("projectDocuments.{$index}.document_type_id"); // Clear error
-        //     }
-        // }
-
-
-
-        // Extract index and field name (e.g., projectDocuments.0.attachments)
-        $keys = explode('.', $key);
-        if (count($keys) === 3 && $keys[2] === 'attachments') {
-            $index = $keys[1];
-
-            // Append new files
-            if (is_array($this->projectDocuments[$index]['attachments'])) {
-                foreach ($this->projectDocuments[$index]['attachments'] as $file) {
-                    $this->projectDocuments[$index]['uploaded_files'][] = [
-                        'name' => $file->getClientOriginalName(),
-                        'temp_path' => $file->getRealPath()
-                    ];
-                }
-            }
-
-            // Clear attachments input after storing them in uploaded_files
-            $this->projectDocuments[$index]['attachments'] = [];
-        }
-    }
-
-
-    private function isDuplicateSelection($selectedType, $currentIndex)
-    {
-        foreach ($this->projectDocuments as $index => $document) {
-            if ($index != $currentIndex && ($document['document_type_id'] ?? null) == $selectedType) {
-                return true;
-            }
-        }
-        return false;
-    }
-
+ 
+ 
+ 
 
     public function updated($fields){
         $this->validateOnly($fields,[
@@ -382,6 +265,19 @@ class ProjectEdit extends Component
                 'date', 
             ],
 
+            'document_type_id' => [
+                'nullable',
+            ],
+           'attachments' => [
+                function ($attribute, $value, $fail) {
+                    if (!empty($this->document_type_id)) {
+                        if (empty($value) || !is_array($value) || count($value) < 1) {
+                            $fail('The attachments field is required and must contain at least one item when a document type is selected.');
+                        }
+                    }
+                },
+            ],
+
         ],[
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
@@ -402,35 +298,7 @@ class ProjectEdit extends Component
     }
 
     
-    public function removeUploadedAttachment(int $id){
-
-        // dd($id, gettype($id)); // Check the actual value and type
-        // dd($id);
-        // Find the attachment record
-        $attachment = ProjectAttachments::find($id);
-
-        if (!$attachment) {
-            session()->flash('error', 'Attachment not found.');
-            return;
-        }
-
-        // Construct the full file path
-        $filePath = "public/uploads/project_attachments/{$attachment->attachment}";
-
-        // Check if the file exists in storage and delete it
-        if (Storage::exists($filePath)) {
-            Storage::delete($filePath);
-        }
-
-        // Delete the record from the database
-        $attachment->delete();
-
-
-        Alert::success('Success','Project attachment deleted successfully');
-        return redirect()->route('project.edit',['project' => $attachment->project_id]);
-
-
-    }
+     
 
     /**Check if project is within open and close hours */
     private function isProjectSubmissionAllowed()
@@ -455,271 +323,25 @@ class ProjectEdit extends Component
 
     public function submit_project($project_id){
 
-        $this->save();
-
-
-        
-        $project = Project::find($project_id);
-        $response_time_hours = 0;
-        
-        /** Update the response time */
-
-            // Ensure updated_at is after created_at
-            if ($this->project->updated_at && now()->greaterThan($project->updated_at)) {
-                // Calculate time difference in hours
-                // $response_time_hours = $this->project->updated_at->diffInHours(now()); 
-                $response_time_hours = $project->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
-            }
- 
-        /** ./ Update the response time */
-
-        
-        // if the project is a draft, create the default values
-        if($project->status == "draft"){
-            // Fetch all reviewers in order
-            $reviewers = Reviewer::orderBy('order')->get();
-
-            foreach ($reviewers as $reviewer) {
-                ProjectReviewer::create([
-                    'order' => $reviewer->order,
-                    'review_status' => 'pending',
-                    'project_id' => $project->id,
-                    'user_id' => $reviewer->user_id,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
-                ]);
-
-                
-            }
-            
-            // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-            $reviewer = ProjectReviewer::where('project_id', $project->id)
-                ->where('review_status', 'pending') 
-                ->orderBy('order', 'asc')
-                ->first();
-
-
-            // update the first reviewer as the current reviewer
-            $reviewer->status = true;
-            $reviewer->save();
-
-
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            Review::create([
-                'viewed' => true,
-                'project_review' => 'The project had been submitted', // message for draft projects
-                'project_id' => $project->id,
-                'reviewer_id' =>  $project->created_by,
-                'review_status' => 'submitted',
-                'created_by' => $project->created_by,
-                'updated_by' => $project->created_by,
-                'response_time_hours' => $response_time_hours,
-                
-            ]);
-
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                Notification::send($user, new ProjectReviewNotification($project, $reviewer));
-
-                //send notification to the database
-                Notification::send($user, new ProjectReviewNotificationDB($project, $reviewer));
-                
-
-                 // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been submitted by '".Auth::user()->name."'";
-            
-
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_submitted',$message ));
-                                /**
-                                 * Message type : 
-                                 * @case('project_submitted')
-                                        @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                        @break
-
-                                    @case('project_reviewed')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                        @break
-
-                                    @case('project_resubmitted')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                        @break
-
-                                    @case('project_reviewers_updated')
-                                        @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                        @break
-
-                                    @default
-                                        @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                */
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers 
-
-
-            }
-
-
-
-
-
-        }else{ // if not, get the current reviewer
-
-            $reviewer = $project->getCurrentReviewer();
-            $reviewer->review_status = "pending";
-            $reviewer->save();
-
-
-            
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            Review::create([
-                'viewed' => true,
-                'project_review' => 'The project had been re-submitted', // message for draft projects
-                'project_id' => $project->id,
-                'reviewer_id' =>  $project->created_by,
-                'review_status' => 're_submitted',
-                'created_by' => $project->created_by,
-                'updated_by' => $project->created_by,
-                'response_time_hours' => $response_time_hours,
-                
-            ]);
-
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                Notification::send($user, new ProjectReviewFollowupNotification($project, $reviewer));
-
-                //send notification to the database
-                Notification::send($user, new ProjectReviewFollowupNotificationDB($project, $reviewer));
-
-
-                // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been re-submitted by '".Auth::user()->name."'";
-            
-
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_resubmitted',$message ));
-                                /**
-                                 * Message type : 
-                                 * @case('project_submitted')
-                                        @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                        @break
-
-                                    @case('project_reviewed')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                        @break
-
-                                    @case('project_resubmitted')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                        @break
-
-                                    @case('project_reviewers_updated')
-                                        @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                        @break
-
-                                    @default
-                                        @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                */
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers
-
-
-            }
-        }
-
-
-
-        $project->status = "submitted";
-        $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-        $project->updated_at = now();
-        $project->save();
-        
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" submitted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Project submitted successfully');
-        return redirect()->route('project.index');
-
+        ProjectHelper::submit_project($project_id);
 
     }
 
 
 
-
-    // // Method to add a new attachment input
-    // public function addAttachment()
-    // {
-    //     $this->attachments[] = ''; // Add a new empty attachment input
-    // }
-
  
-    // public function updatedAttachments($value, $key)
-    // {
-
-    //     // dd($value);
-
-    //     // if ($value) {
-    //     //     // Store the uploaded file
-    //     //     $fileName = Carbon::now()->timestamp . '-' . uniqid() . '.' . $value->extension();
-    //     //     $value->storeAs('uploads/product_reviewers', $fileName, 'public');
-
-    //     //     // Store filename in uploadedFiles array
-    //     //     $this->uploadedFiles[$key] = $fileName;
-    //     // }
-    // }
-
 
     /** Project Submission restriction  */
     private function checkProjectRequirements()
     {
         $projectTimer = ProjectTimer::first();
+
+        // DocumentTypes that don't have any reviewers
+        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+
+        // Check if all document types have at least one reviewer
+        $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
+
     
         return [
             'response_duration' => !$projectTimer || (
@@ -735,6 +357,7 @@ class ProjectEdit extends Component
             ),
             'no_reviewers' => Reviewer::count() === 0,
             'no_document_types' => DocumentType::count() === 0,
+            'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
         ];
     }
 
@@ -746,39 +369,6 @@ class ProjectEdit extends Component
     public function save()
     {
          
-
-        $errors = $this->checkProjectRequirements();
-        $errorMessages = [];
-
-        foreach ($errors as $key => $error) {
-            if ($error) {
-                switch ($key) {
-                    case 'response_duration':
-                        $errorMessages[] = 'Response duration settings are not yet configured. Please wait for the admin to set it up.';
-                        break;
-                    case 'project_submission_times':
-                        $errorMessages[] = 'Project submission times are not set. Please wait for the admin to configure them.';
-                        break;
-                    case 'no_reviewers':
-                        $errorMessages[] = 'No reviewers have been set. Please wait for the admin to assign them.';
-                        break;
-                    case 'no_document_types':
-                        $errorMessages[] = 'Document types have not been added. Please wait for the admin to set them up.';
-                        break;
-                }
-            }
-        }
-        
-        if (!$this->isProjectSubmissionAllowed()) {
-            $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . ProjectTimer::first()->project_submission_open_time . ' and ' . ProjectTimer::first()->project_submission_close_time;
-        }
-        
-
-        if (!empty($errorMessages)) {
-            session()->flash('error', implode(' ', $errorMessages));
-            return;
-        }
-
 
         $this->validate([
             'name' => [
@@ -849,38 +439,25 @@ class ProjectEdit extends Component
                 'date', 
             ],
 
+            'document_type_id' => [
+                'nullable',
+            ],
+           'attachments' => [
+                function ($attribute, $value, $fail) {
+                    if (!empty($this->document_type_id)) {
+                        if (empty($value) || !is_array($value) || count($value) < 1) {
+                            $fail('The attachments field is required and must contain at least one item when a document type is selected.');
+                        }
+                    }
+                },
+            ],
+
         ],[
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
             'location.required' => 'Location name must be searched and is required.',
         ]);
-
-
-        // if (!empty($this->projectDocuments)) {
-        //     $this->validate([
-        //         'projectDocuments.*.document_type_id' => [
-        //             'required', 
-        //             'exists:document_types,id', 
-        //             function ($attribute, $value, $fail) {
-        //                 $selectedTypes = array_column($this->projectDocuments, 'document_type_id');
-        //                 if (count(array_filter($selectedTypes)) !== count(array_unique(array_filter($selectedTypes)))) {
-        //                     $fail('Each document type must be unique.');
-        //                 }
-        //             },
-        //         ],
-        //         'projectDocuments.*.attachments.*' => 'file|mimes:png,jpeg,jpg,pdf,docx,xlsx,csv,txt,zip|max:20480',
-        //     ], [
-        //         'projectDocuments.*.document_type_id.required' => 'Please select a document type.',
-        //         'projectDocuments.*.document_type_id.exists' => 'The selected document type is invalid.',
-                
-        //         'projectDocuments.*.attachments.*.file' => 'Each attachment must be a valid file.',
-        //         'projectDocuments.*.attachments.*.mimes' => 'Only PNG, JPEG, JPG, PDF, DOCX, XLSX, CSV, TXT, and ZIP files are allowed.',
-        //         'projectDocuments.*.attachments.*.max' => 'Each file must not exceed 20MB.',
-        //     ]);
-        // }
-        
-
-        
+ 
 
         //save
         $project = Project::find( $this->project_id);
@@ -913,81 +490,68 @@ class ProjectEdit extends Component
 
         
 
-        // if (!empty($this->attachments)) {
-        //     foreach ($this->attachments as $file) {
+        if (!empty($this->attachments)) {
+
+            //create the project document 
+            $project_document = new ProjectDocument();
+            $project_document->project_id = $project->id;
+            $project_document->document_type_id = $this->document_type_id;
+            $project_document->created_by = Auth::user()->id;
+            $project_document->updated_by = Auth::user()->id;
+            $project_document->save();
+
+
+
+
+            foreach ($this->attachments as $file) {
         
-        //         // Generate a unique file name
-        //         $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . uniqid() . '.' . $file['extension'];
+                // // Store the original file name
+                // $originalFileName = $file->getClientOriginalName(); 
+
+                // // Generate a unique file name
+                // $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
+
+                // // Generate a unique file name
+                // $fileName = Carbon::now()->timestamp . '-' . $review->id . '-' . uniqid() . '.' . $file['extension'];
+
+
+
+                $originalFileName = $file['name'] ?? 'attachment';
+                $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
+
+                $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . pathinfo($originalFileName, PATHINFO_FILENAME) . '.' . $extension;
+
+
         
-        //         // Move the file manually from temporary storage
-        //         $sourcePath = $file['path'];
-        //         $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
+                // Move the file manually from temporary storage
+                $sourcePath = $file['path'];
+                $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
         
-        //         // Ensure the directory exists
-        //         if (!file_exists(dirname($destinationPath))) {
-        //             mkdir(dirname($destinationPath), 0777, true);
-        //         }
-        
-        //         // Move the file to the destination
-        //         if (file_exists($sourcePath)) {
-        //             rename($sourcePath, $destinationPath);
-        //         } else {
-        //             // Log or handle the error (file might not exist at the temporary path)
-        //             continue;
-        //         }
-        
-        //         // Save to the database
-        //         ProjectAttachments::create([
-        //             'attachment' => $fileName,
-        //             'project_id' => $project->id,
-        //             'created_by' => Auth::user()->id,
-        //             'updated_by' => Auth::user()->id,
-        //         ]);
-        //     }
-        // }
-
-        if (!empty($this->projectDocuments) && count($this->projectDocuments) > 0) {
-
-
-            // Save Project Documents
-            foreach ($this->projectDocuments as $doc) {
-
-                if(!empty($doc['document_type_id'])){
-
-                    $projectDocument = ProjectDocument::create([
-                        'project_id' => $project->id,
-                        'document_type_id' => $doc['document_type_id'],
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                    ]);
-
-                    // Handle Attachments (if any)
-                    if (!empty($doc['attachments'])) {
-                        foreach ($doc['attachments'] as $file) {
-                            // Store the original file name
-                            $originalFileName = $file->getClientOriginalName(); 
-
-                            // Generate a unique file name
-                            $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
-
-                            // Move file to storage/app/public/uploads/project_attachments
-                            $filePath = $file->storeAs('uploads/project_attachments', $fileName, 'public');
-
-
-
-                            // Save to ProjectAttachments table
-                            ProjectAttachments::create([
-                                'attachment' => $fileName,  // Stored file name 
-                                'project_id' => $project->id,
-                                'project_document_id' => $projectDocument->id, // Link to Project Document
-                                'created_by' => Auth::id(),
-                                'updated_by' => Auth::id(),
-                            ]);
-                        }
-                    }
-                
+                // Ensure the directory exists
+                if (!file_exists(dirname($destinationPath))) {
+                    mkdir(dirname($destinationPath), 0777, true);
                 }
+        
+                // Move the file to the destination
+                if (file_exists($sourcePath)) {
+                    rename($sourcePath, $destinationPath);
+                } else {
+                    // Log or handle the error (file might not exist at the temporary path)
+                    continue;
+                }
+        
+                // Save to the database
+                ProjectAttachments::create([
+                    'attachment' => $fileName,
+                    'project_id' => $project->id,
+                    'project_document_id' => $project_document->id,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
+                ]);
             }
+
+            
+
         }
 
 
@@ -1025,11 +589,34 @@ class ProjectEdit extends Component
         ]);
 
         Alert::success('Success','Project updated successfully');
-        return redirect()->route('project.index');
+        return redirect()->route('project.edit',['project' => $this->project->id]);
     }
 
 
+    public function delete($project_document_id){
+        $project_document = ProjectDocument::findOrFail($project_document_id);
+         // delete existing attachments 
+         if(!empty($project_document->project_attachments)){
+            // delete project attachments
+            if(!empty($project_document->project_attachments)){
+                foreach($project_document->project_attachments as $attachment){
+                    $attachment->delete();
+                } 
+            }
+        }
 
+ 
+        $project_document->delete();
+
+        ActivityLog::create([
+            'log_action' => "Project Document \"".$project_document->document_type->name."\" deleted ",
+            'log_username' => Auth::user()->name,
+            'created_by' => Auth::user()->id,
+        ]);
+
+        Alert::success('Success',"Project Document \"".$project_document->document_type->name."\" deleted ");
+        return redirect()->route('project.edit',['project' => $this->project->id]);
+    }
 
     
     public function render()

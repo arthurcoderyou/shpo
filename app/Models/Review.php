@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
@@ -12,12 +13,18 @@ class Review extends Model
         'viewed', // true or false
         'project_review',
         'project_id',
+        'project_document_id',
         'reviewer_id',
         'review_status',
         
         # ['pending','approved','rejected']
         # 'submitted' is the special review status for users 
         # re_submitted for resubmission
+
+        'project_status', 
+         # 'draft','submitted','in_review','approved','rejected','completed','cancelled',
+         'next_reviewer_name',
+
         'admin_review', // means that this is a review from the admin
         'created_by',
         'updated_by',
@@ -27,6 +34,61 @@ class Review extends Model
         'response_time_hours',
         'review_time_hours',
     ];
+
+
+    public static function boot()
+    {
+        parent::boot();
+        
+
+        static::created(function ($review) { 
+
+            try {
+                event(new \App\Events\ReviewCreated($review));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ReviewCreated event: ' . $e->getMessage(), [
+                    'review_id' => $review->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+
+        });
+
+        // static::updated(function ($project_reviewer) {
+        //     // event(new  \App\Events\ProjectReviewerUpdated($project_reviewer));
+
+        //     try {
+        //         event(new \App\Events\ProjectReviewerUpdated($project_reviewer));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectReviewerUpdated event: ' . $e->getMessage(), [
+        //             'project_reviewer_id' => $project_reviewer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+
+
+        // });
+
+        // static::deleted(function ($project_reviewer) {
+        //     // event(new  \App\Events\ProjectReviewerDeleted($project_reviewer));
+
+        //     try {
+        //         event(new \App\Events\ProjectReviewerDeleted($project_reviewer));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectReviewerDeleted event: ' . $e->getMessage(), [
+        //             'project_reviewer_id' => $project_reviewer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+        // });
+
+
+    }
+
 
 
     // the submission of the updater of hte project or the creator itself must be added on the reviews 
@@ -76,6 +138,18 @@ class Review extends Model
     {
         return $this->belongsTo(User::class, 'reviewer_id', 'id');
     }
+
+    /**
+     * Get the Project document connected to the review
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function project_document() # : BelongsTo
+    {
+        return $this->belongsTo(ProjectDocument::class, 'project_document_id', 'id');
+    }
+
+
 
     /**
      * Get the project
@@ -196,7 +270,41 @@ class Review extends Model
     }
 
 
+    public function getStatus() #: string
+    {
+        switch ($this->project_status) {
+            case 'submitted': 
+                return "<span class='font-bold text-blue-500'>Submitted</span>";
+            case 'in_review': 
+                return "<span class='font-bold text-sky-500'>In Review</span>";
+            case 'on_que': 
+                return "<span class='font-bold text-pink-500'>On Que</span>";
+            case 'approved': 
+                return "<span class='font-bold text-lime-500'>Approved</span>";
+            case 'rejected': 
+                return "<span class='font-bold text-red-500'>Rejected</span>";
+            case 'completed': 
+                return "Completed";
+            case 'cancelled': 
+                return "Cancelled";
+            default: 
+                return "Draft";
+        }
+    }
 
+    public function getStatusTextAttribute(): string
+    {
+        return match ($this->project_status) {
+            'submitted'  => "Submitted",
+            'in_review'  => "In Review",
+            'approved'   => "Approved",
+            'rejected'   => "Rejected",
+            'completed'  => "Completed",
+            'cancelled'  => "Cancelled",
+            'on_que'    =>  "On Que",
+            default      => "Draft",
+        };
+    }
 
 
 }

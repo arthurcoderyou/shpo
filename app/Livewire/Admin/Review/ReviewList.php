@@ -20,6 +20,13 @@ class ReviewList extends Component
     use WithFileUploads;
     use WithPagination;
 
+    protected $listeners = [
+        'projectReviewCreated' => '$refresh', 
+        // 'reviewerUpdated' => '$refresh',
+        // 'reviewerDeleted' => '$refresh',
+        
+    ];
+
     public $search = '';
     public $sort_by = '';
     public $record_count = 10;

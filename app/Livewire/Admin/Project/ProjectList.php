@@ -12,8 +12,9 @@ use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
-use App\Models\ProjectReviewer;
+use App\Helpers\ProjectHelper;
  
+use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +32,18 @@ class ProjectList extends Component
 
     use WithFileUploads;
     use WithPagination;
+
+    protected $listeners = [
+        'projectCreated' => '$refresh',
+        'projectUpdated' => '$refresh',
+        'projectDeleted' => '$refresh',
+        'projectSubmitted' => '$refresh',
+        'projectQueued' => '$refresh',
+        'projectDocumentCreated' => '$refresh',
+        'projectDocumentUpdated' => '$refresh',
+        'projectDocumentDeleted' => '$refresh',
+    ];
+
 
     public $search = '';
     public $sort_by = '';
@@ -442,343 +455,14 @@ class ProjectList extends Component
     }
 
 
-    /** Project Submission restriction  */
-    private function checkProjectRequirements()
-    {
-        $projectTimer = ProjectTimer::first();
     
-        return [
-            'response_duration' => !$projectTimer || (
-                !$projectTimer->submitter_response_duration_type ||
-                !$projectTimer->submitter_response_duration ||
-                !$projectTimer->reviewer_response_duration ||
-                !$projectTimer->reviewer_response_duration_type
-            ),
-            'project_submission_times' => !$projectTimer || (
-                !$projectTimer->project_submission_open_time ||
-                !$projectTimer->project_submission_close_time ||
-                !$projectTimer->message_on_open_close_time
-            ),
-            'no_reviewers' => Reviewer::count() === 0,
-            'no_document_types' => DocumentType::count() === 0,
-        ];
-    }
-
-
-    /**Check if project is within open and close hours */
-    private function isProjectSubmissionAllowed()
-    {
-        $projectTimer = ProjectTimer::first();
-
-        if ($projectTimer->project_submission_restrict_by_time) {
-            $currentTime = now();
-            $openTime = $projectTimer->project_submission_open_time;
-            $closeTime = $projectTimer->project_submission_close_time;
-
-            if ($currentTime < $openTime || $currentTime > $closeTime) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
     public function submit_project($project_id){
 
-
-        $errors = $this->checkProjectRequirements();
-        $errorMessages = [];
-
-        foreach ($errors as $key => $error) {
-            if ($error) {
-                switch ($key) {
-                    case 'response_duration':
-                        $errorMessages[] = 'Response duration settings are not yet configured.';
-                        break;
-                    case 'project_submission_times':
-                        $errorMessages[] = 'Project submission times are not set.';
-                        break;
-                    case 'no_reviewers':
-                        $errorMessages[] = 'No reviewers have been set.';
-                        break;
-                    case 'no_document_types':
-                        $errorMessages[] = 'Document types have not been added.';
-                        break;
-                }
-            }
-        }
-
-
-        if (!$this->isProjectSubmissionAllowed()) {
-            $openTime = ProjectTimer::first()->project_submission_open_time;
-            $closeTime = ProjectTimer::first()->project_submission_close_time;
-
-            $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . $openTime->format('h:i A') . ' and ' . $closeTime->format('h:i A');
-        }
-
-        if (!empty($errorMessages)) {
-            $message = 'The project cannot be submitted because: ';
-            $message .= implode(', ', $errorMessages);
-            $message .= '. Please wait for the admin to configure these settings.';
-            Alert::error('Error', $message);
-            return redirect()->route('project.index');
-        }
-
-
-
-        // // check if there are existing project reviewers 
-        // if(Reviewer::count() == 0){
-        //     Alert::error('Error','Project reviewers are not added yet to the system');
-        //     return redirect()->route('project.index');
-
-        // }
-
-
-        
-        $project = Project::find($project_id);
-        $response_time_hours = 0;
-
-        /** Update the response time */
-
-            // Ensure updated_at is after created_at
-            if ( $project->updated_at && now()->greaterThan( $project->updated_at)) {
-                // Calculate time difference in hours
-                // $response_time_hours = $this->project->updated_at->diffInHours(now()); 
-                $response_time_hours = $project->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
-            }
- 
-        /** ./ Update the response time */
-
-
-        // dd($project);
-
-
-        // if the project is a draft, create the default values
-        if($project->status == "draft"){
-            // Fetch all reviewers in order
-            $reviewers = Reviewer::orderBy('order')->get();
-
-            foreach ($reviewers as $reviewer) {
-                $projectReviewer = ProjectReviewer::create([
-                    'order' => $reviewer->order,
-                    'review_status' => 'pending',
-                    'project_id' => $project->id,
-                    'user_id' => $reviewer->user_id,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
-                ]);
-
-                
-            }
-            
-            // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-            $reviewer = ProjectReviewer::where('project_id', $project->id)
-                ->where('review_status', 'pending') 
-                ->orderBy('order', 'asc')
-                ->first();
-
-
-            // update the first reviewer as the current reviewer
-            $reviewer->status = true;
-            $reviewer->save();
-
-
-
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            Review::create([
-                'viewed' => true,
-                'project_review' => 'The project had been submitted', // message for draft projects
-                'project_id' => $project->id,
-                'reviewer_id' =>  $project->created_by,
-                'review_status' => 'submitted',
-                'created_by' => $project->created_by,
-                'updated_by' => $project->created_by,
-                'response_time_hours' => $response_time_hours,
-                
-            ]);
-
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                //send email notification
-                Notification::send($user, new ProjectReviewNotification($project, $reviewer));
-                //send notification to the database
-                Notification::send($user, new ProjectReviewNotificationDB($project, $reviewer));
-
-
-
-                // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been submitted by '".Auth::user()->name."'";
-            
-
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_submitted',$message ));
-                                /**
-                                 * Message type : 
-                                 * @case('project_submitted')
-                                        @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                        @break
-
-                                    @case('project_reviewed')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                        @break
-
-                                    @case('project_resubmitted')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                        @break
-
-                                    @case('project_reviewers_updated')
-                                        @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                        @break
-
-                                    @default
-                                        @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                */
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers 
-
-
-
-            }
-
-
-
-
-
-        }else{ // if not, get the current reviewer
-
-            $reviewer = $project->getCurrentReviewer();
-            $reviewer->review_status = "pending";
-            $reviewer->save();
-
-
-            
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            Review::create([
-                'viewed' => true,
-                'project_review' => 'The project had been re-submitted', // message for not-draft projects
-                'project_id' => $project->id,
-                'reviewer_id' =>  $project->created_by,
-                'review_status' => 're_submitted',
-                'created_by' => $project->created_by,
-                'updated_by' => $project->created_by,
-                'response_time_hours' => $response_time_hours,
-                
-            ]);
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                //send email notification
-                Notification::send($user, new ProjectReviewFollowupNotification($project, $reviewer));
-                //send notification to the database
-                Notification::send($user, new ProjectReviewFollowupNotificationDB($project, $reviewer));
-
-
-
-                // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been re-submitted by '".Auth::user()->name."'";
-            
-
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_resubmitted',$message ));
-                                /**
-                                 * Message type : 
-                                 * @case('project_submitted')
-                                        @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                        @break
-
-                                    @case('project_reviewed')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                        @break
-
-                                    @case('project_resubmitted')
-                                        @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                        @break
-
-                                    @case('project_reviewers_updated')
-                                        @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                        @break
-
-                                    @default
-                                        @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                */
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers
-
-
-
-            }
-
-
-
-
-        }
-        
-        
-        $project->status = "submitted";
-        $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-        $project->updated_at = now();
-        $project->save();
-
-
-
-        
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" submitted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Project submitted successfully');
-        return redirect()->route('project.index');
-
+        ProjectHelper::submit_project($project_id);
 
     }
+    
 
 
  
@@ -801,22 +485,49 @@ class ProjectList extends Component
 
          
                 
-        // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-        $reviewer = ProjectReviewer::where('project_id', $project->id)
-            ->where('review_status', 'pending') 
-            ->orderBy('order', 'asc')
-            ->first();
+        // // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
+        // $reviewer = ProjectReviewer::where('project_id', $project->id)
+        //     ->where('review_status', 'pending') 
+        //     ->orderBy('order', 'asc')
+        //     ->first();
 
 
-        // update the first reviewer as the current reviewer
-        $reviewer->status = true;
-        $reviewer->save();
+        // // update the first reviewer as the current reviewer
+        // $reviewer->status = true;
+        // $reviewer->save();
+
+        // ✅ Get the first project document
+        $firstProjectDocument = $project->project_documents->first();
+
+        if ($firstProjectDocument) {
+            // ✅ Get the first reviewer for this document (lowest order)
+            $firstReviewer = $firstProjectDocument->project_reviewers()
+                ->orderBy('order', 'asc')
+                ->first();
+
+            if ($firstReviewer) {
+                $firstReviewer->status = true; // mark as current/active
+                $firstReviewer->save();
+            }
+
+
+            $submission_type = "submission";
+
+            // dd($firstReviewer->user->name);
+            ProjectHelper::notifyReviewersAndSubscribers($project, $firstReviewer, $submission_type);
+            
+
+
+        }
+
+
+
 
 
         // Send notification email to reviewer
-        $user = User::find( $reviewer->user_id);
+        $user = User::find( $firstProjectDocument->user_id);
         if ($user) {
-            Notification::send($user, new ProjectReviewNotification($project, $reviewer));
+            Notification::send($user, new ProjectReviewNotification($project, $firstProjectDocument));
         }
 
  
@@ -831,6 +542,7 @@ class ProjectList extends Component
             'log_action' => "Project \"".$project->name."\" review restarted ",
             'log_username' => Auth::user()->name,
             'created_by' => Auth::user()->id,
+            'project_id' => $project->id,
         ]);
 
         Alert::success('Success','Project review restarted ');
@@ -886,10 +598,15 @@ class ProjectList extends Component
 
 
         // Send notification email to the creator of the project
-        $user = User::find( $project->created_by);
+        $user = User::where('id', $project->created_by)->first();
+
+        $project = Project::where('id', $project->id)->first();
         if ($user) {
 
-            Notification::send($user, new ReviewerReviewNotification($project, $review));
+            // Notification::send($user, new ReviewerReviewNotification($project, $review));
+
+            ProjectHelper::sendForProjectCreatorReviewerReviewNotification($user,$project,$review);
+
         }
 
  
@@ -904,6 +621,7 @@ class ProjectList extends Component
             'log_action' => "Project \"".$project->name."\" approved ",
             'log_username' => Auth::user()->name,
             'created_by' => Auth::user()->id,
+            'project_id' => $project->id,
         ]);
 
         Alert::success('Success','Project approved ');
@@ -914,9 +632,7 @@ class ProjectList extends Component
  
 
 
-
-    public function render()
-    {   
+    public function getProjectsProperty(){
 
         /**
          * 3 Kinds of users
@@ -955,7 +671,7 @@ class ProjectList extends Component
                     // })
                     ->orWhereHas('project_reviewers.user', function ($query) use ($search) {
                         $query->where('users.name', 'LIKE', '%' . $search . '%')
-                        ->where('users.email', 'LIKE', '%' . $search . '%');
+                        ->orWhere('users.email', 'LIKE', '%' . $search . '%');
                     });
             });
         }
@@ -975,7 +691,7 @@ class ProjectList extends Component
 
         if (!empty($this->type)) {
             $type = $this->type;
-         
+        
 
             $projects = $projects->where('projects.type', $type );
         }
@@ -1063,7 +779,7 @@ class ProjectList extends Component
             // do not show drafts to reviewers
             $projects = $projects->whereNot('status','draft');
         }
-         
+        
 
 
         
@@ -1085,7 +801,7 @@ class ProjectList extends Component
                 case "Description A - Z":
                     $projects =  $projects->orderBy('projects.description','ASC');
                     break;
- 
+
                 case "Description Z - A":
                     $projects =  $projects->orderBy('projects.description','DESC');
                     break;
@@ -1179,8 +895,8 @@ class ProjectList extends Component
 
                 /**
                  * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
-                 * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
-                 */
+                * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
+                */
 
                 case "Latest Added":
                     $projects =  $projects->orderBy('projects.created_at','DESC');
@@ -1212,16 +928,16 @@ class ProjectList extends Component
 
                 /**
                  * prioritized due date based on submitter_due_date
-                 * @var mixed
-                 */
+                * @var mixed
+                */
                 $projects =  $projects->orderBy('projects.submitter_due_date','ASC');
 
             }elseif(request()->routeIs('project.in_review')){
 
                 /**
                  * prioritized due date based on reviewer_due_date
-                 * @var mixed
-                 */
+                * @var mixed
+                */
                 // $projects =  $projects->orderBy('projects.reviewer_due_date','ASC');
 
                 $projects =  $projects->withCount([
@@ -1236,7 +952,7 @@ class ProjectList extends Component
             }else{
                 $projects =  $projects->orderBy('projects.updated_at','DESC');
             }
- 
+
 
             
 
@@ -1247,9 +963,20 @@ class ProjectList extends Component
 
 
         $projects = $projects->paginate($this->record_count);
+
+        return $projects;
+    }
+
+
+
+
+    public function render()
+    {   
+
+        
  
         return view('livewire.admin.project.project-list',[
-            'projects' => $projects
+            'projects' => $this->projects
         ]);
     }
 }

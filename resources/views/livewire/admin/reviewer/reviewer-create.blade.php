@@ -25,6 +25,10 @@
                 <!-- Grid -->
                 <div class="grid grid-cols-12 gap-x-2  ">
 
+                    <!-- reviewer type -->
+                    <x-reviewer-type-info :type="$reviewer_type" />
+ 
+
                     <div class="space-y-2 col-span-12 sm:col-span-4">
                         <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             User
@@ -75,27 +79,23 @@
 
                     </div>
 
-
                     <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="document_type_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Document Type
+                        <label for="reviewer_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                            Reviewer Type
                         </label>
 
-                        <select autofocus autocomplete="document_type_id"
-                        wire:model="document_type_id" 
-                        id="document_type_id"
-                        name="document_type_id"
+                        <select autofocus autocomplete="reviewer_type"
+                        wire:model.live="reviewer_type" 
+                        id="reviewer_type"
+                        name="reviewer_type"
                          class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
-                            <option value="">Select Document Type</option>
-                            @if(!empty($document_types))
-                                @foreach ($document_types as $document_type)
-                                    <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
-                                @endforeach
-                            @endif
+                            <option value="initial">Initial Reviewers</option>
+                            <option value="document">Document</option>
+                            <option value="final">Final Reviewers</option>
                             
                         </select>
 
-                        @error('document_type_id')
+                        @error('reviewer_type')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
                         @enderror
 
@@ -103,27 +103,35 @@
                     </div>
 
 
+                    @if($reviewer_type == "document")
+                        <div class="space-y-2 col-span-12 ">
+                            <label for="document_type_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                                Document Type
+                            </label>
 
-                    {{-- <div class="space-y-2 col-span-12 sm:col-span-4 ">
-                        <label for="status" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Status
-                        </label>
+                            <select autofocus autocomplete="document_type_id"
+                            wire:model.live="document_type_id" 
+                            id="document_type_id"
+                            name="document_type_id"
+                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "> 
+                                @if(!empty($document_types))
+                                    @foreach ($document_types as $document_type)
+                                        <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
+                                    @endforeach
+                                @endif
+                                
+                            </select>
 
-                        <select autofocus autocomplete="status"
-                        wire:model="status" 
-                        id="status"
-                        name="status"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
-                            <option value="1">Active</option>
-                            <option value="0">Inactive</option> 
-                        </select>
-
-                        @error('status')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
+                            @error('document_type_id')
+                                <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                            @enderror
 
 
-                    </div> --}}
+                        </div>
+                    @endif
+
+                    
+
 
 
 

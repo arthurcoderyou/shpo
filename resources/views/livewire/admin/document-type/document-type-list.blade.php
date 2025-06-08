@@ -35,6 +35,8 @@
 
                         <select wire:model.live="sort_by" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500   ">
                             <option value="">Sort By</option>
+                            <option>Order 1 - 100</option>
+                            <option>Order 100 - 1</option> 
                             <option>Name A - Z</option>
                             <option>Name Z - A</option> 
                             <option>Latest Added</option>
@@ -69,6 +71,13 @@
  
                     </th> --}}
 
+                    @if(Auth::user()->hasRole('Admin') || Auth::user()->can('project reviewer edit') || Auth::user()->hasRole('DSI God Admin'))
+                    <th scope="col" class="px-2 py-3 text-start">
+                        
+                    </th>
+                    @endif
+
+
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
                             <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
@@ -78,7 +87,13 @@
                     </th>
 
 
-
+                    <th scope="col" class="px-2 py-3 ">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
+                            Display Order
+                            </span>
+                        </div>
+                    </th>
                     
 
 
@@ -102,28 +117,69 @@
                     @if(!empty($document_types) && count($document_types) > 0)
                         @foreach ($document_types as $document_type)
                             <tr>
-                                {{-- <td class="w-10 whitespace-nowrap  ">
-                                    <div class="px-2 py-2 align-self-center">
-                                        <label for="document_type_{{ $document_type->id }}" class="flex">
-                                            <input type="checkbox"
-                                            wire:model="selected_records"
-                                            wire:change="updateSelectedCount"
-                                            class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
-                                            id="document_type_{{ $document_type->id }}"
-                                            value="{{ $document_type->id }}"
-                                            >
-                                            <span class="sr-only">Checkbox</span>
-                                        </label>
-                                    </div>
- 
+                              
 
-                                </td> --}}
+                                @if(Auth::user()->hasRole('Admin') || Auth::user()->can('project reviewer edit') || Auth::user()->hasRole('DSI God Admin'))
+                                    <td class="w-10 whitespace-nowrap flex flex-row items-center">
+                                        
+
+                                        <div class="flex flex-col">
+                                            <button {{ $document_type->order  == 1 ? 'disabled' : '' }} type="button" wire:click="updateOrder({{ $document_type->id }}, {{ $document_type->order }},'move_up')" class="p-1 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " >
+                
+                                                <div class="hs-tooltip flex">
+                
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m15 11.25-3-3m0 0-3 3m3-3v7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                    </svg>
+                                                    <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded shadow-sm " role="tooltip">
+                                                        Move order up
+                                                    </span>
+                                                </div>
+                
+                
+                                            </button>
+                
+                
+                                            
+                                            <button {{ $document_type->order == $lastOrder ? 'disabled' : '' }} type="button" wire:click="updateOrder({{ $document_type->id }}, {{ $document_type->order }},'move_down')" class="p-1 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " >
+                                                <div class="hs-tooltip flex">
+                
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                    </svg>
+                                                    <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded shadow-sm " role="tooltip">
+                                                        Move order down
+                                                    </span>
+                                                </div>
+                
+                
+                                            </button>
+                
+                                        </div>
+                
+                
+
+
+
+                                    </td>
+                                @endif
+
 
                                 <td class="size-auto whitespace-nowrap">
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
                                                 <span class="block text-sm text-gray-500 ">{{ $document_type->name ? $document_type->name : '' }}</span> 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="size-auto whitespace-nowrap">
+                                    <div class="px-2 py-2">
+                                        <div class="flex items-center gap-x-3">
+                                            <div class="grow">
+                                                <span class="block text-sm text-gray-500 ">{{ $document_type->order  }}</span> 
                                             </div>
                                         </div>
                                     </div>

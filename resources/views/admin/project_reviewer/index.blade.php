@@ -4,10 +4,13 @@
             {{ __('Project Reviewers') }}
         </h2>
     </x-slot>
-    @if(Auth::user()->hasRole('Admin') || Auth::user()->can('project reviewer edit') || Auth::user()->hasRole('DSI God Admin'))
+    {{-- @if(Auth::user()->hasRole('Admin') || Auth::user()->can('project reviewer edit') || Auth::user()->hasRole('DSI God Admin'))
     <livewire:admin.project-reviewer.project-reviewer-create :id="$project->id" />
 
-    @endif
+    @endif --}}
+
+
+    
     <livewire:admin.project-reviewer.project-reviewer-list :id="$project->id" />
 
 

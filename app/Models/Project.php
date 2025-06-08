@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
@@ -25,7 +26,8 @@ class Project extends Model
             // - company
 
         'status',
-        # 'draft','submitted','in_review','approved','rejected','completed','cancelled'
+        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',
+        # on_que // status that the project is submitted but it is on que due to the submission restrictions    
         'allow_project_submission', // defines if the project can be submitted again
         # true to allow
         # false to not allow
@@ -56,6 +58,59 @@ class Project extends Model
         static::creating(function ($project) {
             $project->project_number = self::generateProjectNumber();
         });
+
+
+        static::created(function ($project) {
+            // event(new  \App\Events\ProjectCreated($project));
+
+            try {
+                event(new \App\Events\ProjectCreated($project));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+
+        });
+
+        static::updated(function ($project) {
+            // event(new  \App\Events\ProjectUpdated($project));
+
+            try {
+                event(new \App\Events\ProjectUpdated($project));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ProjectUpdated event: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+        });
+
+        static::deleted(function ($project) {
+            // event(new  \App\Events\ProjectDeleted(project: $project));
+
+
+             try {
+                event(new \App\Events\ProjectDeleted($project));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ProjectDeleted event: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+
+        });
+
+       
+
+
     }
 
 
@@ -154,6 +209,8 @@ class Project extends Model
                 return "<span class='font-bold text-blue-500'>Submitted</span>";
             case 'in_review': 
                 return "<span class='font-bold text-sky-500'>In Review</span>";
+            case 'on_que': 
+                return "<span class='font-bold text-pink-500'>On Que</span>";
             case 'approved': 
                 return "<span class='font-bold text-lime-500'>Approved</span>";
             case 'rejected': 
@@ -176,6 +233,7 @@ class Project extends Model
             'rejected'   => "Rejected",
             'completed'  => "Completed",
             'cancelled'  => "Cancelled",
+            'on_que'    =>  "On Que",
             default      => "Draft",
         };
     }
@@ -219,38 +277,105 @@ class Project extends Model
 
 
 
-    public function getReview($reviewer_id = null){
+    // public function getReview($reviewer_id = null){
 
-        if(!empty($reviewer_id)){
-            return $this->project_reviewers->firstWhere('user_id', $reviewer_id);
+    //     if(!empty($reviewer_id)){
+    //         return $this->project_reviewers->firstWhere('user_id', $reviewer_id);
 
+    //     }
+
+    //     return $this->project_reviewers->firstWhere('user_id', Auth::id())->where('status',true);
+
+    // }
+
+    public function getReview($reviewer_id = null)
+    {
+
+        // dd($this->project_documents()->orderBy('id')->get());
+
+        $userId = $reviewer_id ?? auth()->id();
+
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+                // dd($document->project_reviewers );
+
+           $review = $document->project_reviewers()
+                ->where('user_id', $userId)
+                ->where('status', true)
+                ->first();
+
+            if ($review) {
+                return $review;
+            }
         }
 
-        return $this->project_reviewers->firstWhere('user_id', Auth::id());
-
+        return null;
     }
+
 
 
     public function isNextReviewer(): bool
     {
-        $reviewers = $this->project_reviewers()->orderBy('order')->get(); // Get all reviewers sorted by order
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+            $reviewers = $document->project_reviewers()->orderBy('order')->get();
 
-        foreach ($reviewers as $reviewer) {
-            if ($reviewer->review_status !== 'approved') { // Find the first "pending" reviewer
-                return $reviewer->user_id === auth()->id(); // Return true if it's the logged-in user
+            foreach ($reviewers as $reviewer) {
+                if ($reviewer->review_status !== 'approved' && $reviewer->status === false) {
+                    return $reviewer->user_id === auth()->id();
+                }
             }
         }
 
-        return false; // No pending reviewers or the user is not next in line
+        return false;
     }
+
+
+    public function isCurrentReviewer(): bool
+    {
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+            $reviewers = $document->project_reviewers()->orderBy('order')->get();
+
+            foreach ($reviewers as $reviewer) {
+                if ($reviewer->review_status !== 'approved' && $reviewer->status === true) {
+                    return $reviewer->user_id === auth()->id();
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+
+
+
+
+
+
+    // public function isNextReviewer(): bool
+    // {
+    //     $reviewers = $this->project_reviewers()->orderBy('order')->get(); // Get all reviewers sorted by order
+
+    //     foreach ($reviewers as $reviewer) {
+    //         if ($reviewer->review_status !== 'approved') { // Find the first "pending" reviewer
+    //             return $reviewer->user_id === auth()->id(); // Return true if it's the logged-in user
+    //         }
+    //     }
+
+    //     return false; // No pending reviewers or the user is not next in line
+    // }
+
+
+
+
+
 
 
     public function getCurrentReviewerUser()
     {
         return $this->project_reviewers()
         ->where('status', true)  
-            ->where('review_status', 'pending') // Find the first "pending" reviewer
-            ->orWhere('review_status', 'rejected') // Find the first "pending" reviewer
+            // ->where('review_status', 'pending') // Find the first "pending" reviewer
+            // ->orWhere('review_status', 'rejected') // Find the first "pending" reviewer
             
             ->orderBy('order')
             ->first()?->user; // Return the User model of the reviewer
@@ -265,18 +390,28 @@ class Project extends Model
     }
 
 
-    public function getNextReviewer(){
-        return $this->project_reviewers()   
-            ->whereNot('review_status','approved')
-            ->where('status', false)  // find the first active reviewer
-            ->orderBy('order')
-            ->first(); // Return the User model of the reviewer
+    public function getNextReviewer()
+    {
+        // Iterate over all project documents ordered by id (i.e. oldest first)
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+            $reviewer = $document->project_reviewers()
+                ->where('status', false)
+                ->where('review_status', '!=', 'approved')
+                ->orderBy('order')
+                ->first();
+
+            if ($reviewer) {
+                return $reviewer;
+            }
+        }
+
+        // If no eligible reviewer is found
+        return null;
+    }
 
 
-    } 
-
-
-    public function getProjectReviewerByUser($user_id){
+    // getProjectReviewerByUser original name
+    public function checkIfUserIsProjectReviewer($user_id){
         return $this->project_reviewers()    
             ->where('user_id', $user_id)  // find the first active reviewer
             ->orderBy('order')

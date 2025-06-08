@@ -17,6 +17,9 @@ class ProjectDiscussionDeleted implements ShouldBroadcastNow
 
     public $project;
     public $project_discussion;
+
+    public $message;
+    public $project_url;
     /**
      * Create a new event instance.
      */
@@ -24,6 +27,20 @@ class ProjectDiscussionDeleted implements ShouldBroadcastNow
     {
         $this->project = $project;
         $this->project_discussion = $project_discussion;
+        $this->message = "Discussion deleted on project '{$this->project->name}'";
+
+        $this->project_url = route('project.show', $this->project->id);
+
+        if(!empty($this->project_discussion->project_document_id)){
+            $this->project_url = route('project.project_document', [
+                'project' => $this->project->id,
+                'project_document' => $this->project_discussion->project_document_id,
+            ]);
+
+            $this->message = "Discussion deleted on document '{$this->project_discussion->project_document->document_type->name}' for project '{$this->project->name}'";
+        }
+
+
     }
 
     /**
@@ -52,9 +69,9 @@ class ProjectDiscussionDeleted implements ShouldBroadcastNow
         return [
             'project_id' => $this->project->id,
             'project_name' => $this->project->name,
-            'project_url' => route('project.show', $this->project->id),
+            'project_url' => $this->project_url,
             'is_private' => $this->project_discussion->is_private,
-            'message' => "Discussion deleted on project '{$this->project->name}'",
+            'message' => $this->message,
             'timestamp' => $this->project_discussion->created_at->toDateTimeString(),
         ];
     }

@@ -8,9 +8,9 @@
 
     <livewire:dashboard.project-requirements-panel />
 
-    @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer create') )
+    {{-- @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer create') )
         <livewire:admin.reviewer.reviewer-create />
-    @endif
+    @endif --}}
 
 
 

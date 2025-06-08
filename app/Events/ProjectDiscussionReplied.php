@@ -19,6 +19,10 @@ class ProjectDiscussionReplied implements ShouldBroadcastNow
     public $project_discussion;
     public $reply;
 
+    public $message;
+    public $project_url;
+
+
     /**
      * Create a new event instance.
      */
@@ -27,6 +31,23 @@ class ProjectDiscussionReplied implements ShouldBroadcastNow
         $this->project = $project;
         $this->project_discussion = $project_discussion;
         $this->reply = $reply;
+
+        $this->message = "New reply added on project discussion '{$this->project_discussion->title}' in project '{$this->project->name}'";
+
+        $this->project_url = route('project.show', $this->project->id);
+
+        if(!empty($this->project_discussion->project_document_id)){
+            $this->project_url = route('project.project_document', [
+                'project' => $this->project->id,
+                'project_document' => $this->project_discussion->project_document_id,
+            ]);
+
+            $this->message = "New reply added on project discussion '{$this->project_discussion->title}' on document '{$this->project_discussion->project_document->document_type->name}' for project '{$this->project->name}'";
+
+        }
+
+        
+
     }
 
     /**
@@ -55,14 +76,14 @@ class ProjectDiscussionReplied implements ShouldBroadcastNow
         return [
             'project_id' => $this->project->id,
             'project_name' => $this->project->name,
-            'project_url' => route('project.show', $this->project->id),
+            'project_url' => $this->project_url ,
             'discussion_id' => $this->project_discussion->id,
             'reply_id' => $this->reply->id,
             'reply_message' => $this->reply->message,
             'replied_by' => $this->reply->user->name ?? 'Someone',
             'is_private' => $this->project_discussion->is_private,
             'timestamp' => $this->reply->created_at->toDateTimeString(),
-            'message' => "New reply added on project discussion '{$this->project_discussion->title}' in project '{$this->project->name}'",
+            'message' => $this->message,
         ];
     }
 }

@@ -49,6 +49,7 @@ The project **{{ $project->name }}**, which you were previously assigned to revi
     @default
         <span style="color: black;"><strong>{{ $project->status_text }}</strong></span>
 @endswitch  
+- **Document:** {{ $reviewer->project_document->document_type->name ?? "" }} 
 
 - **Submitted by:** {{ $project->creator->name }}  
 - **Last Updated:** {{ $project->updated_at->format('F j, Y, g:i A') }}

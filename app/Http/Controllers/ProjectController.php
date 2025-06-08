@@ -83,7 +83,7 @@ class ProjectController extends Controller
 
 
 
-        return view('admin.project.review',compact('project'));
+        return view('admin.project.show',compact('project'));
 
     }
 

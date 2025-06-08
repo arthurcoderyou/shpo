@@ -3,19 +3,20 @@
 namespace App\Livewire\Admin\Project;
 
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectReviewer;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
-use App\Models\User;
-use App\Notifications\ProjectReviewNotification;
 use Illuminate\Support\Facades\Notification;
+use App\Notifications\ProjectReviewNotification;
 
 
 
@@ -214,54 +215,8 @@ class ProjectReview extends Component
     
 
     public function submit_project($project_id){
-        
-        $project = Project::find($project_id);
-        
 
-        $project->status = "submitted";
-        $project->updated_at = now();
-        $project->save();
-
-
-        // Fetch all reviewers in order
-        $reviewers = Reviewer::orderBy('order')->get();
-
-        foreach ($reviewers as $reviewer) {
-            $projectReviewer = ProjectReviewer::create([
-                'order' => $reviewer->order,
-                // 'status' => 'pending',
-                'project_id' => $project->id,
-                'user_id' => $reviewer->user_id,
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]);
-
-            
-        }
-         
-        // while status is true for project reviewer, this means that the project had been reviewed but not approved and it is still true for reviewing
-        $firstReviewer = ProjectReviewer::where('project_id', $project->id)
-            ->where('status', true) // Status true means not yet approved
-            ->orderBy('order', 'asc')
-            ->first();
-
-        
-        // Send notification email to reviewer
-        $user = User::find( $firstReviewer->user_id);
-        if ($user) {
-            Notification::send($user, new ProjectReviewNotification($project, $projectReviewer));
-        }
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" submitted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Project submitted successfully');
-        return redirect()->route('project.index');
-
+        ProjectHelper::submit_project($project_id);
 
     }
 

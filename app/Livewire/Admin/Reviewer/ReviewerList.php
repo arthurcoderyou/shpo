@@ -2,24 +2,26 @@
 
 namespace App\Livewire\Admin\Reviewer;
 
-use App\Models\User;
-use App\Models\Review;
-use App\Models\Project;
-use Livewire\Component;
-use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
-use Livewire\WithPagination;
-use Livewire\WithFileUploads;
-use App\Models\ProjectReviewer;
 use App\Models\DocumentTypeReviewer;
-use Illuminate\Support\Facades\Auth;
-use RealRashid\SweetAlert\Facades\Alert;
-use Illuminate\Support\Facades\Notification;
-use App\Notifications\ProjectReviewNotification;
-use App\Notifications\ProjectReviewNotificationDB;
+use App\Models\Project;
+use App\Models\ProjectReviewer;
+use App\Models\Review;
+use App\Models\Reviewer;
+use App\Models\User;
 use App\Notifications\ProjectReviewerUpdatedNotification;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
+use App\Notifications\ProjectReviewNotification;
+use App\Notifications\ProjectReviewNotificationDB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+use Livewire\WithPagination;
+use RealRashid\SweetAlert\Facades\Alert;
+use Spatie\Permission\Models\Role;
 
 class ReviewerList extends Component
 {
@@ -29,7 +31,7 @@ class ReviewerList extends Component
 
     public $search = '';
     public $sort_by = '';
-    public $record_count = 10;
+    public $record_count = 100;
 
     public $selected_records = [];
     public $selectAll = false;
@@ -43,19 +45,38 @@ class ReviewerList extends Component
 
     public $document_type_id;
 
+    public $reviewer_type = "document";
+
     public $documentTypesWithoutReviewers;
     public $allDocumentTypesHaveReviewers;
-    
+
+
+
+
+    public $user_id;
+    public $order;
+    public $status; 
+    public $users;
+  
     protected $listeners = [
         'reviewerCreated' => '$refresh', 
         'reviewerUpdated' => '$refresh',
         'reviewerDeleted' => '$refresh',
         
     ];
+
+
+    public $reviewers = [];
      
 
 
     public function mount(){
+
+        $this->users = User::whereHas('roles', function ($query) {
+            $query->where('name', 'Reviewer');
+        })->pluck('id', 'name')->toArray();
+
+
 
         // DocumentTypes that don't have any reviewers
         $this->documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
@@ -69,21 +90,59 @@ class ReviewerList extends Component
 
         // Get the last order number
         // $this->lastOrder = Reviewer::max('order') ?? 0;
-
-        $this->document_types = DocumentType::all();
         
+        // document type adjustment
+            $this->document_types = DocumentType::orderBy('order')->get();
+            
 
-        // check the first document type
-        $this->document_type_id = DocumentType::first()->id ?? null;
-        
-        // check the get request if it has one 
-        $this->document_type_id = request('document_type_id') ?? $this->document_type_id;
+            // check the first document type
+            $this->document_type_id = DocumentType::first()->id ?? null;
+            
+            // check the get request if it has one 
+            $this->document_type_id = request('document_type_id') ?? $this->document_type_id;
+        // ./  document type adjustment
+         
+        // reviewer_type adjustment
+            $this->reviewer_type = "document";
+            
+            // check the get request if it has reviewer_type 
+            $this->reviewer_type = request('reviewer_type') ?? $this->reviewer_type;
 
-        
+
+            if($this->reviewer_type != "document"){
+                $this->document_type_id = null;
+            } 
+            
+        // ./ reviewer_type adjustment
+
+
+        // insert the reviewers into an array
+            $this->reviewers = $this->getReviewersProperty();
+
+
+
+
 
         // dd($this->lastOrder);
 
     }
+
+    public function updatedReviewerType(){
+        
+        if ($this->reviewer_type !== 'document') {
+            $this->document_type_id = null;
+        }
+
+        if ($this->reviewer_type == 'document') { 
+            $this->document_type_id = DocumentType::first()->id ?? null;
+        }
+      
+    }   
+
+    public function updatedDocumentTypeId(){
+       $this->reviewers = $this->getReviewersProperty();
+    }
+
 
 
     /**
@@ -91,67 +150,198 @@ class ReviewerList extends Component
      */
     public function getLastOrderProperty()
     {
-        return Reviewer::where('document_type_id', $this->document_type_id)->count();
+        // return Reviewer::where('document_type_id', $this->document_type_id)->count();
+        return collect($this->reviewers)
+            ->where('reviewer_type', $this->reviewer_type)
+            ->when($this->reviewer_type === 'document', function ($collection) {
+                return $collection->where('document_type_id', $this->document_type_id);
+            }, function ($collection) {
+                return $collection->whereNull('document_type_id');
+            })
+            ->max('order');
     }
 
-    public function updateOrder($reviewer_id, $order, $direction, $document_type_id)
+    /*
+    public function updateOrder($reviewer_id, $order, $direction, $document_type_id, $reviewer_type)
     {
         if ($direction == "move_up") {
-            // Find the reviewer with the closest order that is less than the current order
-            $prev_reviewer = Reviewer::where('document_type_id', $document_type_id)
+            $prev_reviewer = Reviewer::where('reviewer_type', $reviewer_type)
+                ->when($reviewer_type === 'document', function ($query) use ($document_type_id) {
+                    return $query->where('document_type_id', $document_type_id);
+                }, function ($query) {
+                    return $query->whereNull('document_type_id');
+                })
                 ->where('order', '<', $order)
                 ->orderBy('order', 'DESC')
                 ->first();
 
             if ($prev_reviewer) {
                 // Swap the orders
-                $prev_reviewer->order = $order;
-                $prev_reviewer->save();
+                $current_reviewer = Reviewer::find($reviewer_id);
+                $tempOrder = $current_reviewer->order;
 
-                $reviewer = Reviewer::find($reviewer_id);
-                $reviewer->order = $prev_reviewer->order - 1;
-                $reviewer->save();
+                $current_reviewer->order = $prev_reviewer->order;
+                $prev_reviewer->order = $tempOrder;
+
+                $current_reviewer->save();
+                $prev_reviewer->save();
             }
+
         } elseif ($direction == "move_down") {
-            // Find the reviewer with the closest order that is greater than the current order
-            $next_reviewer = Reviewer::where('document_type_id', $document_type_id)
+            $next_reviewer = Reviewer::where('reviewer_type', $reviewer_type)
+                ->when($reviewer_type === 'document', function ($query) use ($document_type_id) {
+                    return $query->where('document_type_id', $document_type_id);
+                }, function ($query) {
+                    return $query->whereNull('document_type_id');
+                })
                 ->where('order', '>', $order)
                 ->orderBy('order', 'ASC')
                 ->first();
 
-                // dd($next_reviewer);
-
             if ($next_reviewer) {
-                // Swap the orders
-                $next_reviewer->order = $order;
-                $next_reviewer->save();
+                $current_reviewer = Reviewer::find($reviewer_id);
+                $tempOrder = $current_reviewer->order;
 
-                $reviewer = Reviewer::find($reviewer_id);
-                $reviewer->order = $next_reviewer->order + 1;
-                $reviewer->save();
+                $current_reviewer->order = $next_reviewer->order;
+                $next_reviewer->order = $tempOrder;
+
+                $current_reviewer->save();
+                $next_reviewer->save();
             }
         }
 
-
-        $this->resetOrder($document_type_id);
-
-
+        $this->resetOrder($document_type_id, $reviewer_type);
     }
 
 
-    public function resetOrder($document_type_id)
+
+    public function resetOrder($document_type_id, $reviewer_type)
     {
-        $reviewers = Reviewer::where('document_type_id', $document_type_id)
+        $reviewers = Reviewer::where('reviewer_type', $reviewer_type)
+            ->when($reviewer_type === 'document', function ($query) use ($document_type_id) {
+                return $query->where('document_type_id', $document_type_id);
+            }, function ($query) {
+                return $query->whereNull('document_type_id');
+            })
             ->orderBy('order', 'ASC')
             ->get();
-
+    
         foreach ($reviewers as $index => $reviewer) {
             $reviewer->order = $index + 1;
             $reviewer->save();
         }
     }
+    */
+
+    public function updateOrder($index, $order, $direction, $document_type_id, $reviewer_type)
+    {
+        if (!isset($this->reviewers[$index])) {
+            return;
+        }
+
+        // Filter reviewers by type and (optional) document_type_id
+        $filtered = collect($this->reviewers)
+            ->where('reviewer_type', $reviewer_type)
+            ->when($reviewer_type === 'document', function ($collection) use ($document_type_id) {
+                return $collection->where('document_type_id', $document_type_id);
+            }, function ($collection) {
+                return $collection->whereNull('document_type_id');
+            })
+            ->sortBy('order')
+            ->values(); // Re-index the array
+
+        // Find the position of the current reviewer in the filtered list
+        $currentReviewer = $this->reviewers[$index];
+        $position = $filtered->search(function ($item) use ($currentReviewer) {
+            return $item['user_id'] == $currentReviewer['user_id']
+                && $item['reviewer_type'] == $currentReviewer['reviewer_type']
+                && ($item['document_type_id'] ?? null) == ($currentReviewer['document_type_id'] ?? null);
+        });
+
+        if ($position === false) {
+            return;
+        }
+
+        // Move up
+        if ($direction === 'move_up' && $position > 0) {
+            $temp = $filtered[$position - 1];
+            $filtered[$position - 1] = $filtered[$position];
+            $filtered[$position] = $temp;
+        }
+
+        // Move down
+        if ($direction === 'move_down' && $position < $filtered->count() - 1) {
+            $temp = $filtered[$position + 1];
+            $filtered[$position + 1] = $filtered[$position];
+            $filtered[$position] = $temp;
+        }
+
+        // Reassign order based on new positions
+        foreach ($filtered->values() as $i => $reviewer) {
+            $reviewer['order'] = $i + 1;
+
+            // Find matching reviewer in main array and update
+            foreach ($this->reviewers as &$mainReviewer) {
+                if (
+                    $mainReviewer['user_id'] == $reviewer['user_id'] &&
+                    $mainReviewer['reviewer_type'] == $reviewer['reviewer_type'] &&
+                    ($mainReviewer['document_type_id'] ?? null) == ($reviewer['document_type_id'] ?? null)
+                ) {
+                    $mainReviewer['order'] = $reviewer['order'];
+                    break;
+                }
+            }
+        }
 
 
+
+        // Optional: sort the reviewers array by `order` again
+        $this->reviewers = collect($this->reviewers)->sortBy('order')->values()->toArray();
+
+
+    }
+
+    public function resetOrder()
+    {
+        $document_type_id = $this->document_type_id;
+        $reviewer_type = $this->reviewer_type;
+
+        $filtered = collect($this->reviewers)
+            ->where('reviewer_type', $reviewer_type)
+            ->when($reviewer_type === 'document', function ($collection) use ($document_type_id) {
+                return $collection->where('document_type_id', $document_type_id);
+            }, function ($collection) {
+                return $collection->whereNull('document_type_id');
+            })
+            ->sortBy('order')
+            ->values(); // Reset index
+
+        foreach ($filtered as $i => $reviewer) {
+            $reviewer['order'] = $i + 1;
+
+            foreach ($this->reviewers as &$mainReviewer) {
+                if (
+                    $mainReviewer['user_id'] == $reviewer['user_id'] &&
+                    $mainReviewer['reviewer_type'] == $reviewer['reviewer_type'] &&
+                    ($mainReviewer['document_type_id'] ?? null) == ($reviewer['document_type_id'] ?? null)
+                ) {
+                    $mainReviewer['order'] = $reviewer['order'];
+                    break;
+                }
+            }
+        }
+    }
+
+
+
+
+    
+    /**
+     * Summary of updateDocumentTypeReviewerOrder
+     * @param mixed $reviewer_id
+     * @param mixed $direction
+     * @return void
+     
     public function updateDocumentTypeReviewerOrder($reviewer_id, $direction)
     {
         // $reviewer = DocumentTypeReviewer::find($document_type_reviewer_id);
@@ -183,7 +373,7 @@ class ReviewerList extends Component
         $reviewer->review_order = $new_order;
         $reviewer->save();
     }
-
+    */
  
    
 
@@ -414,23 +604,398 @@ class ReviewerList extends Component
     }
 
 
-
+    /*
     public function delete($id){
         $reviewer = Reviewer::find($id);
 
         $document_type_id = $reviewer->document_type_id;
-
-
+ 
         $reviewer->delete();
 
         // $order_start_number = $reviewer->order;
 
-        $this->resetOrder($document_type_id);
+        $this->resetOrder($document_type_id, $reviewer->reviewer_type);
  
        
         // Alert::success('Success','Reviewer deleted successfully');
         // return redirect()->route('reviewer.index');
 
+    }*/
+
+    public function delete($index)
+    {
+        // Remove the reviewer from the array using the index
+        unset($this->reviewers[$index]);
+
+        // Reindex the array to avoid gaps in keys
+        $this->reviewers = array_values($this->reviewers);
+
+        // // Optional: sort the reviewers array by `order` again
+        // $this->reviewers = collect($this->reviewers)->sortBy('order')->values()->toArray();
+
+        $this->resetOrder();
+
+    }
+
+
+
+
+
+    public function updated($fields)
+    {
+        $this->validateOnly($fields, [
+            'user_id' => [
+                'required',
+                Rule::unique('reviewers', 'user_id')
+                    ->where(function ($query) {
+                    // Reviewer type is initial or final
+                    if (in_array($this->reviewer_type, ['initial', 'final'])) {
+                        return $query->where('reviewer_type', $this->reviewer_type);
+                    }
+
+                    // Reviewer type is document — must match both type and document_type_id
+                    if ($this->reviewer_type === 'document') {
+                        return $query
+                            ->where('reviewer_type', 'document')
+                            ->where('document_type_id', $this->document_type_id);
+                    }
+
+                    // fallback to avoid error
+                    return $query->whereNull('id'); // guarantees no match
+                }),
+
+            ],
+             
+            'reviewer_type' => [
+                'required',
+            ],
+
+            'document_type_id' => [
+                function ($attribute, $value, $fail) {
+                    if (!empty($this->reviewer_type) &&  $this->reviewer_type == "document") {
+                        if (empty($value)) {
+                            $fail('The document type field is required');
+                        }
+                    }
+                },
+            ],
+
+
+            'order' => [
+                'required',
+            ],
+            // 'status' => [
+            //     'required',
+            // ],
+        ], [
+            'user_id.required' => 'User is required',
+            'user_id.unique' => 'User is already added for this document type',
+            'document_type_id.required' => 'Document type is required',
+        ]);
+
+
+
+
+
+
+    }
+
+ 
+
+    public function validateReviewer()
+    {
+        $this->validate([
+            'user_id' => ['required'],
+            'reviewer_type' => ['required'],
+            'document_type_id' => [
+                function ($attribute, $value, $fail) {
+                    if (!empty($this->reviewer_type) &&  $this->reviewer_type === "document") {
+                        if (empty($value)) {
+                            $fail('The document type field is required.');
+                        }
+                    }
+                },
+            ],
+            'order' => ['required'],
+        ], [
+            'user_id.required' => 'User is required',
+            'document_type_id.required' => 'Document type is required',
+        ]);
+
+        // Manual uniqueness check within the array
+        foreach ($this->reviewers as $reviewer) {
+            if (
+                $reviewer['user_id'] == $this->user_id &&
+                $reviewer['reviewer_type'] == $this->reviewer_type &&
+                (
+                    $this->reviewer_type !== 'document' ||
+                    ($reviewer['document_type_id'] ?? null) == $this->document_type_id
+                )
+            ) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'user_id' => 'User is already added for this reviewer type' .
+                                ($this->reviewer_type === 'document' ? ' and document type.' : '.'),
+                ]);
+            }
+        }
+    }
+
+
+
+    /**
+     * Handle save
+     */
+    // public function save()
+    public function add()
+    {
+        
+
+        // $this->validate([
+        //     'user_id' => [
+        //         'required',
+                
+
+        //         Rule::unique('reviewers', 'user_id')
+        //             ->where(function ($query) {
+        //                 // Reviewer type is initial or final
+        //                 if (in_array($this->reviewer_type, ['initial', 'final'])) {
+        //                     return $query->where('reviewer_type', $this->reviewer_type);
+        //                 }
+
+        //                 // Reviewer type is document — must match both type and document_type_id
+        //                 if ($this->reviewer_type === 'document') {
+        //                     return $query
+        //                         ->where('reviewer_type', 'document')
+        //                         ->where('document_type_id', $this->document_type_id);
+        //                 }
+
+        //                 // fallback to avoid error
+        //                 return $query->whereNull('id'); // guarantees no match
+        //             }),
+
+        //     ],
+        //     'reviewer_type' => [
+        //         'required',
+        //     ],
+
+        //     'document_type_id' => [
+        //         function ($attribute, $value, $fail) {
+        //             if (!empty($this->reviewer_type) &&  $this->reviewer_type == "document") {
+        //                 if (empty($value)) {
+        //                     $fail('The document type field is required');
+        //                 }
+        //             }
+        //         },
+        //     ],
+        //     'order' => [
+        //         'required',
+        //     ],
+        //     // 'status' => [
+        //     //     'required',
+        //     // ],
+        // ], [
+        //     'user_id.required' => 'User is required',
+        //     'user_id.unique' => 'User is already added for this document type',
+        //     'document_type_id.required' => 'Document type is required',
+        // ]);
+
+
+        // dd($this->reviewers);
+
+
+
+        /*
+        if ($this->order === 'top') {
+            if ($this->reviewer_type === 'document') {
+                // Move document reviewers with the same document_type_id up by 1
+                Reviewer::where('reviewer_type', 'document')
+                    ->where('document_type_id', $this->document_type_id)
+                    ->increment('order');
+            } else {
+                // Move initial or final reviewers of the same type up by 1 (no document_type_id needed)
+                Reviewer::where('reviewer_type', $this->reviewer_type)
+                    ->whereNull('document_type_id')
+                    ->increment('order');
+            }
+        
+            // Insert the new reviewer at the top (order = 1)
+            Reviewer::create([
+                'order' => 1,
+                'status' => $this->status,
+                'user_id' => $this->user_id,
+                'reviewer_type' => $this->reviewer_type,
+                'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]);
+        } elseif ($this->order === 'end') {
+            $lastOrder = 0;
+        
+            if ($this->reviewer_type === 'document') {
+                // Count document reviewers with the same document_type_id
+                $lastOrder = Reviewer::where('reviewer_type', 'document')
+                    ->where('document_type_id', $this->document_type_id)
+                    ->count();
+            } else {
+                // Count initial or final reviewers of the same type (no document_type_id)
+                $lastOrder = Reviewer::where('reviewer_type', $this->reviewer_type)
+                    ->whereNull('document_type_id')
+                    ->count();
+            }
+        
+            // Insert the new reviewer at the last order + 1
+            Reviewer::create([
+                'order' => $lastOrder + 1,
+                'status' => $this->status,
+                'user_id' => $this->user_id,
+                'reviewer_type' => $this->reviewer_type,
+                'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]);
+        }*/
+
+
+
+        $this->validateReviewer();
+
+
+
+        $newReviewer = [
+            'order' => 1, // Temporary default
+            'status' => $this->status,
+            'user_id' => $this->user_id,
+            'reviewer_type' => $this->reviewer_type,
+            'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+            'updated_at' => now(),
+            'user' => User::find($this->user_id)?->only(['id', 'name', 'email']),
+        ];
+
+        // Initialize array if not already
+        if (!is_array($this->reviewers)) {
+            $this->reviewers = [];
+        }
+
+        // Filter reviewers of the same type for order adjustment
+        $filteredReviewers = collect($this->reviewers)->filter(function ($reviewer) {
+            return $reviewer['reviewer_type'] === $this->reviewer_type &&
+                ($this->reviewer_type === 'document'
+                    ? $reviewer['document_type_id'] == $this->document_type_id
+                    : is_null($reviewer['document_type_id']));
+        });
+
+        if ($this->order === 'top') {
+            // Increment order for matching reviewers
+            $this->reviewers = collect($this->reviewers)->map(function ($rev) {
+                if (
+                    $rev['reviewer_type'] === $this->reviewer_type &&
+                    ($this->reviewer_type === 'document'
+                        ? $rev['document_type_id'] == $this->document_type_id
+                        : is_null($rev['document_type_id']))
+                ) {
+                    $rev['order'] += 1;
+                }
+                return $rev;
+            })->toArray();
+
+            $newReviewer['order'] = 1;
+            array_unshift($this->reviewers, $newReviewer); // Add to start of array
+        } elseif ($this->order === 'end') {
+            $lastOrder = $filteredReviewers->max('order') ?? 0;
+            $newReviewer['order'] = $lastOrder + 1;
+
+            $this->reviewers[] = $newReviewer; // Add to end of array
+        }
+
+        // Optional: sort the reviewers array by `order` again
+        $this->reviewers = collect($this->reviewers)->sortBy('order')->values()->toArray();
+
+
+         
+ 
+     
+        // Alert::success('Success','Reviewer added successfully');
+        // return redirect()->route('reviewer.index',[
+        //     'document_type_id' => $this->document_type_id,
+        //     'reviewer_type' => $this->reviewer_type
+        // ]);
+    }
+
+
+
+
+
+
+
+    public function save()
+    {
+        
+        $document_type_id = $this->document_type_id;
+        $reviewer_type = $this->reviewer_type;
+
+
+        //delete all existing reviewers 
+        Reviewer::where('document_type_id', $document_type_id)
+            ->where('reviewer_type', $reviewer_type)->delete();
+
+
+        // Filter and sort the reviewers array
+        $filtered = collect($this->reviewers)
+            ->where('reviewer_type', $reviewer_type)
+            ->when($reviewer_type === 'document', function ($collection) use ($document_type_id) {
+                return $collection->where('document_type_id', $document_type_id);
+            }, function ($collection) {
+                return $collection->filter(function ($item) {
+                    return empty($item['document_type_id']);
+                });
+            })
+            ->sortBy('order')
+            ->values(); // Reset index
+
+        foreach ($filtered as $i => $reviewer) {
+            $newOrder = $i + 1;
+
+            // Try to find an existing reviewer
+            $query = Reviewer::where('user_id', $reviewer['user_id'])
+                ->where('reviewer_type', $reviewer_type);
+
+            if ($reviewer_type === 'document') {
+                $query->where('document_type_id', $document_type_id);
+            } else {
+                $query->whereNull('document_type_id');
+            }
+
+            $existingReviewer = $query->first();
+
+            if ($existingReviewer) {
+                // Update the order
+                $existingReviewer->order = $newOrder;
+                $existingReviewer->save();
+            } else {
+                // Create a new record
+                Reviewer::create([
+                    'user_id' => $reviewer['user_id'],
+                    'reviewer_type' => $reviewer_type,
+                    'document_type_id' => $reviewer_type === 'document' ? $document_type_id : null,
+                    'order' => $newOrder,
+                    'status' => $reviewer['status'] ?? 1, // Default to 1 if not set,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
+                ]);
+            }
+        }
+
+
+        $this->dispatch('formSaved');
+
+
+        Alert::success('Success', 'Reviewer list saved successfully');
+        return redirect()->route('reviewer.index', [
+            'document_type_id' => $document_type_id,
+            'reviewer_type' => $reviewer_type,
+        ]);
     }
 
 
@@ -544,12 +1109,22 @@ class ReviewerList extends Component
 
         }
 
+
+        // Filter by reviewer type
+        if (!empty($this->reviewer_type)) {
+            $query = $query->where(function ($q) {
+                $q->where('reviewer_type', $this->reviewer_type);
+            });
+        }
+
+        // dd($this->reviewer_type);
+
         // Filter by document_type_id or show default reviewers (where null)
         if (!empty($this->document_type_id)) {
             $query = $query->where(function ($q) {
                 $q->where('document_type_id', $this->document_type_id);
             });
-        }  
+        }
 
         /*
             // Find the role
@@ -641,8 +1216,13 @@ class ReviewerList extends Component
 
 
 
-        return $query->paginate($this->record_count);
+        // return $query->paginate($this->record_count);
+        // return $query->paginate($this->record_count)->items(); // Returns only the array of data
 
+        return $query->get()->toArray();
+
+
+        
 
 
     }
@@ -770,7 +1350,7 @@ class ReviewerList extends Component
 
 
         // $reviewers = $reviewers->paginate($this->record_count);
- 
+            // dd($this->reviewers);
 
         return view('livewire.admin.reviewer.reviewer-list',[
             'reviewers' => $this->reviewers ,

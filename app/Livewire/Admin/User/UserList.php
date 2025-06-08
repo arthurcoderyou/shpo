@@ -101,6 +101,15 @@ class UserList extends Component
 
     public function delete($id){
         $user = User::find($id);
+
+        if ($this->hasConnectedRecords($user)) { 
+
+            Alert::error('Error', 'User cannot be deleted because they are connected to existing records.');
+            return redirect()->route('user.index');
+        }
+
+        dd("All Goods");
+
         // Fetch all projects created by the selected users
         $projects = Project::where('created_by', $user->id)->get();
     
@@ -116,6 +125,19 @@ class UserList extends Component
             $project->delete();
         }
 
+
+
+        // for projects that the user is currently part with 
+        
+
+
+
+
+
+
+
+
+
         $user->delete();    
         $user->notifications()->delete();
 
@@ -123,6 +145,53 @@ class UserList extends Component
         return redirect()->route('user.index');
 
     }
+
+
+
+    private function hasConnectedRecords(User $user): bool
+    {
+        // Check if the user has created any projects
+        $projects = Project::where('created_by', $user->id);
+
+        // If the user has any related projects, we check if any of those have connected child records
+        foreach ($projects->get() as $project) {
+            if (
+                $project->project_subscribers()->exists() ||
+                $project->project_documents()->exists() ||
+                $project->attachments()->exists() ||
+                $project->project_reviewers()->exists() ||
+                $project->project_reviews()->exists()
+            ) {
+                return true;
+            }
+        }
+
+        // If the user is a saved document reviewer
+        if (count($user->document_reviewers) > 0 ) {
+            return true;
+        }
+
+
+        // If the user is a saved project document reviewer
+        if (count($user->reviewed_projects) > 0 ) {
+            return true;
+        }
+
+
+
+        // If the user has at least one project, that's a connection too
+        if ($projects->exists()) {
+            return true;
+        }
+
+        // Check notifications (optional, based on your usage)
+        if ($user->notifications()->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
 
 
 

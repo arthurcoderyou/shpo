@@ -44,11 +44,26 @@ class ReviewerCreated implements ShouldBroadcastNow
 
     public function broadcastWith(){
          
+
+        $reviewer = $this->reviewer;
+
+        if(!empty($reviewer->document_type)){
+            $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
+        }else{
+            if($reviewer->reviewer_type == "initial"){
+                $message = "New Reviewer '".$reviewer->user->name."' added to the initial reviewers'";
+            }elseif($reviewer->reviewer_type == "final"){
+                $message = "New Reviewer '".$reviewer->user->name."' added to the final reviewers '";
+            }
+ 
+        }
+ 
         return [
-            'message' => "New Reviewer '".$this->reviewer->name."' added to the document type '".$this->reviewer->document_type->name."'",
-                // ? 'Time settings updated by ' . $this->project_timer->updator->name . ' at ' . $this->project_timer->updated_at->toDateTimeString()
-                // : 'Time settings updated by ' . $user->name . ' at ' . now()->toDateTimeString(),
-            'reviewer_url' => route('reviewer.index'),
+            'message' => $message, 
+            'reviewer_url' => route('reviewer.index',[
+                'document_type_id' => $reviewer->document_type_id,
+                'reviewer_type' => $reviewer->reviewer_type,
+            ]),
         ];
     }
 

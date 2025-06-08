@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $user = User::where('id',Auth::user()->id)->first();
         
         // For new database
-        /**  
+         
         if(Auth::user()->roles->isEmpty()){
             // dd("true");
             // notify the admin about the new user that had registered on the website
@@ -64,10 +64,11 @@ class DashboardController extends Controller
 
  
 
-        }*/
+        } 
 
 
         // for old database
+        /*
         if (Auth::user()->roles->isEmpty()) {
             // Get all users with the "Admin" role
             $admin_users = User::role('Admin')->get();
@@ -90,6 +91,7 @@ class DashboardController extends Controller
                 }
             }
         }
+            */
 
         
             

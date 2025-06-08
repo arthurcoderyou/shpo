@@ -62,13 +62,13 @@
                             Edit
                         </button>
 
-                        <button
+                        {{-- <button
                             class="text-xs text-red-600 hover:underline"
                              onclick="confirm('Are you sure you want to delete this message? Deleting will also delete the replies as well') || event.stopImmediatePropagation()"
                             wire:click.prevent="delete_discussion({{ $discussion->id }})"
                         >
                             Delete
-                        </button>
+                        </button> --}}
                     </div>
                 @endif
                 

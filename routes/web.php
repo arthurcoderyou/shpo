@@ -1,19 +1,21 @@
 <?php
 
-use App\Http\Controllers\DiscussionController;
-use App\Http\Controllers\ForumController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ForumController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReviewerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\DiscussionController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DocumentTypeController;
 use App\Http\Controllers\ProjectTimerController;
+use App\Http\Controllers\ProjectDocumentController;
 use App\Http\Controllers\ProjectReviewerController;
 use App\Http\Controllers\TwoFactorVerificationController;
 
@@ -120,6 +122,12 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
             
             # ./ project
 
+            # project document
+                Route::get('project/{project}/project_document/{project_document}',[ProjectDocumentController::class, 'index'])
+                    // ->middleware(['role.permission:role:DSI God Admin,permission:project update list view']) 
+                    ->name('project.project_document'); // for users to see projects pending updates and resubmission
+            # ./ project document 
+ 
             # reviewer
                 Route::get('project/{project}/project_reviewer/',[ProjectReviewerController::class,'index'])
                     ->middleware(['role.permission:role:DSI God Admin,permission:reviewer list view']) 
@@ -195,8 +203,11 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
             # ./ map
 
 
+            # ftp
 
-
+                Route::get('/ftp-download/{id}', [AttachmentController::class, 'ftpDownload'])->name('ftp.download');
+            # ./ ftp
+        
         }); //2fa middleware 
 
     });

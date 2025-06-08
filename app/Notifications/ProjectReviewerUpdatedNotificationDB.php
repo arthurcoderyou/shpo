@@ -5,11 +5,12 @@ namespace App\Notifications;
 use App\Models\User;
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ProjectReviewerUpdatedNotificationDB extends Notification
+class ProjectReviewerUpdatedNotificationDB extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 

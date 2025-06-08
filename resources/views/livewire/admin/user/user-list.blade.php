@@ -27,11 +27,11 @@
                 </div>
 
                 <div>
-                <div class="inline-flex gap-x-2">
+                <div class="inline-flex gap-x-2 text-nowrap">
 
 
                     <input type="text" wire:model.live="search"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
+                        class=" py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
                         placeholder="Search">
 
                     <div class="inline-flex items-center gap-x-2">
@@ -74,7 +74,7 @@
                         </select>
                     </div>
 
-                    @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('user delete'))
+                    {{-- @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('user delete'))
                         <button
                             onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                             wire:click.prevent="deleteSelected"
@@ -83,7 +83,7 @@
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             Delete ({{ $count }})
                         </button>
-                    @endif
+                    @endif --}}
 
                     @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('user create'))
                     <a href="{{ route('user.create') }}"
@@ -100,7 +100,7 @@
             <table class="min-w-full divide-y divide-gray-200 ">
                 <thead class="bg-gray-50 ">
                 <tr>
-                    <th scope="col" class="px-2 py-3 text-start">
+                    {{-- <th scope="col" class="px-2 py-3 text-start">
                         <label for="hs-at-with-checkboxes-main" class="flex">
                             <input
                                 type="checkbox"
@@ -111,7 +111,7 @@
                                 id="hs-at-with-checkboxes-main">
                             <span class="sr-only">Checkbox</span>
                         </label>
-                    </th>
+                    </th> --}}
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
@@ -161,7 +161,7 @@
                     @if(!empty($users) && count($users) > 0)
                         @foreach ($users as $user)
                             <tr>
-                                <td class="w-4 whitespace-nowrap">
+                                {{-- <td class="w-4 whitespace-nowrap">
                                     <div class="px-2 py-2">
                                         <label for="user_{{ $user->id }}" class="flex">
                                             <input type="checkbox"
@@ -174,7 +174,7 @@
                                             <span class="sr-only">Checkbox</span>
                                         </label>
                                     </div>
-                                </td>
+                                </td> --}}
 
 
                                 <td class="size-auto whitespace-nowrap">
@@ -254,15 +254,15 @@
                                         @endif
 
                                         @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('user delete'))
-                                        <!-- delete -->
-                                        {{-- @if( Auth::user()->can('user delete')  ||  Auth::user()->hasRole('DSI God Admin')) --}}
-                                        <button
-                                        onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
-                                        wire:click.prevent="delete({{ $user->id }})"
-                                        type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"/></svg>
-                                        </button>
-                                        {{-- @endif --}}
+                                            <!-- delete -->
+                                            {{-- @if( Auth::user()->can('user delete')  ||  Auth::user()->hasRole('DSI God Admin')) --}}
+                                            <button
+                                            onclick="confirm('Are you sure, you want to delete this record? This cannot be undone') || event.stopImmediatePropagation()"
+                                            wire:click.prevent="delete({{ $user->id }})"
+                                            type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"/></svg>
+                                            </button>
+                                            {{-- @endif --}}
                                         @endif
 
 

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\ProjectDiscussion;
 
 use App\Models\Project;
+use App\Models\ProjectDocument;
 use Livewire\Component;
 use App\Models\ProjectDiscussion;
 
@@ -10,12 +11,15 @@ class ProjectDiscussionList extends Component
 {
 
     public Project $project;
+    public ?ProjectDocument $project_document;
 
     // public bool $onlyPrivate = false;
 
     public string $discussionVisibility = 'all'; // Options: all, private, public
 
     // public $discussions;
+
+    public $record_count = 10;
 
     protected $listeners = [
         'projectDiscussionAdded' => '$refresh',
@@ -56,6 +60,7 @@ class ProjectDiscussionList extends Component
                 'parent_id' => $this->replyToId,
                 'body' => $this->replyBody,
                 'is_private' => $parent->is_private, // inherit privacy from parent
+                'project_document_id' => $parent->project_document_id, // inherit project document id
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
             ]);
@@ -162,27 +167,40 @@ class ProjectDiscussionList extends Component
     }
 
 
-    // public function mount(Project $project)
-    // {
-    //     $this->project = $project;
+    public function mount(Project $project , ProjectDocument $project_document = null)
+    {
+        $this->project = $project;
+        $this->project_document = $project_document;
 
-    //     // $this->discussions = ProjectDiscussion::with(['creator', 'replies.creator'])
-    //     $this->discussions =  ProjectDiscussion::with(['creator', 'parent.creator', 'replies.creator', 'replies.parent.creator'])
-    //         ->where('project_id', $this->project->id)
-    //         ->whereNull('parent_id')
-    //         ->when(!auth()->user()->hasRole(['DSI God Admin','Admin', 'Reviewer']), function ($query) {
-    //             $query->where('is_private', false);
-    //         })
-    //         ->latest()
-    //         ->get();
-    // }
+            // dd($projec)
+
+        // // $this->discussions = ProjectDiscussion::with(['creator', 'replies.creator'])
+        // $this->discussions =  ProjectDiscussion::with(['creator', 'parent.creator', 'replies.creator', 'replies.parent.creator'])
+        //     ->where('project_id', $this->project->id)
+        //     ->whereNull('parent_id')
+        //     ->when(!auth()->user()->hasRole(['DSI God Admin','Admin', 'Reviewer']), function ($query) {
+        //         $query->where('is_private', false);
+        //     })
+        //     ->latest()
+        //     ->get();
+    }
 
     public function getDiscussionsProperty()
     {
  
 
-        return ProjectDiscussion::with(['creator', 'parent.creator', 'replies.creator', 'replies.parent.creator'])
-            ->where('project_id', $this->project->id)
+        $query = ProjectDiscussion::with([
+            'creator',
+            'parent.creator',
+            'replies.creator',
+            'replies.parent.creator'
+        ]);
+
+        if(!empty($this->project_document->id) && $this->project_document->id !== null){ 
+            $query = $query->where('project_document_id','=',$this->project_document->id);
+        }
+
+        $query =    $query->where('project_id', $this->project->id)
             ->whereNull('parent_id')
             ->when(!auth()->user()->hasRole(['DSI God Admin', 'Admin', 'Reviewer']), function ($query) {
                 $query->where('is_private', false);
@@ -193,8 +211,9 @@ class ProjectDiscussionList extends Component
             ->when($this->discussionVisibility === 'public', function ($query) {
                 $query->where('is_private', false);
             })
-            ->latest()
-            ->get();
+            ->latest();
+
+        return $query->paginate($this->record_count);
     }
 
 

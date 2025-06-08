@@ -33,7 +33,7 @@
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
  
 
-
+        
 
         {{-- <!-- The callback parameter is required, so we use console.debug as a noop -->
         <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&callback=console.debug&libraries=maps,marker&v=beta">
@@ -68,6 +68,10 @@
         <!-- Discussion Listeners -->
         <script type="module">
 
+            const pageProjectId = document.getElementById('project-wrapper')?.dataset.projectId;
+
+
+
             function showNewDiscussionAlert(message, link, linkText) {
                 const alertElement = document.getElementById('discussion-alert');
                 const messageElement = alertElement.querySelector('h3');
@@ -93,87 +97,103 @@
                 myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
             };
         
-           
-            window.Echo.private("project.discussions.global")
-                .listen('.create', (e) => {
+            /** project.discussions.global */
+                window.Echo.private("project.discussions.global")
+                    .listen('.create', (e) => {
 
-                    console.log(e.message);
+                        console.log(e.message);
 
-                    Livewire.dispatch('projectDiscussionAdded');
-
-
-                    const projectId = e.project_id;
-                    const is_private = e.is_private;
-
-                    
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                }).listen('.edited', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('projectDiscussionEdited');
+                        Livewire.dispatch('projectDiscussionAdded');
 
 
-                    const projectId = e.project_id;
-                    const is_private = e.is_private;
+                        const projectId = e.project_id;
+                        const is_private = e.is_private;
+
+                        
+                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
+
+                        if (shouldNotify) {
+                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                        }
+                    }).listen('.edited', (e) => {
+
+                        console.log(e.message);
+
+                        const projectId = e.project_id;
+
+                        // Prevent running logic if on a project-specific page with a mismatched projectId
+                        if (pageProjectId && projectId != pageProjectId) return;
 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
-                    const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
+                        Livewire.dispatch('projectDiscussionEdited');
 
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                }).listen('.deleted', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('projectDiscussionDeleted');
+ 
+                        const is_private = e.is_private;
 
 
-                    const projectId = e.project_id;
-                    const is_private = e.is_private;
+                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
+
+                        if (shouldNotify) {
+                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                        }
+                    }).listen('.deleted', (e) => {
+
+                        console.log(e.message);
+                        const projectId = e.project_id;
+
+                        // Prevent running logic if on a project-specific page with a mismatched projectId
+                        if (pageProjectId && projectId != pageProjectId) return;
 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+                        Livewire.dispatch('projectDiscussionDeleted');
 
-                    const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
+ 
+                        const is_private = e.is_private;
 
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                }).listen('.reply', (e) => {
 
-                    console.log(e.message);
+                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
-                    Livewire.dispatch('projectDiscussionReplied');
+                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
 
-                    const projectId = e.project_id;
-                    const is_private = e.is_private;
+                        if (shouldNotify) {
+                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                        }
+                    }).listen('.reply', (e) => {
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+                        console.log(e.message);
 
-                    const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
+                        const projectId = e.project_id;
 
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                });
+                        // Prevent running logic if on a project-specific page with a mismatched projectId
+                        if (pageProjectId && projectId != pageProjectId) return;
+
+
+                        Livewire.dispatch('projectDiscussionReplied');
+ 
+                        const is_private = e.is_private;
+
+                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
+
+                        if (shouldNotify) {
+                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                        }
+                    });
+            /** ./ project.discussions.global */
 
             window.Echo.private("project.timer")
                 .listen('.updated', (e) => {
@@ -285,6 +305,342 @@
                     }
                 });
 
+            window.Echo.private("project")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+
+                    Livewire.dispatch('projectCreated');
+
+   
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectUpdated');
+
+ 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectDeleted');
+
+ 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "Viw eProjects");
+                    }
+                }).listen('.submitted', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectSubmitted');
+
+ 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isReviewer = currentUser.roles.includes('Reviewer');
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Projects");
+                    }
+                }).listen('.queued', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectQueued');
+
+
+                    // const projectId = e.project_id; 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Projects");
+                    }
+                });
+
+            window.Echo.private("project_document")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectDocumentCreated');
+
+   
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project Document");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectDocumentUpdated');
+
+
+                    // const projectId = e.project_id; 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project Document");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectDocumentDeleted');
+
+
+                    // const projectId = e.project_id; 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
+                    }
+                });
+
+
+            window.Echo.private("project_reviewer")
+                .listen('.created', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectReviewerCreated');
+
+   
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isReviewer = currentUser.roles.includes('Reviewer');
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                    }
+                }).listen('.updated', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectReviewerUpdated');
+
+ 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isReviewer = currentUser.roles.includes('Reviewer');
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                    }
+                }).listen('.deleted', (e) => {
+
+                    console.log(e.message);
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+
+                    Livewire.dispatch('projectReviewerDeleted');
+
+ 
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isReviewer = currentUser.roles.includes('Reviewer');
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                    }
+                });
+
+
+             window.Echo.private("review")
+                .listen('.created', (e) => {
+
+                    console.log(e.message); 
+
+                    const projectId = e.project_id;
+
+                    // Prevent running logic if on a project-specific page with a mismatched projectId
+                    if (pageProjectId && projectId != pageProjectId) return;
+
+                    Livewire.dispatch('projectReviewCreated');
+
+   
+
+                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                    const isReviewer = currentUser.roles.includes('Reviewer');
+                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                    }
+                })
+                // .listen('.updated', (e) => {
+
+                //     console.log(e.message);
+
+                //     Livewire.dispatch('projectReviewerUpdated');
+
+
+                //     const projectId = e.project_id; 
+
+                //     const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                //     const isReviewer = currentUser.roles.includes('Reviewer');
+                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+                //     if (shouldNotify) {
+                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                //     }
+                // }).listen('.deleted', (e) => {
+
+                //     console.log(e.message);
+
+                //     Livewire.dispatch('projectReviewerDeleted');
+
+
+                //     const projectId = e.project_id; 
+
+                //     const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                //     const isReviewer = currentUser.roles.includes('Reviewer');
+                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                //     if (shouldNotify) {
+                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                //     }
+                // })
+                ;
+
             
         </script>
         <!-- ./ Discussion Listeners -->
@@ -295,7 +651,9 @@
         <!-- Inside the <head> -->
         @livewireStyles
     </head>
-    <body class="font-sans antialiased bg-white">
+    <body  class="font-sans antialiased bg-white " 
+     @if(isset($project)) data-project-id="{{ $project->id }}" @endif 
+        >
  
 
 
@@ -435,17 +793,61 @@
             });
 
 
-             
+            
 
 
         </script>
+
+
+
 
         <!-- Before the closing </body> tag -->
         @livewireScripts
 
 
-         <!-- Push custom scripts from views -->
-         @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
+        <!-- Push custom scripts from views -->
+        @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
+
+ 
+        <script>
+            let inactivityTime = function () {
+                let inactivityTimeout, alertTimeout;
+                const inactivityLimit = 180000; // 3 minutes
+                const warningTime = 30000; // Show alert 30 seconds before reload
+
+                const startTimers = () => {
+                    clearTimeout(inactivityTimeout);
+                    clearTimeout(alertTimeout);
+
+                    alertTimeout = setTimeout(() => {
+                        const confirmReload = confirm(
+                            "You've been inactive for a while.\nWould you like to reload the page to see the latest data?"
+                        );
+                        if (confirmReload) {
+                            location.reload();
+                        } else {
+                            // Restart the inactivity timer if user cancels reload
+                            startTimers();
+                        }
+                    }, inactivityLimit - warningTime);
+
+                    inactivityTimeout = setTimeout(() => {
+                        location.reload();
+                    }, inactivityLimit);
+                };
+
+                // Reset timers on user interaction
+                ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'].forEach(evt =>
+                    document.addEventListener(evt, startTimers)
+                );
+
+                startTimers(); // Start timers on load
+            };
+
+            window.onload = inactivityTime;
+        </script>
+
+
 
 
     </body>

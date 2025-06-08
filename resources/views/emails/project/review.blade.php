@@ -49,6 +49,7 @@ You have been assigned as a reviewer for the project **{{ $project->name }}**.
     @default
         <span style="color: black;"><strong>{{ $project->status_text }}</strong></span>
 @endswitch
+- **Document:** {{ $reviewer->project_document->document_type->name ?? "" }} 
 
 - **Submitted by:** {{ $project->creator->name }}
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -46,11 +47,33 @@ class ProjectTimer extends Model
         parent::boot();
 
         static::created(function ($projectTimer) {
-            event(new \App\Events\ProjectTimerUpdated($projectTimer));
+            // event(new \App\Events\ProjectTimerUpdated($projectTimer));
+
+            try {
+                event(new \App\Events\ProjectTimerUpdated($projectTimer));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [
+                    'projectTimer_id' => $projectTimer->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
         });
     
         static::updated(function ($projectTimer) {
-            event(new \App\Events\ProjectTimerUpdated($projectTimer));
+            // event(new \App\Events\ProjectTimerUpdated($projectTimer));
+
+            try {
+                event(new \App\Events\ProjectTimerUpdated($projectTimer));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [
+                    'projectTimer_id' => $projectTimer->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+            
         });
     }
 

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Events\ProjectDocumentDeleted;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectDiscussion extends Model
 {
+    use SoftDeletes;
     /*
         Schema::create('project_discussions', function (Blueprint $table) {
             $table->id();
@@ -30,6 +33,7 @@ class ProjectDiscussion extends Model
         'is_private',
         'created_by',
         'updated_by',
+        'project_document_id',
     ];
 
     public function project()
@@ -41,6 +45,12 @@ class ProjectDiscussion extends Model
     {
         return $this->belongsTo(User::class,'created_by');
     }
+
+    public function project_document()
+    {
+        return $this->belongsTo(ProjectDocument::class,'project_document_id');
+    }
+
 
     public function updater()
     {
@@ -56,6 +66,10 @@ class ProjectDiscussion extends Model
     {
         return $this->hasMany(ProjectDiscussion::class, 'parent_id')->with('replies');
     }
+
+    
+
+
 
     public function scopeTopLevel($query)
     {

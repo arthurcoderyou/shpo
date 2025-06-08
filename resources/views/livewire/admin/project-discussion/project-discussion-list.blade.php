@@ -34,6 +34,34 @@
                 @foreach ($discussions as $discussion)
                     <x-project.discussion-thread :discussion="$discussion" />
                 @endforeach
+
+                <!-- Footer -->
+                <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 ">
+                    {{ $discussions->links() }}
+
+                    <div class="inline-flex items-center gap-x-2">
+                        <p class="text-sm text-gray-600 ">
+                        Showing:
+                        </p>
+                        <div class="max-w-sm space-y-3">
+                        <select wire:model.live="record_count" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
+                            <option>10</option>
+                            <option>25</option>
+                            <option>50</option>
+                            <option>100</option>
+                            <option>200</option>
+                        </select>
+                        </div>
+                        <p class="text-sm text-gray-600 ">
+                            {{ count($discussions) > 0 ? 'of '.$discussions->total()  : '' }}
+                        </p>
+                    </div>
+
+
+                </div>
+                <!-- End Footer -->
+
+
             </div>
         @else
             <div class="text-center text-gray-500 py-12">

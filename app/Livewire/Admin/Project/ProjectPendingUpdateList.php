@@ -2,23 +2,24 @@
 
 namespace App\Livewire\Admin\Project;
 
-use App\Models\ActivityLog;
-use App\Models\Project;
-use App\Models\ProjectReviewer;
-use App\Models\Reviewer;
 use App\Models\User;
-use App\Notifications\ProjectReviewFollowupNotification;
+use App\Models\Project;
+use Livewire\Component;
+use App\Models\Reviewer;
+use App\Models\ActivityLog;
+use Livewire\WithPagination;
+use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
+use App\Models\ProjectReviewer;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
+
+use Illuminate\Support\Facades\Storage;
+use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Notification; 
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ReviewerReviewNotification;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification; 
-use Illuminate\Support\Facades\Storage;
-
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use Livewire\WithPagination;
-use RealRashid\SweetAlert\Facades\Alert;
-use Spatie\Permission\Models\Role;
+use App\Notifications\ProjectReviewFollowupNotification;
 
 class ProjectPendingUpdateList extends Component
 {
@@ -111,82 +112,11 @@ class ProjectPendingUpdateList extends Component
 
 
     public function submit_project($project_id){
-        
-        $project = Project::find($project_id);
-        
 
-       
-
-
-        // if the project is a draft, create the default values
-        if($project->status == "draft"){
-                // Fetch all reviewers in order
-                $reviewers = Reviewer::orderBy('order')->get();
-
-                foreach ($reviewers as $reviewer) {
-                    $projectReviewer = ProjectReviewer::create([
-                        'order' => $reviewer->order,
-                        'review_status' => 'pending',
-                        'project_id' => $project->id,
-                        'user_id' => $reviewer->user_id,
-                        'created_by' => auth()->id(),
-                        'updated_by' => auth()->id(),
-                    ]);
-
-                    
-                }
-                
-                // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-                $reviewer = ProjectReviewer::where('project_id', $project->id)
-                    ->where('review_status', 'pending') 
-                    ->orderBy('order', 'asc')
-                    ->first();
-
-
-                // update the first reviewer as the current reviewer
-                $reviewer->status = true;
-                $reviewer->save();
-
-
-                // Send notification email to reviewer
-                $user = User::find( $reviewer->user_id);
-                if ($user) {
-                    Notification::send($user, new ProjectReviewNotification($project, $reviewer));
-                }
-
-
-
-        }else{ // if not, get the current reviewer
-
-            $reviewer = $project->getCurrentReviewer();
-            $reviewer->review_status = "pending";
-            $reviewer->save();
-
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
-                Notification::send($user, new ProjectReviewFollowupNotification($project, $reviewer));
-            }
-        }
-        
-        
-        $project->status = "submitted";
-        $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-        $project->updated_at = now();
-        $project->save();
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" submitted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Project submitted successfully');
-        return redirect()->route('project.index');
-
+        ProjectHelper::submit_project($project_id);
 
     }
+
 
     
 

@@ -24,6 +24,7 @@ class ReviewerCreate extends Component
     public $users;
 
     public $document_types;
+    public $reviewer_type = "document";
 
     public $document_type_id;
 
@@ -41,48 +42,36 @@ class ReviewerCreate extends Component
 
 
         // check the first document type
-        $this->document_type_id = DocumentType::first()->id ?? null;
+            // $this->document_type_id = DocumentType::first()->id ?? null;
+            
+            // document type adjustment
+            $this->document_types = DocumentType::orderBy('order')->get();
+                
+
+            // check the first document type
+            $this->document_type_id = DocumentType::first()->id ?? null;
+            
+            // check the get request if it has one 
+            $this->document_type_id = request('document_type_id') ?? $this->document_type_id;
+        // ./  document type adjustment
         
-        // check the get request if it has one 
-        $this->document_type_id = request('document_type_id') ?? $this->document_type_id;
+        // reviewer_type adjustment
+            $this->reviewer_type = "document";
+            
+            // check the get request if it has reviewer_type 
+            $this->reviewer_type = request('reviewer_type') ?? $this->reviewer_type;
 
 
+            if($this->reviewer_type != "document"){
+                $this->document_type_id = null;
+            }
+            
+        // ./ reviewer_type adjustment
 
+ 
 
     }
-
-    // public function updated($fields)
-    // {
-    //     $reviewer = Reviewer::where('user_id', $this->user_id)->first();
-
-    //     $this->validateOnly($fields, [
-    //         'user_id' => [
-    //             'required',
-    //             function ($attribute, $value, $fail) use ($reviewer) {
-    //                 if ($reviewer) {
-    //                     $exists = DocumentTypeReviewer::where('document_type_id', $this->document_type_id)
-    //                         ->where('reviewer_id', $reviewer->id)
-    //                         ->exists();
-
-    //                     if ($exists) {
-    //                         $fail('User is already assigned as a reviewer for this document type.');
-    //                     }
-    //                 }
-    //             },
-    //         ],
-    //         'document_type_id' => 'required',
-    //         'order' => [
-    //             'required',
-    //         ],
-    //         'status' => [
-    //             'required',
-    //         ],
-    //     ], [
-    //         'user_id.required' => 'User is required',
-    //         'document_type_id.required' => 'Document type is required',
-    //     ]);
-    // }
-
+ 
 
     public function updated($fields)
     {
@@ -91,12 +80,39 @@ class ReviewerCreate extends Component
                 'required',
                 Rule::unique('reviewers', 'user_id')
                     ->where(function ($query) {
-                        return $query->where('document_type_id', $this->document_type_id);
-                    }),
+                    // Reviewer type is initial or final
+                    if (in_array($this->reviewer_type, ['initial', 'final'])) {
+                        return $query->where('reviewer_type', $this->reviewer_type);
+                    }
+
+                    // Reviewer type is document — must match both type and document_type_id
+                    if ($this->reviewer_type === 'document') {
+                        return $query
+                            ->where('reviewer_type', 'document')
+                            ->where('document_type_id', $this->document_type_id);
+                    }
+
+                    // fallback to avoid error
+                    return $query->whereNull('id'); // guarantees no match
+                }),
+
             ],
-            'document_type_id' => [
+             
+            'reviewer_type' => [
                 'required',
             ],
+
+            'document_type_id' => [
+                function ($attribute, $value, $fail) {
+                    if (!empty($this->reviewer_type) &&  $this->reviewer_type == "document") {
+                        if (empty($value)) {
+                            $fail('The document type field is required');
+                        }
+                    }
+                },
+            ],
+
+
             'order' => [
                 'required',
             ],
@@ -108,11 +124,27 @@ class ReviewerCreate extends Component
             'user_id.unique' => 'User is already added for this document type',
             'document_type_id.required' => 'Document type is required',
         ]);
+
+
+
+
+
+
     }
 
 
 
+    public function updatedReviewerType(){
+        
+        if ($this->reviewer_type !== 'document') {
+            $this->document_type_id = null;
+        }
 
+        if ($this->reviewer_type == 'document') { 
+            $this->document_type_id = DocumentType::first()->id ?? null;
+        }
+      
+    }   
 
     /**
      * Handle save
@@ -124,13 +156,39 @@ class ReviewerCreate extends Component
         $this->validate([
             'user_id' => [
                 'required',
+                
+
                 Rule::unique('reviewers', 'user_id')
                     ->where(function ($query) {
-                        return $query->where('document_type_id', $this->document_type_id);
+                        // Reviewer type is initial or final
+                        if (in_array($this->reviewer_type, ['initial', 'final'])) {
+                            return $query->where('reviewer_type', $this->reviewer_type);
+                        }
+
+                        // Reviewer type is document — must match both type and document_type_id
+                        if ($this->reviewer_type === 'document') {
+                            return $query
+                                ->where('reviewer_type', 'document')
+                                ->where('document_type_id', $this->document_type_id);
+                        }
+
+                        // fallback to avoid error
+                        return $query->whereNull('id'); // guarantees no match
                     }),
+
             ],
-            'document_type_id' => [
+            'reviewer_type' => [
                 'required',
+            ],
+
+            'document_type_id' => [
+                function ($attribute, $value, $fail) {
+                    if (!empty($this->reviewer_type) &&  $this->reviewer_type == "document") {
+                        if (empty($value)) {
+                            $fail('The document type field is required');
+                        }
+                    }
+                },
             ],
             'order' => [
                 'required',
@@ -144,141 +202,68 @@ class ReviewerCreate extends Component
             'document_type_id.required' => 'Document type is required',
         ]);
 
-
-
          
         if ($this->order === 'top') {
-            // Move all existing reviewers up by 1
-            Reviewer::where('document_type_id',$this->document_type_id)->increment('order');
-
+            if ($this->reviewer_type === 'document') {
+                // Move document reviewers with the same document_type_id up by 1
+                Reviewer::where('reviewer_type', 'document')
+                    ->where('document_type_id', $this->document_type_id)
+                    ->increment('order');
+            } else {
+                // Move initial or final reviewers of the same type up by 1 (no document_type_id needed)
+                Reviewer::where('reviewer_type', $this->reviewer_type)
+                    ->whereNull('document_type_id')
+                    ->increment('order');
+            }
+        
             // Insert the new reviewer at the top (order = 1)
             Reviewer::create([
                 'order' => 1,
                 'status' => $this->status,
-                'document_type_id' => $this->document_type_id,
                 'user_id' => $this->user_id,
+                'reviewer_type' => $this->reviewer_type,
+                'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
             ]);
         } elseif ($this->order === 'end') {
-            // Get the last order number
             $lastOrder = 0;
-            $lastOrder = Reviewer::where('document_type_id',$this->document_type_id)->count() ?? 0;
-
+        
+            if ($this->reviewer_type === 'document') {
+                // Count document reviewers with the same document_type_id
+                $lastOrder = Reviewer::where('reviewer_type', 'document')
+                    ->where('document_type_id', $this->document_type_id)
+                    ->count();
+            } else {
+                // Count initial or final reviewers of the same type (no document_type_id)
+                $lastOrder = Reviewer::where('reviewer_type', $this->reviewer_type)
+                    ->whereNull('document_type_id')
+                    ->count();
+            }
+        
             // Insert the new reviewer at the last order + 1
             Reviewer::create([
                 'order' => $lastOrder + 1,
                 'status' => $this->status,
                 'user_id' => $this->user_id,
-                'document_type_id' => $this->document_type_id,
+                'reviewer_type' => $this->reviewer_type,
+                'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
             ]);
-        } 
+        }
 
-        // //save
-        // Reviewer::create([
-        //     'user_id' => $this->user_id,
-        //     'order' => $this->order,
-        //     'status' => $this->status,
-        // ]);
-
-        $user = User::find($this->user_id);
-
-        // ActivityLog::create([
-        //     'log_action' => "Reviewer \"".$user->name."\" added ",
-        //     'log_username' => Auth::user()->name,
-        //     'created_by' => Auth::user()->id,
-        // ]);
-
+         
+ 
+     
         Alert::success('Success','Reviewer added successfully');
         return redirect()->route('reviewer.index',[
-            'document_type_id' => $this->document_type_id
+            'document_type_id' => $this->document_type_id,
+            'reviewer_type' => $this->reviewer_type
         ]);
     }
 
      
-
-    // public function save()
-    // {
-    //     // Check if the user is already in Reviewer table
-    //     $this->validate([
-    //         'user_id' => [
-    //             'required',
-    //             // Rule::unique('reviewers', 'user_id'),
-    //         ],
-    //         'document_type_id' => 'required',
-    //         'status' => 'required',
-    //         'order' => 'required',
-    //     ], [
-    //         'user_id.required' => 'User is required',
-    //         'user_id.unique' => 'User is already added globally',
-    //         'document_type_id.required' => 'Document type is required',
-    //     ]);
-
-    //     // Create the reviewer (globally)
-    //     $reviewer = Reviewer::create([
-    //         'user_id' => $this->user_id,
-    //         'status' => $this->status,
-    //         'order' => 0, // temp placeholder
-    //         'created_by' => auth()->id(),
-    //         'updated_by' => auth()->id(),
-    //     ]);
-
-    //     // Now check if document_type_id exists and needs relationship
-    //     if ($this->document_type_id) {
-    //         // Check if this reviewer already existsx  for the document type
-    //         $alreadyExists = DocumentTypeReviewer::where('document_type_id', $this->document_type_id)
-    //             ->where('reviewer_id', $reviewer->id)
-    //             ->exists();
-
-    //         if ($alreadyExists) {
-    //             Alert::error('Error', 'User is already added for this document type.');
-    //             return;
-    //         }
-
-    //         // Manage order
-    //         if ($this->order === 'top') {
-    //             DocumentTypeReviewer::where('document_type_id', $this->document_type_id)->increment('review_order');
-
-    //             DocumentTypeReviewer::create([
-    //                 'document_type_id' => $this->document_type_id,
-    //                 'reviewer_id' => $reviewer->id,
-    //                 'review_order' => 1,
-    //             ]);
-    //         } elseif ($this->order === 'end') {
-    //             $lastOrder = DocumentTypeReviewer::where('document_type_id', $this->document_type_id)->max('review_order') ?? 0;
-
-    //             DocumentTypeReviewer::create([
-    //                 'document_type_id' => $this->document_type_id,
-    //                 'reviewer_id' => $reviewer->id,
-    //                 'review_order' => $lastOrder + 1,
-    //             ]);
-    //         }
-    //     } else {
-    //         // Global order management
-    //         if ($this->order === 'top') {
-    //             Reviewer::query()->increment('order');
-    //             $reviewer->update(['order' => 1]);
-    //         } elseif ($this->order === 'end') {
-    //             $lastOrder = Reviewer::max('order') ?? 0;
-    //             $reviewer->update(['order' => $lastOrder + 1]);
-    //         }
-    //     }
-
-    //     ActivityLog::create([
-    //         'log_action' => "Reviewer \"{$reviewer->user->name}\" added",
-    //         'log_username' => Auth::user()->name,
-    //         'created_by' => Auth::id(),
-    //     ]);
-
-    //     Alert::success('Success', 'Reviewer added successfully');
-    //     return redirect()->route('reviewer.index',[
-    //         'document_type_id' => $this->document_type_id
-    //     ]);
-    // }
-
-
 
 
 

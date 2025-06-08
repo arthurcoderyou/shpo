@@ -44,9 +44,26 @@ class ReviewerDeleted implements ShouldBroadcastNow
 
     public function broadcastWith(){
          
+
+        $reviewer = $this->reviewer;
+
+        if(!empty($reviewer->document_type)){
+            $message = "Reviewer '".$reviewer->user->name."' deleted from the document type '".$reviewer->document_type->name."'"; 
+        }else{
+            if($reviewer->reviewer_type == "initial"){
+                $message = "Reviewer '".$reviewer->user->name."' deleted from the initial reviewers";
+            }elseif($reviewer->reviewer_type == "final"){
+                $message = "Reviewer '".$reviewer->user->name."' deleted from the final reviewers";
+            }
+        }
+
+
         return [
-            'message' => "Reviewer '".$this->reviewer->name."' deleted from the document type '".$this->reviewer->document_type->name."'", 
-            'reviewer_url' => route('reviewer.index'),
+            'message' => $message, 
+            'reviewer_url' => route('reviewer.index',[
+                'document_type_id' => $reviewer->document_type_id,
+                'reviewer_type' => $reviewer->reviewer_type,
+            ]),
         ];
     }
 }

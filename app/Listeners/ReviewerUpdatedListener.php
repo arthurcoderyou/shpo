@@ -22,13 +22,25 @@ class ReviewerUpdatedListener
      */
     public function handle(ReviewerUpdated $event): void
     {
+       
         $reviewer = $event->reviewer;
+
+        if(!empty($reviewer->document_type)){
+            $message =  "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the document type '".$reviewer->document_type->name."'";
+        }else{
+            if($reviewer->reviewer_type == "initial"){
+                $message = "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the initial reviewers";
+            }elseif($reviewer->reviewer_type == "final"){
+                $message = "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the final reviewers";
+            }
+ 
+        }
 
 
         ActivityLog::create([
             'created_by' => $reviewer->created_by,
             'log_username' => auth()->user()->name,
-            'log_action' => "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the document type '".$reviewer->document_type->name."'",
+            'log_action' => $message,
         ]);
     }
 }

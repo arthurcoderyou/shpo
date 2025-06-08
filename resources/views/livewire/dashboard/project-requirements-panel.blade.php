@@ -39,7 +39,43 @@
 
           </div>
         </div>
-      @endif
+    @endif
+
+    @if(request()->routeIs('reviewer.index') && (!isset($errors['no_reviewers']) || $errors['no_reviewers'] == false)  
+      &&  (!isset($errors['document_types_missing_reviewers']) || $errors['document_types_missing_reviewers'] == false)  ) <!-- route to display the success message about the reviewers -->
+        <div class="bg-green-50 border border-green-200 text-sm text-green-800 rounded-lg p-4 " role="alert" id="requirement-panel-success">
+          <div class="flex">
+            <div class="shrink-0">
+              <svg class="shrink-0 size-4 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="ms-4">
+              <h3 class="text-sm font-semibold">
+                Reviewers are all set!
+              </h3>
+              <div class="mt-2 text-sm text-green-700 ">
+                Reviewer order has been saved and is now reflected across the system.
+              </div>
+            </div>
+
+            <div class="ps-3 ms-auto">
+                <div class="-mx-1.5 -my-1.5">
+                <button type="button" class="inline-flex bg-green-50 rounded-lg p-1.5 text-green-500 hover:bg-green-100 focus:outline-hidden focus:bg-green-100 " data-hs-remove-element="#requirement-panel-success">
+                    <span class="sr-only">Dismiss</span>
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+                </div>
+            </div>
+
+
+          </div>
+        </div>
+    @endif
+
 
     @else 
 
@@ -58,6 +94,36 @@
               </h3>
               <div class="mt-2 text-sm text-red-700 ">
                 <ul class="list-disc space-y-1 ps-5">
+
+                  {{-- No Initial Reviewers --}}
+                  @if (isset($errors['no_initial_reviewers']) && $errors['no_initial_reviewers'] === true)
+                    @role('Admin|DSI God Admin')
+                      <li>
+                        No <strong>initial</strong> reviewers have been assigned. Please
+                        <a href="{{ route('reviewer.index') }}" class="underline">assign initial reviewers</a> to proceed.
+                      </li>
+                    @else
+                      <li>
+                        No <strong>initial</strong> reviewers have been assigned. Please wait for the administrator to assign them.
+                      </li>
+                    @endrole
+                  @endif
+
+                  {{-- No Final Reviewers --}}
+                  @if (isset($errors['no_final_reviewers']) && $errors['no_final_reviewers'] === true)
+                    @role('Admin|DSI God Admin')
+                      <li>
+                        No <strong>final</strong> reviewers have been assigned. Please
+                        <a href="{{ route('reviewer.index') }}" class="underline">assign final reviewers</a> to proceed.
+                      </li>
+                    @else
+                      <li>
+                        No <strong>final</strong> reviewers have been assigned. Please wait for the administrator to assign them.
+                      </li>
+                    @endrole
+                  @endif  
+
+
                   @if (isset($errors['no_document_types']) && $errors['no_document_types'] == true)
                     @role('Admin|DSI God Admin') 
                       <li>

@@ -10,6 +10,7 @@ use Livewire\Component;
 
 use App\Models\ActivityLog;
 use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
 use Illuminate\Validation\Rule;
 use App\Models\ReviewAttachments;
 use Illuminate\Support\Facades\Auth;
@@ -29,8 +30,7 @@ class ReviewCreate extends Component
     public $project_review;
     public $project;
 
-    public $attachments = []; // Initialize with one phone field
-    public $uploadedFiles = []; // Store file names
+    public $attachments = []; // Initialize with one phone field 
 
     public $shpo_number;
     public $submitter_response_duration;
@@ -104,17 +104,14 @@ class ReviewCreate extends Component
         $project->submitter_response_duration_type = $this->submitter_response_duration_type;  
         // $project->submitter_due_date = Project::calculateDueDate(now(),$project->submitter_response_duration_type, $project->submitter_response_duration );
         $project->submitter_due_date = Project::calculateDueDate(now(),$this->submitter_response_duration_type, $this->submitter_response_duration );
-
-
-
-
-
+ 
         $project->save();
 
         ActivityLog::create([
             'log_action' => "Project SHPO number on \"".$project->name."\" updated ",
             'log_username' => Auth::user()->name,
             'created_by' => Auth::user()->id,
+            'project_id' => $project->id,
         ]);
 
         Alert::success('Success', "Project SHPO number on \"".$project->name."\" updated. You can now submit a review");
@@ -127,7 +124,13 @@ class ReviewCreate extends Component
     // saving and submission of review 
     public function save($status){
 
-        // dd("Here");
+        // get the project reviewer instance of the current user reviewer
+        $project_reviewer = $this->project->getReview();
+
+        // dd($project_reviewer);
+
+
+        // dd($status);
 
 
         $this->validate([
@@ -136,15 +139,14 @@ class ReviewCreate extends Component
             ]
         ]);
 
-
-
-         
-
+ 
 
         //add to the review model
         $review = new Review();
         $review->project_review = $this->project_review;
         $review->project_id = $this->project->id;
+        $review->project_status = $this->project->status;
+        $review->project_document_id = $project_reviewer->project_document_id; // the project reviewer reviewing project document will be associated to its review
         $review->reviewer_id = Auth::user()->id;
 
         /** Update the review time */
@@ -205,8 +207,10 @@ class ReviewCreate extends Component
          
 
 
-        // update the project reviewer 
-        $project_reviewer = $this->project->getReview();
+       
+
+        // dd($project_reviewer);
+
         $project_reviewer->review_status = $status;
 
         if($status == "approved"){
@@ -217,18 +221,13 @@ class ReviewCreate extends Component
         $project_reviewer->updated_at = now();
         $project_reviewer->updated_by = Auth::user()->id;
         $project_reviewer->save();
-
-        
-
-
-
-
+ 
 
         // Send notification email to reviewer 
         $user = User::findOrFail($this->project->creator->id);// insert the project submitter and creator
         $project = Project::where('id', $this->project->id)->first();
 
-        $project->allow_project_submission = true;
+        $project->allow_project_submission = true; 
 
         //update the next reviewer
         if($status == "approved"){
@@ -256,11 +255,12 @@ class ReviewCreate extends Component
  
 
         if ($user) {
-            //this is to notify the creator of the project that his project had been reviewed
-            Notification::send($user, new ReviewerReviewNotification($project, $review));
 
-            //notify the database
-            Notification::send($user, new ReviewerReviewNotificationDB($project, $review));
+            // notification to send to creator of the project about the reviewer review had been submitted . It is also an eamil notification
+            $creator = User::where('id',$this->project->creator->id)->first();
+            ProjectHelper::sendForProjectCreatorReviewerReviewNotification($creator, $project, $review);
+
+            
             
         }
 
@@ -275,15 +275,18 @@ class ReviewCreate extends Component
                 $next_project_reviewer->save();
 
 
+                // add to the review 
+                $review->next_reviewer_name = $next_project_reviewer->user->name;
+                $review->save();
+
+
                 // notify that reviewer that he is the next in line
                 // Send notification email to the next reviewer
-                $next_project_reviewer_user = User::find( $next_project_reviewer->user_id);
+                $next_project_reviewer_user = User::where('id', $next_project_reviewer->user_id)->first();
                 if ($next_project_reviewer_user) {
-                    // notify the next reviewer
-                    Notification::send($next_project_reviewer_user, new ProjectReviewNotification($project, $next_project_reviewer));
 
-                    //send notification to the database
-                    Notification::send($next_project_reviewer_user, new ProjectReviewNotificationDB($project, $next_project_reviewer));
+                    // notification to send to the reviewer about project review notification
+                    ProjectHelper::sendForReviewersProjectReviewNotification($next_project_reviewer_user,$project,  $next_project_reviewer);
 
                 }
 
@@ -321,44 +324,9 @@ class ReviewCreate extends Component
                 $message = "The project '".$project->name."' had been approved by reviewer '".Auth::user()->name."'";
             }
 
-            if(!empty($project->project_subscribers)){
-                foreach($project->project_subscribers as $subcriber){
-
-                    // subscriber user 
-                    $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                    if(!empty($sub_user)){
-                        // notify the next reviewer
-                        Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $project,'project_reviewed',$message ));
-                        /**
-                         * Message type : 
-                         * @case('project_submitted')
-                                @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                @break
-
-                            @case('project_reviewed')
-                                @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                @break
-
-                            @case('project_resubmitted')
-                                @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                @break
-
-                            @case('project_reviewers_updated')
-                                @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                @break
-
-                            @default
-                                @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                        */
-
-
-                    }
-                    
-
-
-                }
-            } 
+            ProjectHelper::sendForProjectSubscribersProjectSubscribersNotification($project,$message,"project_reviewed");
+            
+ 
         // ./ update the subscribers 
 
 

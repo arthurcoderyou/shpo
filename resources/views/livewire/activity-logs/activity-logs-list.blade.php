@@ -136,8 +136,8 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
-                                                <span class="block text-sm font-semibold text-gray-800 ">{{ $activity_log->user->name }}</span>
-                                                <span class="block text-sm text-gray-500 ">{{ $activity_log->user->email }}</span>
+                                                <span class="block text-sm font-semibold text-gray-800 ">{{ $activity_log->user->name ?? 'User Deleted' }}</span>
+                                                <span class="block text-sm text-gray-500 ">{{ $activity_log->user->email ?? 'User Deleted' }}</span>
                                             </div>
                                         </div>
                                     </div>

@@ -221,7 +221,7 @@
                                                         {{ $review->project_review }}
                                                     </h1>
                                                     <p class="text-sm text-gray-600 ">
-                                                        Project Status : {!! $review->project->getStatus() !!}
+                                                        Project Status : {!! $review->getStatus() !!}
                                                         
                                                     </p>
                                                     <p class="text-sm text-gray-500">
@@ -313,7 +313,7 @@
                                                         Reviewed by {{ $review->reviewer->name }}
                                                     </h1>
                                                     <p class="text-sm text-gray-600 ">
-                                                        Project Status : {!! $review->project->getStatus() !!}
+                                                        Project Status : {!! $review->getStatus() !!}
                                                         
                                                     </p>
                                                     <p class="text-sm text-gray-500">
@@ -539,10 +539,7 @@
                                                 </ul>
                                                 
 
-                                                
-
-
-
+                                                 
                                                 @if($review->project->status !== "approved" && $review->review_status == "approved" && !empty( $next_reviewer->user ) && !empty(  $review->project ) )
                                                 <!-- Profile -->
                                                 <div class="  p-2  ">
