@@ -23,12 +23,12 @@ use App\Http\Controllers\TwoFactorVerificationController;
 Route::view('/', 'welcome');
 
 
-Route::post('/user-activity', function (\Illuminate\Http\Request $request) {
-    // You can store or log the activity here
-    // Example: 
-    Cache::put("user-last-activity-{$request->userId}", now());
-    return response()->json(['status' => 'ok']);
-});
+// Route::post('/user-activity', function (\Illuminate\Http\Request $request) {
+//     // You can store or log the activity here
+//     // Example: 
+//     Cache::put("user-last-activity-{$request->userId}", now());
+//     return response()->json(['status' => 'ok']);
+// });
 
 
  
