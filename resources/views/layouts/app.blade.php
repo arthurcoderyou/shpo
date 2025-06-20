@@ -767,7 +767,7 @@
   --}}
         @include('sweetalert::alert')
 
-        <script>
+        {{-- <script>
             let inactivityTime = function () {
                 let inactivityTimeout, alertTimeout;
                 // const inactivityLimit = 180000; // 3 minutes
@@ -804,7 +804,7 @@
             };
 
             window.onload = inactivityTime;
-        </script>
+        </script> --}}
 
 
 
