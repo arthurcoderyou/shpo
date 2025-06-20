@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Events\UserActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -73,6 +74,13 @@ class UserController extends Controller
         return view('admin.user.edit',['user' => $user]);
     }
 
+
+
+    public function userActivity(Request $request)
+    {
+        $userId = $request->input('userId');
+        event(new UserActivity($userId));
+    }
 
 
 }

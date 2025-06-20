@@ -13,6 +13,18 @@ use RealRashid\SweetAlert\Facades\Alert;
 new class extends Component
 {
 
+
+    protected $listeners = ['autoLogout'];
+
+    public function autoLogout()
+    {
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+
+        return redirect('/login'); // or your custom login route
+    }
+
    
     public $show_device_trust_section = false;
     public $reviewer_exists = false;

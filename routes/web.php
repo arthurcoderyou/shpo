@@ -22,6 +22,15 @@ use App\Http\Controllers\TwoFactorVerificationController;
 
 Route::view('/', 'welcome');
 
+
+Route::post('/user-activity', function (\Illuminate\Http\Request $request) {
+    // You can store or log the activity here
+    // Example: 
+    Cache::put("user-last-activity-{$request->userId}", now());
+    return response()->json(['status' => 'ok']);
+});
+
+
  
 Route::middleware(['throttle:60,1','verified'])->group(function () {
     Route::middleware(['auth' ,'log_user_device'])->group(function () {

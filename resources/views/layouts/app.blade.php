@@ -32,8 +32,11 @@
         <!-- Include Flatpickr JS -->
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
  
+        <script>
+            window.userId = @json(auth()->id());
+        </script>
 
-        
+
 
         {{-- <!-- The callback parameter is required, so we use console.debug as a noop -->
         <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&callback=console.debug&libraries=maps,marker&v=beta">
@@ -763,6 +766,48 @@
         </script>
   --}}
         @include('sweetalert::alert')
+
+        <script>
+            let inactivityTime = function () {
+                let inactivityTimeout, alertTimeout;
+                // const inactivityLimit = 180000; // 3 minutes
+                const inactivityLimit = 60000; // 3 minutes
+
+                const warningTime = 30000; // 30 seconds before logout
+
+                const startTimers = () => {
+                    clearTimeout(inactivityTimeout);
+                    clearTimeout(alertTimeout);
+
+                    alertTimeout = setTimeout(() => {
+                        const confirmLogout = confirm(
+                            "You've been inactive for a while.\nWould you like to stay logged in?"
+                        );
+                        if (!confirmLogout) {
+                            window.Livewire.emit('autoLogout');
+                        } else {
+                            startTimers(); // Restart timers if user cancels logout
+                        }
+                    }, inactivityLimit - warningTime);
+
+                    inactivityTimeout = setTimeout(() => {
+                        window.Livewire.emit('autoLogout');
+                    }, inactivityLimit);
+                };
+
+                // Reset timers on user interaction
+                ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'].forEach(evt =>
+                    document.addEventListener(evt, startTimers)
+                );
+
+                startTimers(); // Start on page load
+            };
+
+            window.onload = inactivityTime;
+        </script>
+
+
+
         <!-- Push custom scripts from views -->
         @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
 
@@ -801,53 +846,14 @@
 
 
 
+
+
+
         <!-- Before the closing </body> tag -->
         @livewireScripts
 
 
-        <!-- Push custom scripts from views -->
-        @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
-
- 
-        <script>
-            let inactivityTime = function () {
-                let inactivityTimeout, alertTimeout;
-                const inactivityLimit = 180000; // 3 minutes
-                const warningTime = 30000; // Show alert 30 seconds before reload
-
-                const startTimers = () => {
-                    clearTimeout(inactivityTimeout);
-                    clearTimeout(alertTimeout);
-
-                    alertTimeout = setTimeout(() => {
-                        const confirmReload = confirm(
-                            "You've been inactive for a while.\nWould you like to reload the page to see the latest data?"
-                        );
-                        if (confirmReload) {
-                            location.reload();
-                        } else {
-                            // Restart the inactivity timer if user cancels reload
-                            startTimers();
-                        }
-                    }, inactivityLimit - warningTime);
-
-                    inactivityTimeout = setTimeout(() => {
-                        location.reload();
-                    }, inactivityLimit);
-                };
-
-                // Reset timers on user interaction
-                ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'].forEach(evt =>
-                    document.addEventListener(evt, startTimers)
-                );
-
-                startTimers(); // Start timers on load
-            };
-
-            window.onload = inactivityTime;
-        </script>
-
-
+          
 
 
     </body>

@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
 
         $this->app->booted(function () {
-            app(Schedule::class)->command(CheckProjectSubmissions::class)->everyMinute();
+            // app(Schedule::class)->command(CheckProjectSubmissions::class)->everyMinute();
         });
 
     }
