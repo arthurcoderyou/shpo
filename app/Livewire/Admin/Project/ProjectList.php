@@ -738,7 +738,7 @@ class ProjectList extends Component
 
 
 
-            }elseif(Auth::user()->hasRole('Admin')){
+            }elseif(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin') ){
                 // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
                 
                 if($this->routeIsReview){
