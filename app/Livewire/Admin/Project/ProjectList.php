@@ -120,8 +120,7 @@ class ProjectList extends Component
         $this->review_status = request()->query('review_status', ''); // Default to empty string if not set
         
         $this->projects_count = 0;
-
-
+ 
 
 
 
@@ -361,7 +360,7 @@ class ProjectList extends Component
                 $this->selected_records = $this->selected_records->whereNot('status','draft');
 
 
-            }elseif(Auth::user()->hasRole('Admin')){
+            }elseif(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin')){
                 // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
                 
                 if($this->routeIsReview){
