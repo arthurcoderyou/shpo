@@ -2,24 +2,39 @@
 
 namespace App\Events;
 
+use App\Models\Review;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class ReviewUpdated
+class ReviewUpdated  implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public Review $review;
+    public string $message; 
+
+    public $reviewId;
+    public $authId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(Review $review,  $authId)
     {
-        //
+        $this->review = $review;
+
+        $review = $this->review;
+
+        $this->message =  "Review by '".$review->reviewer->name."' updated to the project '".$review->project->name."'";
+ 
+        $this->reviewId = $review->id;
+        $this->authId = $authId;
     }
 
     /**
@@ -30,7 +45,22 @@ class ReviewUpdated
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel('review'),
+        ];
+    }
+
+    public function broadcastAs(){
+        return "updated";
+    }
+
+
+    public function broadcastWith(){
+         
+ 
+        return [
+            'message' => $this->message,   
+            'project_id' => $this->review->project->id,
+            'project_url' => route('project.show',['project' => $this->review->project->id]), 
         ];
     }
 }

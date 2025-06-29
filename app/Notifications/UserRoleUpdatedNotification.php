@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class UserRoleUpdatedNotification extends Notification 
+class UserRoleUpdatedNotification extends Notification   implements ShouldQueue
 // implements ShouldQueue
 {
     use Queueable;

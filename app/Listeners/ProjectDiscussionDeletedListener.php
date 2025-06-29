@@ -7,7 +7,7 @@ use App\Events\ProjectDiscussionDeleted;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectDiscussionDeletedListener
+class ProjectDiscussionDeletedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

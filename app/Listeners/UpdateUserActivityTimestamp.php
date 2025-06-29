@@ -8,7 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
-class UpdateUserActivityTimestamp
+class UpdateUserActivityTimestamp  implements ShouldQueue
 {
     /**
      * Create the event listener.

@@ -7,7 +7,7 @@ use App\Events\ProjectQueued;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectQueuedListener
+class ProjectQueuedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

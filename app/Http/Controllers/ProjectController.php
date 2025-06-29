@@ -52,7 +52,7 @@ class ProjectController extends Controller
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
-            return redirect()->route('dashboard');
+            return redirect()->to(url()->previous() ?? route('dashboard'));
                
              
         }
@@ -83,7 +83,7 @@ class ProjectController extends Controller
 
 
 
-        return view('admin.project.show',compact('project'));
+        return view('admin.project.review',compact('project'));
 
     }
 
@@ -119,6 +119,21 @@ class ProjectController extends Controller
         }
 
         $project = Project::findOrFail($id);
+
+        // cehck if the user is the project creator and check if the project is allowing project submissions 
+        // if true, it means that the project can be edited 
+        // if false, it means the project must first be reviewed before the project creator can edit the project
+        if($project->allow_project_submission == false && $user->id == $project->created_by){
+            Alert::error('Error', 'Your project is submitted and to be reviewed by the reviewer. Editing is prohibited. Please wait until the review is complete');
+
+            // If there is no previous URL, redirect to the dashboard
+            return redirect()->route('project.index.my-projects');
+        }
+        
+
+
+
+        
         return view('admin.project.edit',compact('project'));
     }
 

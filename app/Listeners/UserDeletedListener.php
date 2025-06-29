@@ -6,7 +6,7 @@ use App\Events\UserDeleted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class UserDeletedListener
+class UserDeletedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

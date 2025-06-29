@@ -26,124 +26,115 @@
                         </p>
                     </div> --}}
 
-                    <div class="flex justify-between items-start flex-wrap gap-6">
-                        <!-- Left: Main Info -->
-                        <div class="flex-1 min-w-[300px] space-y-2">
-                            <h1 class="text-2xl font-semibold text-sky-800">
-                                {{-- <span class="text-gray-500">Document:</span>  --}}
-                                {{ $project_document->document_type->name }}
-                            </h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
 
-                            
+    <!-- Left: Main Info -->
+    <div class="space-y-4">
+        <h1 class="text-2xl font-semibold text-sky-800">
+            {{ $project_document->document_type->name }}
+        </h1>
 
-                            @if(Auth::user()->hasRole('Reviewer'))
-                                <a href="{{ route('project.review',['project' => $project->id ]) }}"
-                                class="inline-block text-sm text-white bg-sky-600 hover:bg-sky-700 font-medium px-3 py-1 rounded transition">
-                                    Click to Review
-                                </a>
-                            @endif
+        @if(Auth::user()->hasRole('Reviewer') && $project->status !== "draft")
+            <a href="{{ route('project.review',['project' => $project->id ]) }}"
+               class="inline-block text-sm text-white bg-sky-600 hover:bg-sky-700 font-medium px-4 py-2 rounded shadow transition">
+                Click to Review
+            </a>
+        @endif
 
-                            <h2 class="text-xl font-bold text-gray-800">
-                                <a class="hover:text-sky-500" href="{{ route('project.show',['project' => $project->id]) }}">
-                                    <span class="text-gray-500">Project:</span> {{ $project->name }}
-                                </a>
-                                
-                            </h2>
+        <h2 class="text-xl font-bold text-gray-800">
+            <a class="hover:text-sky-500" href="{{ route('project.show',['project' => $project->id]) }}">
+                <span class="text-gray-500">Project:</span> {{ $project->name }}
+            </a>
+        </h2>
 
-                            <div class="flex gap-x-2">
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('project.show',['project' => $project->id]) }}"
+               class="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-700 transition">
+                View Project
+            </a>
 
-                                <!-- Show -->
-                                    <a href="{{ route('project.show',['project' => $project->id]) }}" class="py-1 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border  bg-sky-500 text-white hover:bg-sky-700 focus:outline-hidden focus:border-sky-400  disabled:opacity-50 disabled:pointer-events-none">
-                                        View Project
-                                    </a>
-                                <!-- Show -->
+            <a href="{{ route('project.edit',['project' => $project->id]) }}"
+               class="px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-700 transition">
+                Edit Project
+            </a>
 
-                                <!-- Edit -->
-                                    <a href="{{ route('project.edit',['project' => $project->id]) }}" class="py-1 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border  bg-blue-500 text-white hover:bg-blue-700 focus:outline-hidden focus:border-blue-400  disabled:opacity-50 disabled:pointer-events-none">
-                                        Edit Project
-                                    </a>
-                                <!-- Edit -->
+            @if($project->status !== "draft")
+                <a href="#discussion"
+                   class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-500 text-gray-600 hover:border-gray-400 hover:text-gray-500 transition">
+                    Discussion
+                </a>
+            @endif
 
-        
-        
-                                <!-- Activity Logs -->
-                                <a href="#discussion" class="py-1 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-500 text-gray-500 hover:border-gray-400 hover:text-gray-400 focus:outline-hidden focus:border-gray-400 focus:text-gray-400 disabled:opacity-50 disabled:pointer-events-none">
-                                    Discussion
-                                </a>
-                                <!-- Activity Logs -->
-        
-        
-                                <!-- Activity Logs -->
-                                <a href="#project_logs" class="py-1 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-teal-500 text-teal-500 hover:border-teal-400 hover:text-teal-400 focus:outline-hidden focus:border-teal-400 focus:text-teal-400 disabled:opacity-50 disabled:pointer-events-none">
-                                    Logs
-                                </a>
-                                <!-- Activity Logs -->
-                            </div>
+            <a href="#project_logs"
+               class="px-3 py-1.5 text-sm font-medium rounded-lg border border-teal-500 text-teal-600 hover:border-teal-400 hover:text-teal-500 transition">
+                Logs
+            </a>
+        </div>
 
+        <!-- Metadata -->
+        <p class="text-sm text-gray-600">{{ $project->federal_agency }}</p>
+        <p class="text-sm text-blue-600 font-medium">{{ $project->type }}</p>
 
-                            <p class="text-sm text-gray-600">{{ $project->federal_agency }}</p>
-                            <p class="text-sm text-blue-600 font-medium">{{ $project->type }}</p>
+        @unless(Auth::user()->hasRole('User'))
+            <div class="space-y-1">
+                <p class="text-sm text-green-600 font-medium">
+                    Project #: {{ $project->project_number ?? 'NOT SET' }}
+                </p>
+                <p class="text-sm text-yellow-600 font-medium">
+                    SHPO #: {{ $project->shpo_number ?? 'NOT SET' }}
+                </p>
+            </div>
+        @endunless
+    </div>
 
-                            @if(!Auth::user()->hasRole('User'))
-                                <div class="space-y-1">
-                                    <p class="text-sm text-green-600 font-medium">
-                                        Project #: {{ $project->project_number ?? 'NOT SET' }}
-                                    </p>
-                                    <p class="text-sm text-yellow-600 font-medium">
-                                        SHPO #: {{ $project->shpo_number ?? 'NOT SET' }}
-                                    </p>
-                                </div>
-                            @endif
-                        </div>
+    <!-- Right: Status Info -->
+    <div class="space-y-4 text-sm text-gray-700">
+        <div>
+            <p><strong>Project Status:</strong> {!! $project->getStatus() !!}</p>
 
-                        <!-- Right: Status Info -->
-                        <div class="min-w-[280px] space-y-3">
-                            <div class="text-sm text-gray-700">
-                                <p><strong>Project Status:</strong> {!! $project->getStatus() !!}</p>
+            @if($project->status !== "approved" && !empty($project->project_reviewer))
+                <p><strong>Review Status:</strong> {!! $project->project_reviewer->getReviewStatus() !!}</p>
+                <p><strong>Currently Reviewed by:</strong><br>{{ $project->project_reviewer->user->name }}</p>
+            @endif
+        </div>
 
-                                @if($project->status !== "approved" && !empty($project->project_reviewer))
-                                    <p><strong>Review Status:</strong> {!! $project->project_reviewer->getReviewStatus() !!}</p>
-                                    <p><strong>Currently Reviewed by:</strong><br>{{ $project->project_reviewer->user->name }}</p>
-                                @endif
-                            </div>
+        @if($project->status !== "approved" && $project->status !== "draft")
+            <hr>
 
-                            @if($project->status !== "approved")
-                                <div class="text-sm text-gray-700">
-                                    <hr class="my-2">
+            <div>
+                <p class="font-medium">Update Schedule:
+                    @if (\Carbon\Carbon::parse($project->submitter_due_date)->isPast())
+                        <span class="text-red-500 font-semibold">Overdue</span>
+                    @else
+                        <span class="text-lime-600 font-semibold">On Time</span>
+                    @endif
+                </p>
+                <p>Expected update submission:<br>
+                    <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->submitter_due_date)->format('M d, Y h:i A') }}</strong>
+                </p>
+            </div>
 
-                                    <p class="font-medium">Update Schedule:
-                                        @if (\Carbon\Carbon::parse($project->submitter_due_date)->isPast())
-                                            <span class="text-red-500 font-semibold">Overdue</span>
-                                        @else
-                                            <span class="text-lime-600 font-semibold">On Time</span>
-                                        @endif
-                                    </p>
-                                    <p>
-                                        Expected update submission:<br>
-                                        <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->submitter_due_date)->format('M d, Y h:i A') }}</strong>
-                                    </p>
-                                </div>
+            @unless(Auth::user()->hasRole('User'))
+                <hr>
 
-                                @if(!Auth::user()->hasRole('User'))
-                                    <div class="text-sm text-gray-700">
-                                        <hr class="my-2">
+                <div>
+                    <p class="font-medium">Review Schedule:
+                        @if (\Carbon\Carbon::parse($project->reviewer_due_date)->isPast())
+                            <span class="text-red-500 font-semibold">Overdue</span>
+                        @else
+                            <span class="text-lime-600 font-semibold">On Time</span>
+                        @endif
+                    </p>
+                    <p>Expected review by:<br>
+                        <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}</strong>
+                    </p>
+                </div>
+            @endunless
+        @endif
+    </div>
+</div>
 
-                                        <p class="font-medium">Review Schedule:
-                                            @if (\Carbon\Carbon::parse($project->reviewer_due_date)->isPast())
-                                                <span class="text-red-500 font-semibold">Overdue</span>
-                                            @else
-                                                <span class="text-lime-600 font-semibold">On Time</span>
-                                            @endif
-                                        </p>
-                                        <p>
-                                            Expected review by:<br>
-                                            <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}</strong>
-                                        </p>
-                                    </div>
-                                @endif
-                            @endif
-                        </div>
-                    </div>
 
                     <!-- Project Description -->
                     <div>
@@ -320,7 +311,7 @@
                 @if(
                     (
                     Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasRole('Admin') || 
-                    (Auth::user()->hasRole('User') && $project->created_by == Auth::id() )
+                    ( $project->created_by == Auth::id() )
                     ) &&
 
                     $project->status !== "approved"

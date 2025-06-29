@@ -7,7 +7,7 @@ use App\Events\ReviewerUpdated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ReviewerUpdatedListener
+class ReviewerUpdatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

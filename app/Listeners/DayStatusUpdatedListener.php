@@ -7,7 +7,7 @@ use App\Events\DayStatusUpdated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class DayStatusUpdatedListener
+class DayStatusUpdatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

@@ -108,8 +108,12 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
             # project
                 
                 Route::get('project',[ProjectController::class, 'index'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project list view'])  
+                    ->middleware(['role.permission:role:DSI God Admin,permission:project all list view'])  
                     ->name('project.index');
+                Route::get('project/my_projects',[ProjectController::class, 'index'])
+                    ->middleware(['role.permission:role:DSI God Admin,permission:project list view'])  
+                    ->name('project.index.my-projects');
+
                 Route::get('project/in_review',[ProjectController::class, 'in_review'])
                     ->middleware(['role.permission:role:DSI God Admin,permission:project review list view']) 
                     ->name('project.in_review'); // for reviewers to see projects pending reviews

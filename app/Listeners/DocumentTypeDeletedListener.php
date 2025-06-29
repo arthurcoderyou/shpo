@@ -7,7 +7,7 @@ use App\Events\DocumentTypeDeleted;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class DocumentTypeDeletedListener
+class DocumentTypeDeletedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

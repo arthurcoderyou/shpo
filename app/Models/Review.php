@@ -44,7 +44,7 @@ class Review extends Model
         static::created(function ($review) { 
 
             try {
-                event(new \App\Events\ReviewCreated($review));
+                event(new \App\Events\ReviewCreated($review->id, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ReviewCreated event: ' . $e->getMessage(), [

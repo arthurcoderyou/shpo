@@ -286,7 +286,7 @@ class ProjectCreate extends Component
 
         } catch (\Exception $e) {
             // Handle failed connection
-            logger()->error("FTP connection failed: " . $e->getMessage());
+            // logger()->error("FTP connection failed: " . $e->getMessage());
             // return; // Exit or show error as needed
 
             Alert::error('Error','Connection cannot be stablished with the FTP server');
@@ -663,7 +663,7 @@ class ProjectCreate extends Component
 
         // Save Project Subscribers (if any)
         if (!empty($this->selectedUsers)) {
-            foreach ($this->selectedUsers as $user) {
+            foreach ($this->selectedUsers as $index => $user ) {
                 ProjectSubscriber::create([
                     'project_id' => $project->id,
                     'user_id' => $user['id'],

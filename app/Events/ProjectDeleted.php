@@ -6,23 +6,32 @@ use App\Models\Project;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class ProjectDeleted implements ShouldBroadcastNow
+class ProjectDeleted implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
+ 
+    public string $message;
 
-    public Project $project;
+
+    public $projectId;
+    public $authId;
+
     /**
      * Create a new event instance.
      */
-    public function __construct(Project $project)
+    public function __construct($projectId, $authId)
     {
-        $this->project = $project;
+         
+        $this->message = "Project '".$projectId."' deleted";
+ 
+        $this->authId = $authId;
     }
 
     /**
@@ -45,8 +54,7 @@ class ProjectDeleted implements ShouldBroadcastNow
     public function broadcastWith(){
          
         return [
-            'message' => "Project '".$this->project->name."' deleted", 
-            'project_id' => $this->project->id,
+            'message' => $this->message,  
             'project_url' => route('project.index'), // show project list
         ];
     }

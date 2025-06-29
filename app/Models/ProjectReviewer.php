@@ -38,7 +38,7 @@ class ProjectReviewer extends Model
             // event(new  \App\Events\ProjectReviewerCreated($project_reviewer));
 
             try {
-                event(new \App\Events\ProjectReviewerCreated($project_reviewer));
+                event(new \App\Events\ProjectReviewerCreated($project_reviewer,auth()->user()->id  ));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectReviewerCreated event: ' . $e->getMessage(), [
@@ -54,7 +54,7 @@ class ProjectReviewer extends Model
             // event(new  \App\Events\ProjectReviewerUpdated($project_reviewer));
 
             try {
-                event(new \App\Events\ProjectReviewerUpdated($project_reviewer));
+                event(new \App\Events\ProjectReviewerUpdated($project_reviewer, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectReviewerUpdated event: ' . $e->getMessage(), [
@@ -70,7 +70,7 @@ class ProjectReviewer extends Model
             // event(new  \App\Events\ProjectReviewerDeleted($project_reviewer));
 
             try {
-                event(new \App\Events\ProjectReviewerDeleted($project_reviewer));
+                event(new \App\Events\ProjectReviewerDeleted($project_reviewer->id,auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectReviewerDeleted event: ' . $e->getMessage(), [

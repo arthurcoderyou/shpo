@@ -23,8 +23,12 @@ Hello {{ $user->name }},
         @php $message = "Project <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
         @break
 
+    @case('project_approved')
+        @php $message = "Project <strong>{$project->name}</strong>, had been completed the approval process"; @endphp
+        @break
+
     @case('project_reviewed')
-        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
+        @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest project review."; @endphp
         @break
 
     @case('project_resubmitted')

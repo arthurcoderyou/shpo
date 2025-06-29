@@ -102,11 +102,17 @@ class UserList extends Component
     public function delete($id){
         $user = User::find($id);
 
-        if ($this->hasConnectedRecords($user)) { 
+        if(!Auth::user()->hasRole('DSI God Admin')){ // the God Admin can override this 
 
-            Alert::error('Error', 'User cannot be deleted because they are connected to existing records.');
-            return redirect()->route('user.index');
+            if ($this->hasConnectedRecords($user)) { 
+
+                Alert::error('Error', 'User cannot be deleted because they are connected to existing records.');
+                return redirect()->route('user.index');
+            }
+
         }
+
+        
 
         // dd("All Goods");
 

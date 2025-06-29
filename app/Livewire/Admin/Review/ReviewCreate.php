@@ -264,15 +264,22 @@ class ReviewCreate extends Component
             
         }
 
-        
+
+
+        // reset the project document reviewers 
+        $project->resetCurrentProjectDocumentReviewers();
+ 
         //update the next reviewer
         if($status == "approved"){
 
-            $next_project_reviewer = $project->getNextReviewer();
+
+            // the reviewers had been reset, we can just get the current reviewer now 
+            // $next_project_reviewer = $project->getNextReviewer();
+            $next_project_reviewer = $project->getCurrentReviewer();
 
             if(!empty($next_project_reviewer)){ // check if there are next reviewers
-                $next_project_reviewer->status = true;
-                $next_project_reviewer->save();
+                // $next_project_reviewer->status = true;
+                // $next_project_reviewer->save();
 
 
                 // add to the review 
@@ -295,6 +302,7 @@ class ReviewCreate extends Component
                 $project->status = "approved";
                 $project->save();
 
+ 
 
 
             }
@@ -330,6 +338,12 @@ class ReviewCreate extends Component
         // ./ update the subscribers 
 
 
+
+
+        // send project approval updates for creators and project subscribers if the project is approved 
+        if($project->status == "approved"){
+            ProjectHelper::sendCompleteProjectApprovalNotification($project);
+        }
 
         
 

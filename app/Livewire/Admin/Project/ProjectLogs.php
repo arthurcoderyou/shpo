@@ -159,6 +159,8 @@ class ProjectLogs extends Component
                 });
             }
 
+            // dd($activity_logs->get());
+
 
             switch ($this->log_filter) {
                 case 'Project Logs':

@@ -72,6 +72,12 @@ Broadcast::channel('project_reviewer', function ($project) {
 
 });
 
+Broadcast::channel('project_subscriber', function ($review) { 
+    
+    return Auth::check();
+
+});
+
 Broadcast::channel('review', function ($review) { 
     
     return Auth::check();

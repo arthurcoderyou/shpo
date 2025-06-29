@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ProjectReviewNotification extends Mailable implements ShouldQueue
+class ProjectCompleteApprovalNotification extends Mailable implements ShouldQueue 
 {
     use Queueable, SerializesModels;
 
@@ -27,7 +27,7 @@ class ProjectReviewNotification extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Project Review Notification',
+            subject: 'Project Complete Approval Notification',
         );
     }
 
@@ -37,7 +37,7 @@ class ProjectReviewNotification extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.project.review',
+            markdown: 'emails.project.complete-approval',
         );
     }
 

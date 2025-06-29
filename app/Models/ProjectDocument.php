@@ -28,7 +28,7 @@ class ProjectDocument extends Model
             // event(new  \App\Events\ProjectDocumentCreated($project_document));
 
              try {
-                event(new \App\Events\ProjectDocumentCreated($project_document));
+                event(new \App\Events\ProjectDocumentCreated($project_document, auth()->user()->id ));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectDocumentCreated event: ' . $e->getMessage(), [
@@ -44,7 +44,7 @@ class ProjectDocument extends Model
             // event(new  \App\Events\ProjectDocumentUpdated($project_document));
 
             try {
-                event(new \App\Events\ProjectDocumentUpdated($project_document));
+                event(new \App\Events\ProjectDocumentUpdated($project_document, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectDocumentUpdated event: ' . $e->getMessage(), [
@@ -59,7 +59,7 @@ class ProjectDocument extends Model
             // event(new  \App\Events\ProjectDocumentDeleted($project_document));
 
             try {
-                event(new \App\Events\ProjectDocumentDeleted($project_document));
+                event(new \App\Events\ProjectDocumentDeleted($project_document->id, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectDocumentDeleted event: ' . $e->getMessage(), [

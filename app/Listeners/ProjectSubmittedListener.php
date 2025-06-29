@@ -19,7 +19,7 @@ use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
 
-class ProjectSubmittedListener
+class ProjectSubmittedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -353,12 +353,12 @@ class ProjectSubmittedListener
 
 
  
-        $project = $event->project;
-
+        $project = Project::find($event->projectId);
+        $user = User::find($event->authId);
 
         ActivityLog::create([
-            'created_by' => $project->created_by,
-            'log_username' => auth()->user()->name,
+            'created_by' => $event->authId,
+            'log_username' => $user->name,
             'log_action' =>   $event->message,
             'project_id' => $project->id,
         ]);

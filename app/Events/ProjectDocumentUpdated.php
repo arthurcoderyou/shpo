@@ -6,25 +6,34 @@ use App\Models\ProjectDocument;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class ProjectDocumentUpdated implements ShouldBroadcastNow
+class ProjectDocumentUpdated implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public ProjectDocument $project_document;
     public string $message;
+    public $projectDocumentId;
+    public $authId;
+
+
     /**
      * Create a new event instance.
      */
-    public function __construct(ProjectDocument $project_document)
+    public function __construct(ProjectDocument $project_document, $authId)
     {
         $this->project_document = $project_document;
         $this->message = "Project document updated on '".$this->project_document->document_type->name."' for project '".$this->project_document->project->name."'";
+
+        $this->projectDocumentId = $this->project_document->id;
+        $this->authId = $authId;
+
     }
 
     /**

@@ -2,12 +2,14 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
+use App\Models\Project;
 use App\Models\ActivityLog;
 use App\Events\ProjectUpdated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectUpdatedListener
+class ProjectUpdatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -22,13 +24,17 @@ class ProjectUpdatedListener
      */
     public function handle(ProjectUpdated $event): void
     {
-        $project = $event->project;
+ 
 
+        $project = Project::find( $event->projectId);
+        $user = User::find($event->authId);
+
+ 
 
         ActivityLog::create([
             'created_by' => $project->created_by,
-            'log_username' => auth()->user()->name,
-            'log_action' =>  "Project '".$project->name."' updated",
+            'log_username' => $user->name,
+            'log_action' =>  $event->message,
             'project_id' => $project->id,
         ]);
     }

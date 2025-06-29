@@ -81,10 +81,14 @@
                                 The project has passed all reviews and has been fully approved.
                             </p>
                         @endif
-                    @else 
+                    @elseif($project->getCurrentReviewer()->user_id == Auth::user()->id)
 
                         <p class=" text-sm font-medium text-gray-800 mt-2.5 block">
                             Please update the project's SHPO number.
+                        </p>
+                    @else
+                        <p class=" text-sm font-medium text-gray-800 mt-2.5 block">
+                            You are not the current reviewer for the project
                         </p>
                     @endif
                     
@@ -406,7 +410,7 @@
 
                     @endif
                 
-                @else
+                @elseif($project->getCurrentReviewer()->user_id == Auth::user()->id)
 
 
                     <!-- Grid -->
@@ -454,6 +458,14 @@
 
                     </div>
 
+                @else
+                    <div class="mt-5 flex justify-center gap-x-2">
+                        <a href="{{ route('project.in_review') }}" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-gray-600 text-white hover:bg-gray-700 focus:outline-none focus:bg-gray-700 disabled:opacity-50 disabled:pointer-events-none">
+                            Cancel
+                        </a>
+                         
+                         
+                    </div>
 
                 @endif
 

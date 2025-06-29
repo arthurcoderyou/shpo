@@ -38,8 +38,13 @@
 
     <livewire:admin.project.project-show :id="$project->id" /> 
 
-    <livewire:admin.review.review-create :id="$project->id" /> 
 
+
+    <!-- Check if the current auth user is the active reviewer-->
+
+    {{-- @if($project->getCurrentReviewer()->user_id == auth()->user()->id) --}}
+        <livewire:admin.review.review-create :id="$project->id" /> 
+    {{-- @endif --}}
 
     
     <livewire:admin.review.review-list :id="$project->id" /> 

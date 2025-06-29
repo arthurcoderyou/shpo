@@ -20,6 +20,7 @@ use App\Notifications\ReviewerReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewerUpdatedNotification;
+use App\Notifications\ProjectCompleteApprovalNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
 
@@ -168,10 +169,74 @@ class ProjectHelper
             $project->save();
  
             
+            // ProjectHelper::setProjectReviewers($project,$submission_type);
+
+            // $reviewer = $project->getNextReviewer();
+
+            // ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+
+        }else{ // if not, get the current reviewer
+
+            $submission_type = "re-submission";
+
+            $project->status = "submitted";
+            $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+            $project->updated_at = now();
+            $project->save();
+ 
+
+        }
+
+
+        ProjectHelper::setProjectReviewers($project,$submission_type);
+
+
+        $reviewer = $project->getCurrentReviewer(); // get the current reviewer
+
+
+        ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+        
+        
+        
+
+        // if($submission_type = "submission")
+        try {
+            event(new \App\Events\ProjectSubmitted($project, $submission_type));
+        } catch (\Throwable $e) {
+            // Log the error without interrupting the flow
+            Log::error('Failed to dispatch ProjectSubmitted event: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+            
+         
+
+        Alert::success('Success','Project submitted successfully');
+
+        if($project->created_by == auth()->user()->id){
+            return redirect()->route('project.index.my-projects');
+        }else{
+            return redirect()->route('project.index');
+        }
+        
+        
+
+    }
 
 
 
-            if(!empty($project->project_documents) && count($project->project_documents) > 0){
+
+    // check for current project document being reviewed and set the active current project 
+    public static function setProjectReviewers(Project $project, $submission_type){
+
+
+        if($submission_type == "submission"){ // first time submission
+
+            // check for the project documents
+            if(!empty($project->project_documents) &&  $project->project_documents->count() > 0){
  
                 foreach($project->project_documents as $project_document){
 
@@ -180,6 +245,7 @@ class ProjectHelper
                         ->where('document_type_id', $project_document->document_type_id)
                         ->get(); 
                     
+                    // create the project reviewers 
                     foreach ($reviewers as $reviewer) {
                         ProjectReviewer::create([
                             'order' => $reviewer->order,
@@ -191,36 +257,12 @@ class ProjectHelper
                             'reviewer_type' => 'document',
                             'project_document_id' => $project_document->id, // id of the connected document 
 
- 
+
                         ]);
 
                         
                     }
-                     
-
-                }
-
-
-
-                // ✅ Get the first project document
-                $firstProjectDocument = $project->project_documents->first();
-
-                if ($firstProjectDocument) {
-                    // ✅ Get the first reviewer for this document (lowest order)
-                    $firstReviewer = $firstProjectDocument->project_reviewers()
-                        ->orderBy('order', 'asc')
-                        ->first();
-
-                    if ($firstReviewer) {
-                        $firstReviewer->status = true; // mark as current/active
-                        $firstReviewer->save();
-                    }
-
-
-                    // dd($firstReviewer->user->name);
-                    ProjectHelper::notifyReviewersAndSubscribers($project, $firstReviewer, $submission_type);
-                    
-
+                        
 
                 }
 
@@ -228,81 +270,25 @@ class ProjectHelper
                 
             }
 
-             
 
-            // dd($project->project_reviewers);
-
-
-
-            // // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-            // $reviewer = ProjectReviewer::where('project_id', $project->id)
-            //     ->where('review_status', 'pending') 
-            //     ->orderBy('order', 'asc')
-            //     ->first();
-
-
-            // // update the first reviewer as the current reviewer
-            // $reviewer->status = true;
-            // $reviewer->save();
-
-
+            $project->resetCurrentProjectDocumentReviewers();
             
 
+        }else{ // re-submission
 
 
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            // Review::create([
-            //     'viewed' => true,
-            //     'project_review' => 'The project had been submitted', // message for draft projects
-            //     'project_id' => $project->id,
-            //     'reviewer_id' =>  $project->created_by,
-            //     'review_status' => 'submitted',
-            //     'created_by' => $project->created_by,
-            //     'updated_by' => $project->created_by,
-            //     'response_time_hours' => $response_time_hours,
-                
-            // ]);
-
-
-            
-
-
-
-
-        }else{ // if not, get the current reviewer
-
-            $submission_type = "re-submission";
-
-            $project->status = "submitted";
-            $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-            $project->updated_at = now();
-            $project->save();
-
-
-
-            if(!empty($project->project_documents) && count($project->project_documents) > 0){
+            if(!empty($project->project_documents) && $project->project_documents->count() > 0){
  
                 foreach($project->project_documents as $project_document){
 
+  
                     // Fetch all reviewers in order that is part of the project document id 
                     $reviewers = Reviewer::orderBy('order')
                         ->where('document_type_id', $project_document->document_type_id)
                         ->get(); 
                     
                     foreach ($reviewers as $reviewer) {
-                        // ProjectReviewer::create([
-                        //     'order' => $reviewer->order,
-                        //     'review_status' => 'pending',
-                        //     'project_id' => $project->id,
-                        //     'user_id' => $reviewer->user_id,
-                        //     'created_by' => auth()->id(),
-                        //     'updated_by' => auth()->id(),
-                        //     'reviewer_type' => 'document',
-                        //     'project_document_id' => $project_document->id, // id of the connected document 
-
- 
-                        // ]);
+                         
 
                         ProjectReviewer::firstOrCreate(
                             [
@@ -337,190 +323,33 @@ class ProjectHelper
 
                 }
 
-
-
-                // ✅ Get the first project document
-                $firstProjectDocument = $project->project_documents->first();
-
-                if ($firstProjectDocument) {
-                    // ✅ Get the first reviewer for this document (lowest order)
-                    $firstReviewer = $firstProjectDocument->project_reviewers()
-                        ->orderBy('order', 'asc')
-                        ->first();
-
-                    if ($firstReviewer) {
-                        $firstReviewer->status = true; // mark as current/active
-                        $firstReviewer->save();
-                    }
-
-
-                    // dd($firstReviewer->user->name);
-                    // ProjectHelper::notifyReviewersAndSubscribers($project, $firstReviewer, $submission_type);
-                    
-
-
-                }
-
-
-                
+ 
             }
-
-
-
-
-            $reviewer = $project->getCurrentReviewer();
-            // dd($reviewer);
-
-
-            $reviewer->review_status = "pending";
-            $reviewer->save();
-
-
-            ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
-
-
-            
-            // submitting a project creates a review that the user had submitted the project
-            // the condition is that the project creator id must be hte same to the reviewer id
-            // Review::create([
-            //     'viewed' => true,
-            //     'project_review' => 'The project had been re-submitted', // message for not-draft projects
-            //     'project_id' => $project->id,
-            //     'reviewer_id' =>  $project->created_by,
-            //     'review_status' => 're_submitted',
-            //     'created_by' => $project->created_by,
-            //     'updated_by' => $project->created_by,
-            //     'response_time_hours' => $response_time_hours,
-                
-            // ]);
-
-            /*
-            // Send notification email to reviewer
-            $user = User::find( $reviewer->user_id);
-            if ($user) {
- 
-                try {
-                    //send email notification
-                    Notification::send($user, new ProjectReviewFollowupNotification($project, $reviewer));
-                } catch (\Throwable $e) {
-                    // Log the error without interrupting the flow
-                    Log::error('Failed to send ProjectReviewFollowupNotification notification: ' . $e->getMessage(), [
-                        'project_id' => $project->id,
-                        'trace' => $e->getTraceAsString(),
-                    ]);
-                }
-
- 
-                try {
-                    //send notification to the database
-                    Notification::send($user, new ProjectReviewFollowupNotificationDB($project, $reviewer));
-                } catch (\Throwable $e) {
-                    // Log the error without interrupting the flow
-                    Log::error('Failed to send ProjectReviewFollowupNotification notification: ' . $e->getMessage(), [
-                        'project_id' => $project->id,
-                        'trace' => $e->getTraceAsString(),
-                    ]);
-                }
-
-
-                // update the subscribers 
-
-                    //message for the subscribers 
-                    $message = "The project '".$project->name."' had been re-submitted by '".Auth::user()->name."'";
             
 
-                    if(!empty($project->project_subscribers)){
-
-                        $sub_project = Project::where('id',$project->id)->first(); // get the project to be used for notification
-
-                        foreach($project->project_subscribers as $subcriber){
-
-                            // subscriber user 
-                            $sub_user = User::where('id',$subcriber->user_id)->first();
-
-                            if(!empty($sub_user)){
-                                // notify the next reviewer
-                                Notification::send($sub_user, new ProjectSubscribersNotification($sub_user, $sub_project,'project_resubmitted',$message ));
-                                //
-                                //  * Message type : 
-                                //  * @case('project_submitted')
-                                //         @php $message = "A new project, <strong>{$project->name}</strong>, has been submitted for review. Stay tuned for updates."; @endphp
-                                //         @break
-
-                                //     @case('project_reviewed')
-                                //         @php $message = "The project <strong>{$project->name}</strong> has been reviewed. Check out the latest status."; @endphp
-                                //         @break
-
-                                //     @case('project_resubmitted')
-                                //         @php $message = "The project <strong>{$project->name}</strong> has been updated and resubmitted for review."; @endphp
-                                //         @break
-
-                                //     @case('project_reviewers_updated')
-                                //         @php $message = "The list of reviewers for the project <strong>{$project->name}</strong> has been updated."; @endphp
-                                //         @break
-
-                                //     @default
-                                //         @php $message = "There is an important update regarding the project <strong>{$project->name}</strong>."; @endphp
-                                //
-
-
-                            }
-                            
-
-
-                        }
-                    } 
-                // ./ update the subscribers
-
-
-
-            }
-                */
-
+            $project->resetCurrentProjectDocumentReviewers();
 
 
 
         }
+
+
         
-        
-        
+ 
 
-        // if($submission_type = "submission")
-        try {
-            event(new \App\Events\ProjectSubmitted($project, $submission_type));
-        } catch (\Throwable $e) {
-            // Log the error without interrupting the flow
-            Log::error('Failed to dispatch ProjectSubmitted event: ' . $e->getMessage(), [
-                'project_id' => $project->id,
-                'trace' => $e->getTraceAsString(),
-            ]);
-        }
-            
-        
-
-
-        // ActivityLog::create([
-        //     'log_action' => "Project \"".$project->name."\" submitted ",
-        //     'log_username' => Auth::user()->name,
-        //     'created_by' => Auth::user()->id,
-        // ]);
-
-        // try {
-        //     event(new \App\Events\ProjectSubmitted($project));
-        // } catch (\Throwable $e) {
-        //     // Log the error without interrupting the flow
-        //     Log::error('Failed to dispatch ProjectSubmitted event: ' . $e->getMessage(), [
-        //         'project_id' => $project->id,
-        //         'trace' => $e->getTraceAsString(),
-        //     ]);
-        // }
-
-
-        Alert::success('Success','Project submitted successfully');
-        return redirect()->route('project.index');
 
 
     }
+
+
+
+
+
+
+
+
+
+
  
  
     /** Project Submission restriction  */
@@ -939,7 +768,7 @@ class ProjectHelper
 
         try {
             // notify the next reviewer
-        Notification::send($reviewer_user, new ProjectReviewNotification($project, $reviewer));
+            Notification::send($reviewer_user, new ProjectReviewNotification($project, $reviewer));
         } catch (\Throwable $e) {
             // Log the error without interrupting the flow
             Log::error('Failed to send ProjectReviewNotification notification: ' . $e->getMessage(), [
@@ -962,6 +791,39 @@ class ProjectHelper
         
 
     }
+
+
+
+    // send notification regarding complete project aproval notification
+    public static function sendCompleteProjectApprovalNotification(Project $project){
+
+        // send notification to the creator
+        if($project->status == "approved"){
+            $creator = User::where('id',$project->created_by)->first();
+
+            try {
+                // notify the next reviewer
+                Notification::send($creator, new ProjectCompleteApprovalNotification(  $project  )); 
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to send ProjectCompleteApprovalNotification notification: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            } 
+        }
+
+
+        // send notification to project subscribers  
+        $message = "The project '".$project->name."' had completed the review approval process ";
+        ProjectHelper::sendForProjectSubscribersProjectSubscribersNotification($project,  $message, "project_approved");
+
+
+        // project_approved
+
+
+    }
+
 
 
 
@@ -1018,5 +880,37 @@ class ProjectHelper
         } 
 
     }
+
+
+    // check if user is reviewer of the project
+    public static function checkIfUserIsProjectReviewer($project_id){
+
+         
+        $user = Auth::user();
+        // Check if the user has the role "DSI God Admin" OR the permission "project review"
+        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project review'))) {
+            return false;
+        }
+
+
+ 
+        $project = Project::findOrFail($project_id);
+
+
+        
+        // check if the user is a reviewer 
+        $isReviewer = $project->project_reviewers()->where('user_id', auth()->id())->exists();
+
+        if(!$isReviewer){
+            return false;
+        }
+
+
+
+        return true;
+ 
+
+    }
+
 
 }

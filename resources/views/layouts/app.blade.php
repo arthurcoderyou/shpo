@@ -377,7 +377,7 @@
                     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
 
                     if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "Viw eProjects");
+                        showNewDiscussionAlert(e.message, e.project_url, "View Projects");
                     }
                 }).listen('.submitted', (e) => {
 
@@ -770,8 +770,8 @@
         <script>
             let inactivityTime = function () {
                 let inactivityTimeout, alertTimeout;
-                // const inactivityLimit = 180000; // 3 minutes
-                const inactivityLimit = 60000; // 3 minutes
+                const inactivityLimit = 600000; // 1 hour
+                // const inactivityLimit = 60000; // 1 minutes
 
                 const warningTime = 30000; // 30 seconds before logout
 
@@ -784,14 +784,20 @@
                             "You've been inactive for a while.\nWould you like to stay logged in?"
                         );
                         if (!confirmLogout) {
-                            window.Livewire.emit('autoLogout');
+                            // window.Livewire.emit('autoLogout');
+
+                            Livewire.dispatch('autoLogout');
+
                         } else {
                             startTimers(); // Restart timers if user cancels logout
                         }
                     }, inactivityLimit - warningTime);
 
                     inactivityTimeout = setTimeout(() => {
-                        window.Livewire.emit('autoLogout');
+                        // window.Livewire.emit('autoLogout');
+
+                        Livewire.dispatch('autoLogout');
+
                     }, inactivityLimit);
                 };
 

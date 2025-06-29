@@ -6,25 +6,34 @@ use App\Models\ProjectAttachments;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class ProjectAttachmentDeleted implements ShouldBroadcastNow
+class ProjectAttachmentDeleted implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public ProjectAttachments $project_attachment;
+ 
     public string $message;
+
+    public $projectAttachmentId;
+    public $authId;
+
     /**
      * Create a new event instance.
      */
-    public function __construct(ProjectAttachments $project_attachment)
+    // public function __construct(ProjectAttachments $project_attachment, $authId)
+    public function __construct( $projectAttachmentId, $authId)
     {
-        $this->project_attachment = $project_attachment;
-        $this->message = "Project attachment '".$this->project_attachment->attachment."' deleted on '".$this->project_attachment->project_document->document_type->name."' for project '".$this->project_attachment->project_document->project->name."'";
+  
+        $this->message = "Project attachment '".$projectAttachmentId."' deleted ";
+
+        $this->projectAttachmentId = $projectAttachmentId;
+        $this->authId = $authId;
+
     }
 
     /**
@@ -49,8 +58,7 @@ class ProjectAttachmentDeleted implements ShouldBroadcastNow
          
         return [
             'message' => $this->message,
-            'project_id' => $this->project_attachment->project_document->project->id,
-            'project_url' => route('project.show',['project' => $this->project_attachment->project_document->project->id]),
+            'project_url' => route('project.index'), // show project list
         ];
     }
 }

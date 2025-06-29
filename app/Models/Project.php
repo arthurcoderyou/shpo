@@ -13,8 +13,7 @@ class Project extends Model
 {
     use SoftDeletes;
 
-
-
+ 
 
     protected $table = "projects";
     protected $fillable = [
@@ -64,7 +63,7 @@ class Project extends Model
             // event(new  \App\Events\ProjectCreated($project));
 
             try {
-                event(new \App\Events\ProjectCreated($project));
+                event(new \App\Events\ProjectCreated($project , auth()->user()->id ));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
@@ -80,7 +79,7 @@ class Project extends Model
             // event(new  \App\Events\ProjectUpdated($project));
 
             try {
-                event(new \App\Events\ProjectUpdated($project));
+                event(new \App\Events\ProjectUpdated($project,auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectUpdated event: ' . $e->getMessage(), [
@@ -96,7 +95,7 @@ class Project extends Model
 
 
              try {
-                event(new \App\Events\ProjectDeleted($project));
+                event(new \App\Events\ProjectDeleted($project->id, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectDeleted event: ' . $e->getMessage(), [
@@ -383,11 +382,75 @@ class Project extends Model
 
     public function getCurrentReviewer()
     {
-        return $this->project_reviewers() 
-            ->where('status', true)  // find the first active reviewer
-            ->orderBy('order')
-            ->first(); // Return the User model of the reviewer
+        // return $this->project_reviewers() 
+        //     ->where('status', true)  // find the first active reviewer
+        //     ->orderBy('order')
+        //     ->first(); // Return the User model of the reviewer
+
+        // Iterate over all project documents ordered by id (i.e. oldest first)
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+            $reviewer = $document->project_reviewers()
+                ->where('status', true)
+                ->where('review_status', '!=', 'approved')
+                ->orderBy('order')
+                ->first();
+
+            if ($reviewer) {
+                return $reviewer;
+            }
+        }
+
+
     }
+
+
+    public function getCurrentProjectDocument()
+    {
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+            $hasPendingReview = $document->project_reviewers() 
+                ->where('review_status', '!=', 'approved')
+                ->exists();
+
+            if ($hasPendingReview) {
+                return $document;
+            }
+        }
+
+        return null; // No matching document found
+    }
+
+
+
+    public function resetCurrentProjectDocumentReviewers()
+    {
+        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+            $hasPendingReview = $document->project_reviewers()
+                ->where('review_status', '!=', 'approved')
+                ->exists();
+
+            if ($hasPendingReview) {
+                // Deactivate all reviewers
+                $document->project_reviewers()->update(['status' => false]);
+
+                // Activate the first reviewer by order
+                $firstReviewer = $document->project_reviewers()
+                    ->where('review_status', '!=', 'approved')
+                    ->orderBy('order')
+                    ->first();
+
+                if ($firstReviewer) {
+                    $firstReviewer->status = true;
+                    $firstReviewer->save();
+                }
+
+                break; // Stop after the first matching document
+            }
+        }
+    }
+
+
+
+
 
 
     public function getNextReviewer()
@@ -554,6 +617,30 @@ class Project extends Model
 
 
             }
+
+
+        return $projects->count();
+    }
+
+
+
+     static public function countMyProjects($status = null){
+
+        $projects = Project::select('projects.*');
+ 
+            $projects =  $projects->where('created_by',Auth::user()->id);
+
+
+            if(!empty($status)){
+
+                $projects =  $projects->where('status',$status);
+
+
+            }
+ 
+
+
+             
 
 
         return $projects->count();

@@ -7,7 +7,7 @@ use App\Events\ProjectDiscussionCreated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectDiscussionCreatedListener
+class ProjectDiscussionCreatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

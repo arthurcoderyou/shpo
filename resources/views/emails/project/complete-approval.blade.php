@@ -1,3 +1,4 @@
+ 
 {{-- <x-mail::message>
 # Introduction
 
@@ -12,11 +13,13 @@ Thanks,<br>
 </x-mail::message> --}}
 
 @component('mail::message')
-# Project Reviewer List Updated
+# Project Completed Approval Process
+ 
+Hello {{ $user->name }} 🎉,
 
-Hello {{ $user->name }},
-
-The reviewer list for the project **{{ $project->name }}** has been updated. Below is the new list of assigned reviewers:
+We are excited to inform you that your project has been successfully approved.  
+  
+The reviewer list for the project **{{ $project->name }}** are listed below:
 
 ## **Updated Reviewer List and Order:**
 @foreach ($project->project_documents as $project_document)
@@ -30,16 +33,7 @@ The reviewer list for the project **{{ $project->name }}** has been updated. Bel
 
 @endforeach
 
-
-@php
-    $current_reviewer = $project->getCurrentReviewer();
-@endphp 
-
-@if(!empty($current_reviewer))
-## **Current Reviewer:**
-- **{{ $current_reviewer->order }}.** {{ $current_reviewer->user->name }} : {{ $current_reviewer->project_document->document_type->name ?? null }}
-@endif
-
+ 
 
 ## **Project Details:**
 - **Name:** {{ $project->name }}
@@ -49,8 +43,7 @@ The reviewer list for the project **{{ $project->name }}** has been updated. Bel
 @component('mail::button', ['url' => $url])
 View Project
 @endcomponent
-
-Please review the project as necessary.
+ 
 
 Thanks,  
 {{ config('app.name') }}

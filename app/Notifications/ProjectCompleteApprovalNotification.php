@@ -2,28 +2,25 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
-use App\Models\ProjectReviewer;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ProjectReviewNotification extends Notification   implements ShouldQueue
-// implements ShouldQueue
+class ProjectCompleteApprovalNotification extends Notification implements ShouldQueue 
 {
     use Queueable;
 
-    protected $project;
-    protected $projectReviewer;
+    protected $project; 
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Project $project, ProjectReviewer $projectReviewer)
+    public function __construct(Project $project)
     {
-        $this->project = $project;
-        $this->projectReviewer = $projectReviewer;
+        $this->project = $project; 
     }
 
     /**
@@ -50,42 +47,28 @@ class ProjectReviewNotification extends Notification   implements ShouldQueue
     public function toMail($notifiable)
     {
         $attachments = $this->project->attachments;
-        $projectLink = url()->to(route('project.review', $this->project->id, false));
+        $projectLink = url()->to(route('project.show', $this->project->id, false));
+        $user = User::find($this->project->created_by);
 
         $email = (new MailMessage)
-            ->subject("Project Review Request: {$this->project->name}")
-            ->markdown('emails.project.review', [
-                'project' => $this->project,
-                'reviewer' => $this->projectReviewer,
+            ->subject("Project Approval Completed: {$this->project->name}")
+            ->markdown('emails.project.complete-approval', [
+                'project' => $this->project, 
                 'url' => $projectLink,
+                'user' => $user,
             ]);
+ 
 
         // Attach project files if any
         foreach ($attachments as $attachment) {
-            $path = storage_path("app/public/uploads/review_attachments/{$attachment->attachment}");
+            $path = storage_path("app/public/uploads/project_attachments/{$attachment->attachment}");
             if (file_exists($path)) {
                 $email->attach($path);
             }
         }
 
-
-
         
 
         return $email;
     }
-
-
-
-    // /**
-    //  * Get the array representation of the notification.
-    //  *
-    //  * @return array<string, mixed>
-    //  */
-    // public function toArray(object $notifiable): array
-    // {
-    //     return [
-    //         //
-    //     ];
-    // }
 }

@@ -6,23 +6,32 @@ use App\Models\Project;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class ProjectUpdated implements ShouldBroadcastNow
+class ProjectUpdated  implements ShouldBroadcast 
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public Project $project;
+    public Project $project; 
+    public string $message;
+    public $projectId;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct(Project $project)
+    public function __construct(Project $project,$authId )
     {
         $this->project = $project;
+        $this->message = "Project '".$this->project->name."' updated";
+
+        $this->projectId = $project->id;
+        $this->authId = $authId;
+
     }
 
     /**
@@ -45,7 +54,7 @@ class ProjectUpdated implements ShouldBroadcastNow
     public function broadcastWith(){
          
         return [
-            'message' => "Project '".$this->project->name."' updated", 
+            'message' => $this->message,
             'project_id' => $this->project->id,
             'project_url' => route('project.show',['project' => $this->project->id]),
         ];

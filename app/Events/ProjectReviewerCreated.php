@@ -4,24 +4,29 @@ namespace App\Events;
 
 use App\Models\ProjectReviewer;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
 
-class ProjectReviewerCreated implements ShouldBroadcastNow
+class ProjectReviewerCreated implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public ProjectReviewer $project_reviewer;
     public string $message;
+
+    public $projectReviewerId;
+    public $authId;
+
     /**
      * Create a new event instance.
      */
-    public function __construct(ProjectReviewer $project_reviewer)
+    public function __construct(ProjectReviewer $project_reviewer, $authId)
     {
         $this->project_reviewer = $project_reviewer;
 
@@ -37,6 +42,10 @@ class ProjectReviewerCreated implements ShouldBroadcastNow
             }
  
         }
+
+        $this->projectReviewerId =$project_reviewer->id;
+        $this->authId = $authId;
+
 
     }
 

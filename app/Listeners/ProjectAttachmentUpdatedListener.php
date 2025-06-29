@@ -2,12 +2,14 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\ProjectAttachments;
 use App\Events\ProjectAttachmentUpdated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectAttachmentUpdatedListener
+class ProjectAttachmentUpdatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -22,13 +24,19 @@ class ProjectAttachmentUpdatedListener
      */
     public function handle(ProjectAttachmentUpdated $event): void
     {
+
+
+        $project_attachment = ProjectAttachments::find($event->projectAttachmentId );
+        $user = User::find($event->authId); 
+
+
         ActivityLog::create([
-            'created_by' => $event->project_attachment->created_by,
-            'log_username' => auth()->user()->name,
+            'created_by' => $project_attachment->created_by,
+            'log_username' => $user->name,
             'log_action' =>  $event->message,
-            'project_id' =>  $event->project_attachment->project_document->project->id,
-            'project_document_id' => $event->project_attachment->project_document->id,
-            'project_document_attachment_id' => $event->project_attachment->id,
+            'project_id' =>  $project_attachment->project_document->project->id,
+            'project_document_id' => $project_attachment->project_document->id,
+            'project_document_attachment_id' => $project_attachment->id,
         ]);
     }
 }

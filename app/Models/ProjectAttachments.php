@@ -29,7 +29,7 @@ class ProjectAttachments extends Model
             // event(new  \App\Events\ProjectAttachmentCreated($project_attachment));
 
             try {
-                event(new \App\Events\ProjectAttachmentCreated($project_attachment));
+                event(new \App\Events\ProjectAttachmentCreated($project_attachment, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectAttachmentCreated event: ' . $e->getMessage(), [
@@ -46,7 +46,7 @@ class ProjectAttachments extends Model
             // event(new  \App\Events\ProjectAttachmentUpdated($project_attachment));
 
             try {
-                event(new \App\Events\ProjectAttachmentUpdated($project_attachment));
+                event(new \App\Events\ProjectAttachmentUpdated($project_attachment, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectAttachmentUpdated event: ' . $e->getMessage(), [
@@ -61,7 +61,7 @@ class ProjectAttachments extends Model
             // event(new  \App\Events\ProjectAttachmentDeleted($project_attachment));
 
             try {
-                event(new \App\Events\ProjectAttachmentDeleted($project_attachment));
+                event(new \App\Events\ProjectAttachmentDeleted($project_attachment->id, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectAttachmentDeleted event: ' . $e->getMessage(), [

@@ -7,7 +7,7 @@ use App\Events\DocumentTypeCreated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class DocumentTypeCreatedListener
+class DocumentTypeCreatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

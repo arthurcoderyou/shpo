@@ -67,6 +67,8 @@ class ProjectList extends Component
     public $review_status_options = [];
 
     // Route verifiers
+    
+    public $routeIsMyProjects;
     public $routeIsReview;
     public $routeIsPendingProject;
 
@@ -109,6 +111,7 @@ class ProjectList extends Component
         //set the project review status array
         $this->setReviewStatusArray();
 
+        $this->routeIsMyProjects = request()->routeIs('project.index.my-projects');
         $this->routeIsReview = request()->routeIs('project.in_review');
         $this->routeIsPendingProject = request()->routeIs('project.pending_project_update');
 
@@ -162,6 +165,9 @@ class ProjectList extends Component
         if(request()->routeIs('project.index')){
             $this->title = "Project"; 
             $this->subtitle = "Listing of projects";
+        }elseif(request()->routeIs('project.index.my-projects')){
+            $this->title = "My Projects"; 
+            $this->subtitle = "Listing of my projects";
         }elseif(request()->routeIs('project.in_review')){
             $this->title = "Project for Review"; 
             $this->subtitle = "Listing of projects that needs to be reviewed";
@@ -294,7 +300,16 @@ class ProjectList extends Component
         $this->selected_records = [];
 
         Alert::success('Success', 'Selected projects deleted successfully');
-        return redirect()->route('project.index');
+
+        // if($project->created_by == auth()->user()->id){
+        //     return redirect()->route('project.index.my-projects');
+
+        // }else{
+
+        return redirect()->back();
+        // }
+
+        
     }
 
     // This method is called automatically when selected_records is updated
@@ -382,6 +397,20 @@ class ProjectList extends Component
         $project = Project::find($id);
 
 
+        if($project->status !== "draft" || !Auth::user()->hasRole('DSI God Admin') || !Auth::user()->hasRole('Admin')  ){
+            Alert::error('Error','Project is not draft. It cannot be deleted. Please contact administrator if you want to delete the project ');
+
+            if($project->created_by == auth()->user()->id){
+                return redirect()->route('project.index.my-projects');
+            }else{
+                return redirect()->route('project.index');
+            }
+
+            
+        }
+
+
+
         // delete project connected records 
         
             //delete project reviewers 
@@ -440,17 +469,29 @@ class ProjectList extends Component
         $project->delete();
 
 
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" deleted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Project \"".$project->name."\" deleted ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
 
 
 
         Alert::success('Success','Project deleted successfully');
-        return redirect()->route('project.index');
+        // return redirect()->route('project.index');
+
+        // if($project->created_by == auth()->user()->id){
+        //     return redirect()->route('project.index.my-projects');
+
+        // }else{
+
+        //     return redirect()->route('project.index');
+        // }
+
+        return redirect()->back();
+
+
 
     }
 
@@ -650,7 +691,97 @@ class ProjectList extends Component
         $projects = Project::select('projects.*');
 
 
+
+
+
+        if(!$this->routeIsMyProjects){ // if the route is for my projects only, only show hte user projects
+
+            /**Identify the records to disply by roles  */
+            if(Auth::user()->hasRole('User')){
+                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
+            
+
+                /**Identify the records to display based on the current route */
+                /** User route for pending project updates for resubmission */
+                if($this->routeIsPendingProject){
+                    $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
+                        ->whereNot('status','draft')
+                        ->where('allow_project_submission',true)
+                        
+                        ->where('created_by',Auth::user()->id);
+                } 
+
+                // for other routes, user will display all of his projects
+                $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
+
+
+            }elseif(Auth::user()->hasRole('Reviewer')){
+                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
+                
+                if($this->routeIsReview){
+                    $projects = $projects->whereNot('status','approved')->whereNot('status','draft')
+                        ->whereHas('project_reviewers', function ($query) {
+                            $query->where('user_id', Auth::id())
+                                ->where('status', true)
+                                ; // Filter by the logged-in user's ID
+                        });
+
+                }else{
+                    // do not show drafts to reviewers
+                    $projects = $projects->whereNot('status','draft');
+
+                    
+                }
+
+                
+
+            
+
+
+
+            }elseif(Auth::user()->hasRole('Admin')){
+                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
+                
+                if($this->routeIsReview){
+                    $projects = $projects->whereNot('status','approved')->whereNot('status','draft')
+                        ->whereHas('project_reviewers', function ($query) {
+                            $query->where('status', true)
+                                ; // Filter by the logged-in user's ID
+                        })
+                        ->where('allow_project_submission',false);
+
+                }elseif($this->routeIsPendingProject){
+                    $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
+                        ->whereNot('status','draft')
+                        ->where('allow_project_submission',true);
+                        
+                        // ->where('created_by',Auth::user()->id);
+                } 
+
+                // do not show drafts to reviewers
+                $projects = $projects->whereNot('status','draft');
+            }
+        
+        
+
+        }else{
+
+            // for other routes, user will display all of his projects
+            $projects = $projects->orWhere('projects.created_by', '=', Auth::user()->id); 
+
+        }
+
+
+
+
+
+
+
+
+
         if (!empty($this->search)) {
+
+            // dd($this->search);
             $search = $this->search;
         
             $projects = $projects->where(function($query) use ($search) {
@@ -721,64 +852,8 @@ class ProjectList extends Component
         }
 
 
-        /**Identify the records to disply by roles  */
-        if(Auth::user()->hasRole('User')){
-            // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
+
         
-
-            /**Identify the records to display based on the current route */
-            /** User route for pending project updates for resubmission */
-            if($this->routeIsPendingProject){
-                $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                    ->whereNot('status','draft')
-                    ->where('allow_project_submission',true)
-                    
-                    ->where('created_by',Auth::user()->id);
-            } 
-
-            // for other routes, user will display all of his projects
-            $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-
-
-        }elseif(Auth::user()->hasRole('Reviewer')){
-            // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-            
-            if($this->routeIsReview){
-                $projects = $projects->whereNot('status','approved')->whereNot('status','draft')
-                    ->whereHas('project_reviewers', function ($query) {
-                        $query->where('user_id', Auth::id())
-                            ->where('status', true)
-                            ; // Filter by the logged-in user's ID
-                    });
-
-            }
-
-            // do not show drafts to reviewers
-            $projects = $projects->whereNot('status','draft');
-
-
-        }elseif(Auth::user()->hasRole('Admin')){
-            // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-            
-            if($this->routeIsReview){
-                $projects = $projects->whereNot('status','approved')->whereNot('status','draft')
-                    ->whereHas('project_reviewers', function ($query) {
-                        $query->where('status', true)
-                            ; // Filter by the logged-in user's ID
-                    })
-                    ->where('allow_project_submission',false);
-
-            }elseif($this->routeIsPendingProject){
-                $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                    ->whereNot('status','draft')
-                    ->where('allow_project_submission',true);
-                    
-                    // ->where('created_by',Auth::user()->id);
-            } 
-
-            // do not show drafts to reviewers
-            $projects = $projects->whereNot('status','draft');
-        }
         
 
 

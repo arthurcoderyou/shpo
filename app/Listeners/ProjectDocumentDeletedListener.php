@@ -2,12 +2,14 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\ProjectDocument;
 use App\Events\ProjectDocumentDeleted;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectDocumentDeletedListener
+class ProjectDocumentDeletedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -22,12 +24,16 @@ class ProjectDocumentDeletedListener
      */
     public function handle(ProjectDocumentDeleted $event): void
     {
+
+        // $project_document = ProjectDocument::find($event->projectDocumentId);
+        $user = User::find($event->authId); 
+
         ActivityLog::create([
-            'created_by' => $event->project_document->created_by,
-            'log_username' => auth()->user()->name,
-            'log_action' =>  $event->message,
-            'project_id' =>  $event->project_document->project->id,
-            'project_document_id' => $event->project_document->id,
+            'created_by' => $event->authId,
+            'log_username' => $user->name,
+            'log_action' =>  $event->message, 
+            // 'project_id' =>  $project_document->project->id,
+            // 'project_document_id' => $project_document->id,
         ]);
     }
 }

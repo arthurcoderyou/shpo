@@ -6,25 +6,32 @@ use App\Models\ProjectDocument;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class ProjectDocumentDeleted implements ShouldBroadcastNow
+class ProjectDocumentDeleted implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public ProjectDocument $project_document;
+ 
     public string $message;
+
+    public $projectDocumentId;
+    public $authId;
+    
     /**
      * Create a new event instance.
      */
-    public function __construct(ProjectDocument $project_document)
+    public function __construct( $projectDocumentId, $authId)
     {
-        $this->project_document = $project_document;
-        $this->message = "Project document deleted on '".$this->project_document->document_type->name."' for project '".$this->project_document->project->name."'";
+        
+        $this->message = "Project document '".$projectDocumentId."' deleted ";
+
+        $this->projectDocumentId = $projectDocumentId;
+        $this->authId = $authId;
     }
 
     /**
@@ -50,9 +57,8 @@ class ProjectDocumentDeleted implements ShouldBroadcastNow
 
 
         return [
-            'message' => $this->message,
-            'project_id' => $this->project_document->project->id,
-            'project_url' => route('project.show',['project' => $this->project_document->project->id]),
+            'message' => $this->message,  
+            'project_url' => route('project.index'), // show project list
         ];
     }
 }

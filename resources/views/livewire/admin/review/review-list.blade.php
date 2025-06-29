@@ -208,7 +208,7 @@
 
                                 <td class="size-auto text-wrap max-w-full ">
                                     <div class="px-2 py-2">
-
+                                        {{-- 
                                         <!-- Check if it is an admin review-->
                                         @if($review->admin_review == true)
 
@@ -232,16 +232,7 @@
                                             </div>
                                             <!-- End Profile -->
 
-
-                                           
-
-                                            {{-- <!-- About -->
-                                            <div class="mt-2">
-
-                                                <p class="text-sm text-gray-600 ">
-                                                    {{ $review->project_review }}
-                                                </p>
-                                            </div> --}}
+ 
 
                                             
 
@@ -304,6 +295,9 @@
                                         
                                         <!-- if it is a reviewer review , show review details -->
                                         @elseif(!$review->isSubmitterReview() && $review->review_status !== "submitted") 
+
+                                         --}}
+
                                             <!-- Profile -->
                                             <div class="flex items-center gap-x-3">
                                                 
@@ -600,7 +594,7 @@
 
  
 
-
+                                        {{-- 
                                         <!-- if it is a submitter review , show submitted details -->
                                         @else 
 
@@ -640,6 +634,7 @@
 
 
                                         @endif
+                                         --}}
 
                                     </div>
                                 </td>

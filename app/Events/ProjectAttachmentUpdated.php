@@ -6,25 +6,35 @@ use App\Models\ProjectAttachments;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class ProjectAttachmentUpdated implements ShouldBroadcastNow
+class ProjectAttachmentUpdated implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public ProjectAttachments $project_attachment;
     public string $message;
+
+    public $projectAttachmentId;
+    public $authId;
+
     /**
      * Create a new event instance.
      */
-    public function __construct(ProjectAttachments $project_attachment)
+    public function __construct(ProjectAttachments $project_attachment, $authId)
     {
         $this->project_attachment = $project_attachment;
         $this->message = "Project attachment '".$this->project_attachment->attachment."' updated on '".$this->project_attachment->project_document->document_type->name."' for project '".$this->project_attachment->project_document->project->name."'";
+
+        $this->projectAttachmentId = $this->project_attachment->id;
+        $this->authId = $authId;
+
+
     }
 
     /**

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UserCreatedListener
+class UserCreatedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

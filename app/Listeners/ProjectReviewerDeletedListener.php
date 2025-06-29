@@ -2,12 +2,13 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
 use App\Models\ActivityLog;
 use App\Events\ProjectReviewerDeleted;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ProjectReviewerDeletedListener
+class ProjectReviewerDeletedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -21,17 +22,13 @@ class ProjectReviewerDeletedListener
      * Handle the event.
      */
     public function handle(ProjectReviewerDeleted $event): void
-    {
-        $project_reviewer = $event->project_reviewer;
- 
+    { 
+        $user = User::find($event->authId );
 
         ActivityLog::create([
-            'created_by' => $project_reviewer->created_by,
-            'log_username' => auth()->user()->name,
-            'log_action' => $event->message,
-            'project_id' =>  $project_reviewer->project_id,   
-            'project_document_id' => $event->project_reviewer->project_document_id ?? null, 
-            'project_reviewer_id' => $event->project_reviewer->id ,
+            'created_by' => $event->authId,
+            'log_username' =>  $user->name,
+            'log_action' => $event->message, 
         ]);
     }
 }

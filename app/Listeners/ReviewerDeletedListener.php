@@ -7,7 +7,7 @@ use App\Events\ReviewerDeleted;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ReviewerDeletedListener
+class ReviewerDeletedListener  implements ShouldQueue
 {
     /**
      * Create the event listener.

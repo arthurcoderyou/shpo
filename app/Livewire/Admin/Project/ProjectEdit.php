@@ -97,7 +97,8 @@ class ProjectEdit extends Component
         $this->federal_agency = $project->federal_agency;
 
         $this->project_number = $project->project_number ? $project->project_number: Project::generateProjectNumber();
-        $this->shpo_number = $project->shpo_number ? $project->shpo_number : Project::generateProjectNumber(rand(10, 99)) ;
+        // $this->shpo_number = $project->shpo_number ? $project->shpo_number : Project::generateProjectNumber(rand(10, 99)) ;
+         $this->shpo_number = $project->shpo_number ? $project->shpo_number : null;
         $this->submitter_due_date = $project->submitter_due_date;
         $this->reviewer_due_date = $project->reviewer_due_date;
         $this->submitter_response_duration_type = $project->submitter_response_duration_type;

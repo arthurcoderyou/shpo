@@ -60,7 +60,7 @@ class ActivityLog extends Model
         static::created(function ($activityLog) {
             // Trigger an event or perform some action when a new Activity
             // Log is created
-            // event(new ActivityLogCreated($activityLog));
+            event(new ActivityLogCreated($activityLog));
         });
     }
 
