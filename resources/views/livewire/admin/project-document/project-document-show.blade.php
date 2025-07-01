@@ -193,14 +193,13 @@
                                             <div class="dz-flex dz-flex-wrap dz-gap-x-10 dz-gap-y-2 dz-justify-start dz-w-full">
                                                 @foreach ($project_documents as $attachment)
 
-                                                    <?php 
-                                                    // $attachment_file = asset('storage/uploads/funeral_attachments/' . $attachment['attachment']);
+                                                    @php 
+                                                     
                                                     $attachment_file = route('ftp.download', ['id' => $attachment['id']]);
 
-                                                    // $attachment_download_file = route('ftp.download', ['id' => $attachment['id']]);
-
+                                                     
                                                     
-                                                    ?>
+                                                    @endphp
 
                                                     {{-- <?php $attachment_file = asset('storage/uploads/project_attachments/' . $attachment['attachment']); ?> --}}
 
