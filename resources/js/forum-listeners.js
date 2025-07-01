@@ -26,6 +26,13 @@ window.Echo.channel('forums')
         showAlert(e.message);
     });
 
+window.Echo.channel('notifications')
+    .listen('.delete', (e) => {
+        console.log(e.message);
+        Livewire.dispatch('notificationsDeleted');
+        showAlert(e.message);
+    });
+
 
 // window.Echo.channel('project_discussions')
 //     .listen('.create', (e) => {

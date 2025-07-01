@@ -8,19 +8,32 @@ use Livewire\Component;
 class UserDashboard extends Component
 {
 
+
+    protected $listeners = [
+        'projectCreated' => '$refresh',
+        'projectUpdated' => '$refresh',
+        'projectDeleted' => '$refresh',
+        'projectSubmitted' => '$refresh',
+        'projectQueued' => '$refresh',
+        // 'projectDocumentCreated' => '$refresh',
+        // 'projectDocumentUpdated' => '$refresh',
+        // 'projectDocumentDeleted' => '$refresh',
+    ];
+
+
     public $pending_update_projects;
-    public $all_projects;
+    public $my_projects;
     public $in_review_projects;
     public $approved_projects;
 
     public function mount(){
-        $this->pending_update_projects = Project::countProjectsForUpdate();
 
-        
-        
-        $this->all_projects = Project::countProjects();
-        $this->in_review_projects  = Project::countProjects("in_review");
-        $this->approved_projects  = Project::countProjects("approved");
+
+
+        $this->pending_update_projects = Project::countProjectsForUpdate(); 
+        $this->my_projects = Project::countProjects(null, "yes");
+        $this->in_review_projects  = Project::countProjects("in_review", "yes");
+        $this->approved_projects  = Project::countProjects("approved", "yes");
 
 
 

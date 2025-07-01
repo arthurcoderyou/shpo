@@ -75,7 +75,7 @@
                             </button>
 
 
-                        {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->hasRole('DSI God Admin')) --}}
+                        {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->hasRole('DSI God Admin')) 
                             <button
                                 onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                                 wire:click.prevent="deleteSelected"
@@ -144,7 +144,7 @@
                                             wire:change="updateSelectedCount"
                                             class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
                                             id="notification_{{ $notification->id }}"
-                                            value="{{ $notification->id }}"
+                                            value="'{{ $notification->id }}'"
                                             >
                                             <span class="sr-only">Checkbox</span>
                                         </label>
@@ -228,7 +228,7 @@
                                         {{-- @if( Auth::user()->can('user delete')  ||  Auth::user()->hasRole('DSI God Admin')) --}}
                                         <button
                                         onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
-                                        wire:click.prevent="delete({{ $notification->id }})"
+                                        wire:click.prevent="delete('{{ $notification->id }}')"
                                         type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"/></svg>
                                         </button>

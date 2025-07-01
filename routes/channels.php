@@ -83,3 +83,10 @@ Broadcast::channel('review', function ($review) {
     return Auth::check();
 
 });
+
+
+Broadcast::channel('notifications', function ($review) { 
+    
+    return Auth::check();
+
+});

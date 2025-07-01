@@ -9,6 +9,13 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class ProjectController extends Controller
 {
+
+
+    // Note that the control of that data displayed is on the Class of the project.list 
+    // You are just adding the route in order to not make any route mistakes
+
+
+
     // index
     public function index(){
 
@@ -22,9 +29,31 @@ class ProjectController extends Controller
                
              
         }
-
+ 
         return view('admin.project.index');
     }
+
+
+    // my_projects_index
+    public function my_projects_index(){
+
+        $user = Auth::user();
+        // Check if the user has the role "DSI God Admin" OR the permission "project list view"
+        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project list view'))) {
+            Alert::error('Error', 'You do not have permission to access this section.');
+
+            // If there is no previous URL, redirect to the dashboard
+            return redirect()->route('dashboard');
+               
+             
+        }
+ 
+        return view('admin.project.my-projects.index');
+    }
+
+ 
+
+ 
 
     public function in_review(){
 
@@ -43,6 +72,27 @@ class ProjectController extends Controller
         return view('admin.project.in_review');
 
     }
+
+
+    public function my_projects_in_review(){
+
+        $user = Auth::user();
+        // Check if the user has the role "DSI God Admin" OR the permission "project review list view"
+        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project review list view'))) {
+            Alert::error('Error', 'You do not have permission to access this section.');
+
+            // If there is no previous URL, redirect to the dashboard
+            return redirect()->route('dashboard');
+               
+             
+        }
+
+
+        return view('admin.project.my-projects.in_review');
+
+    }
+
+
 
     public function review($id){
         
@@ -183,6 +233,25 @@ class ProjectController extends Controller
 
         return view('admin.project.pending_project_update');
     }
+
+    // list of projects that are pending update by users
+    public function my_projects_pending_project_update(){
+
+        $user = Auth::user();
+        // Check if the user has the role "DSI God Admin" OR the permission "project update list view"
+        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project update list view'))) {
+            Alert::error('Error', 'You do not have permission to access this section.');
+
+            // If there is no previous URL, redirect to the dashboard
+            return redirect()->route('dashboard');
+               
+             
+        }
+
+
+        return view('admin.project.my-projects.pending_project_update');
+    }
+
     
 
     // // add_permissions

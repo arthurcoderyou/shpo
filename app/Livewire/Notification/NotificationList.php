@@ -10,7 +10,9 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class NotificationList extends Component
 {   
-
+    protected $listeners = [
+        'notificationsDeleted' => '$refresh',
+    ];
 
     use WithFileUploads;
     use WithPagination;
@@ -48,8 +50,8 @@ class NotificationList extends Component
 
         $this->selected_records = []; // Clear selected records
 
-        Alert::success('Success','Selected notifications deleted successfully');
-        return redirect()->route('dashboard');
+        // Alert::success('Success','Selected notifications deleted successfully');
+        // return redirect()->route('dashboard');
     }
 
     // Method to markAsReadSelected selected records
@@ -108,14 +110,16 @@ class NotificationList extends Component
     }
 
     public function delete($notificationId){
+ 
+
         // Retrieve the notification again
         $notification = auth()->user()->notifications()->where('id', $notificationId)->first();
 
 
         $notification->delete();     
 
-        Alert::success('Success','Notification deleted successfully');
-        return redirect()->route('dashboard');
+        // Alert::success('Success','Notification deleted successfully');
+        // return redirect()->route('dashboard');
 
     }
 
@@ -142,8 +146,7 @@ class NotificationList extends Component
     }
 
 
-    public function render()
-    {
+    public function getNotificationsProperty(){
         $notifications = auth()->user()->notifications(); // Paginate 10 per page
 
         // **Search by Message**
@@ -185,8 +188,16 @@ class NotificationList extends Component
         // **Pagination**
         $notifications = $notifications->paginate($this->record_count);
 
+        return $notifications;
+    }
+
+
+    public function render()
+    {
+        
+
         return view('livewire.notification.notification-list', [
-            'notifications' => $notifications
+            'notifications' => $this->notifications
         ]);
     }
 

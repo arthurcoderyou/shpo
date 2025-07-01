@@ -307,7 +307,10 @@ new class extends Component
                             <!-- Projects -->
                             <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
                                 <button id="hs-header-base-dropdown" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
-                                {{ request()->routeIs('project.index.my-projects') || request()->routeIs('project.index') || request()->routeIs('project.in_review') ||
+                                {{ request()->routeIs('project.index.my-projects')  ||
+                                    request()->routeIs('project.in_review.my-projects')  ||
+                                    request()->routeIs('project.pending_project_update.my-projects') ||
+                                    request()->routeIs('project.index') || request()->routeIs('project.in_review') ||
                                     request()->routeIs('reviewer.index') || request()->routeIs('project.edit') || 
                                     request()->routeIs('project.create') || request()->routeIs('project.show') || 
                                     request()->routeIs('project.in_review') || request()->routeIs('project.review') || 
@@ -332,51 +335,171 @@ new class extends Component
 
                                         @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project create'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project.create') 
-                                            
+
                                             ? $active : $inactive }}" 
                                             href="{{ route('project.create') }}">
-                                                Submit a Project
-                                            </a>
-                                        @endif
-    
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project reviewer list view'))
-                                            <a class="p-2 md:px-3  flex items-center text-sm {{ request()->routeIs('project.in_review')  || request()->routeIs('project.review')  
-                                            
-                                            ? $active : $inactive }}" 
-                                            href="{{ route('project.in_review') }}">
-                                                Projects for Review    &nbsp;&nbsp;
-                                                @php 
-                                                    $projects_for_review = 0;
-                                                    $projects_for_review = Project::countProjectsForReview(); 
-                                                @endphp
-                                                <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
-                                                >{{ $projects_for_review }}</span>
+                                                <span class="py-0.5 px-1.5">
+                                                    Submit a Project
+                                                </span>
+
+                                                
                                             </a>
                                         @endif
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update list view'))
-                                            <a class="p-2 md:px-3  flex items-center text-sm {{ 
-                                            request()->routeIs('project.pending_project_update')  
-                                            ? $active : $inactive }}" 
-                                            href="{{ route('project.pending_project_update') }}">
-                                                Project for Update    &nbsp;&nbsp;
-                                                @php 
-                                                    $projects_for_review = 0;
-                                                    $projects_for_review = Project::countProjectsForUpdate(); 
-                                                @endphp
-                                                <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
-                                                >{{ $projects_for_review }}</span>
-                                            </a>
-                                        @endif
+
+                                        {{-- ALL --}}
+
+                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update all list view'))
+                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
+                                                request()->routeIs('project.in_review')  
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.in_review') }}">
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+
+                                                    Projects Pending Review    &nbsp; 
+                                                    </span>
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjectsForReview(); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif
+
+
+
+                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update all list view'))
+                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
+                                                request()->routeIs('project.pending_project_update')  
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.pending_project_update') }}">
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+
+                                                    Projects Update Pending    &nbsp; 
+                                                    </span>
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjectsForUpdate(); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif
+
+                                              
+
+                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project all list view'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index') ||  
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        All Projects &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects(); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+                                             
+
+                                            
+
+                                        {{-- ./ ALL --}}
+
+
+
+
+                                        {{-- OWNED --}}
+                                           
+
+                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update list view'))
+                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
+                                                request()->routeIs('project.pending_project_update.my-projects')  
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.pending_project_update.my-projects') }}">
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+
+                                                    Your Projects Update Pending    &nbsp; 
+                                                    </span>
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjectsForUpdate("yes"); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif
+
+                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project list view'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.my-projects') ||  
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.my-projects') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Your Projects &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countMyProjects(); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif  
+
+
+                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project review list view'))
+                                                <a class="p-2 md:px-3  flex items-center justify-center text-sm {{ request()->routeIs('project.in_review.my-projects')  || request()->routeIs('project.review')   
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.in_review.my-projects') }}">
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Your Projects In Review    &nbsp;&nbsp; 
+                                                    </span> 
+                                                    
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjects("in_review","yes"); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif
+
+
+                                        {{-- ./ OWNED --}}
+
+                                        
+
 
                                         @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('review list view'))
                                             <a class="p-2 md:px-3  flex items-center text-sm {{ 
                                             request()->routeIs('review.index')  
                                             ? $active : $inactive }}" 
                                             href="{{ route('review.index') }}">
-                                                Project Reviews    &nbsp;&nbsp;
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Project Reviews    &nbsp;&nbsp;
+                                                </span>
                                                 @php 
                                                     $projects_reviews = 0;
                                                     $projects_reviews = \App\Models\Review::count(); 
@@ -387,51 +510,14 @@ new class extends Component
                                             </a>
                                         @endif
 
-
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project list view'))
-                                            <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                request()->routeIs('project.index.my-projects') ||  
-                                                ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
-                                                ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
-                                                 ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
-
-                                            ? $active : $inactive }}" 
-                                            href="{{ route('project.index.my-projects') }}">
-                                                My Projects &nbsp;&nbsp;
-                                                @php 
-                                                    $projects_count = 0;
-                                                    $projects_count = Project::countMyProjects(); 
-                                                @endphp
-                                                <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                    title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
-                                                    >{{ $projects_count }}</span>
-                                            </a>
-                                        @endif
-
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project all list view'))
-                                            <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                request()->routeIs('project.index') || 
-                                                ( !empty($current_route_project) && $current_route_project->created_by !== Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
-                                                ( !empty($current_route_project) && $current_route_project->created_by !== Auth::user()->id &&  request()->routeIs('project.show')  ) || 
-                                                 ( !empty($current_route_project) && $current_route_project->created_by !== Auth::user()->id &&  request()->routeIs('project.reviewer.index')  ) 
-
-                                            ? $active : $inactive }}" 
-                                            href="{{ route('project.index') }}">
-                                                All Projects &nbsp;&nbsp;
-                                                @php 
-                                                    $projects_count = 0;
-                                                    $projects_count = Project::countProjects(); 
-                                                @endphp
-                                                <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                    title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
-                                                    >{{ $projects_count }}</span>
-                                            </a>
-                                        @endif
+ 
 
                                         @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('reviewer list view'))
                                             <a class="p-2 md:px-3 flex   items-center text-sm {{ request()->routeIs('reviewer.index')  ? $active : $inactive }}" 
                                             href="{{ route('reviewer.index') }}">
-                                                Project Reviewer 
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Project Reviewer 
+                                                </span>
                                                 @if($reviewer_exists)
                                                     <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#63E6BE" d="M504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zM227.3 387.3l184-184c6.2-6.2 6.2-16.4 0-22.6l-22.6-22.6c-6.2-6.2-16.4-6.2-22.6 0L216 308.1l-70.1-70.1c-6.2-6.2-16.4-6.2-22.6 0l-22.6 22.6c-6.2 6.2-6.2 16.4 0 22.6l104 104c6.2 6.2 16.4 6.2 22.6 0z"/></svg>
                                                 @else
@@ -448,8 +534,10 @@ new class extends Component
                                         @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('timer list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project_timer.index')  ? $active : $inactive }}" 
                                             href="{{ route('project_timer.index') }}">
-                                                Time Settings
-                                                
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Time Settings
+                                                </span>
+                                                    
                                                 @if($time_setup)
                                                     <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#63E6BE" d="M504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zM227.3 387.3l184-184c6.2-6.2 6.2-16.4 0-22.6l-22.6-22.6c-6.2-6.2-16.4-6.2-22.6 0L216 308.1l-70.1-70.1c-6.2-6.2-16.4-6.2-22.6 0l-22.6 22.6c-6.2 6.2-6.2 16.4 0 22.6l104 104c6.2 6.2 16.4 6.2 22.6 0z"/></svg>
                                                 @else
@@ -462,7 +550,9 @@ new class extends Component
                                         @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('document type list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('document_type.index')  ? $active : $inactive }}" 
                                             href="{{ route('document_type.index') }}">
-                                                Document Types  
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Document Types  
+                                                </span>
                                                 @if($document_types_exists)
                                                     <svg class="shrink-0 size-4 mx-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#63E6BE" d="M504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zM227.3 387.3l184-184c6.2-6.2 6.2-16.4 0-22.6l-22.6-22.6c-6.2-6.2-16.4-6.2-22.6 0L216 308.1l-70.1-70.1c-6.2-6.2-16.4-6.2-22.6 0l-22.6 22.6c-6.2 6.2-6.2 16.4 0 22.6l104 104c6.2 6.2 16.4 6.2 22.6 0z"/></svg>
                                                 @else

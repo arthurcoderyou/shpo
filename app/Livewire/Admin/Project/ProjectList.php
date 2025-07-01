@@ -85,15 +85,35 @@ class ProjectList extends Component
     public $type;
 
     public $project_types = [
-        'Company',
-        'Federal Agency'
+        'Local',
+        'Federal',
+        'Private'
     ];
 
+
+    public $status;
+    public $myProjects;
  
-    public function mount(){
+    public function mount($status = 'all', $myProjects  = false){
 
 
-        
+        $this->status = $status;
+        /**
+         * options for status
+         * projects
+         * pending_update_projects
+         * in_review_projects
+         */
+
+
+        $this->myProjects = $myProjects;
+        /**
+         * options
+         * true
+         * false
+         */
+
+
 
 
         // get the current route
@@ -111,9 +131,16 @@ class ProjectList extends Component
         //set the project review status array
         $this->setReviewStatusArray();
 
-        $this->routeIsMyProjects = request()->routeIs('project.index.my-projects');
-        $this->routeIsReview = request()->routeIs('project.in_review');
-        $this->routeIsPendingProject = request()->routeIs('project.pending_project_update');
+
+
+        // route controllers 
+            $this->routeIsMyProjects = request()->routeIs('project.index.my-projects');
+            $this->routeIsReview = request()->routeIs('project.in_review');
+            $this->routeIsPendingProject = request()->routeIs('project.pending_project_update');
+
+
+
+
 
         $this->project_status = request()->query('project_status', ''); // Default to empty string if not set
 
@@ -158,24 +185,68 @@ class ProjectList extends Component
     }
 
 
-    public function updateTitleAndSub(){
+    public function updateTitleAndSub()
+    {
+        $user = Auth::user();
 
+        switch ($this->status) {
+            case 'projects':
+                if ($this->myProjects) {
+                    // if ($user->hasRole('User')) {
+                    //     $this->title = 'My Projects';
+                    //     $this->subtitle = 'Listing of your submitted projects';
+                    // } elseif ($user->hasRole('Reviewer')) {
+                    //     $this->title = 'Assigned Projects';
+                    //     $this->subtitle = 'Projects assigned to you for review';
+                    // } elseif ($user->hasRole('Admin') || $user->hasRole('DSI God Admin')) {
+                    //     $this->title = 'Managed Projects';
+                    //     $this->subtitle = 'Projects managed under admin view';
+                    // } else {
+                        $this->title = 'Your Projects';
+                        $this->subtitle = 'Listing of your projects';
+                    // }
+                } else {
+                    $this->title = 'All Projects';
+                    $this->subtitle = 'Listing of all projects';
+                }
+                break;
 
-        if(request()->routeIs('project.index')){
-            $this->title = "Project"; 
-            $this->subtitle = "Listing of projects";
-        }elseif(request()->routeIs('project.index.my-projects')){
-            $this->title = "My Projects"; 
-            $this->subtitle = "Listing of my projects";
-        }elseif(request()->routeIs('project.in_review')){
-            $this->title = "Project for Review"; 
-            $this->subtitle = "Listing of projects that needs to be reviewed";
-        }elseif(request()->routeIs('project.pending_project_update')){
-            $this->title = "Project for Update"; 
-            $this->subtitle = "Listing of projects that needs to be updated ";
+            case 'pending_update_projects':
+                if ($this->myProjects) {
+                    $this->title = 'Your Projects to Update';
+                    $this->subtitle = 'Projects you submitted that need updates';
+                } else {
+                    $this->title = 'Projects for Update';
+                    $this->subtitle = 'All projects that need to be updated';
+                }
+                break;
+
+            case 'in_review_projects':
+                if ($this->myProjects) {
+                    
+                    $this->title = 'Your Projects in Review';
+                    $this->subtitle = 'Your projects currently under review';
+                    
+                } else {
+                     if ($user->hasRole('Reviewer')) {
+                        $this->title = 'Projects Pending Review';
+                        $this->subtitle = 'Projects assigned to you for review';
+                    } else{
+                        $this->title = 'Projects for Review';
+                        $this->subtitle = 'All projects that need to be reviewed';
+                    }
+
+                    
+                }
+                break;
+
+            default:
+                $this->title = 'Projects';
+                $this->subtitle = 'Project listing';
+                break;
         }
-
     }
+
 
 
     public function deleteSelected()
@@ -672,373 +743,310 @@ class ProjectList extends Component
  
 
 
-    public function getProjectsProperty(){
+    // protected function applyStatusBasedFilters($query,$user){
 
-        /**
-         * 3 Kinds of users
-         * Reviewer
-         * Admin
-         * User
-         * 
-         * Non-role users
-         * 
-         * 
-         * Adjust the display based on the current route
+    //     /**
+    //      * options for status
+    //      * projects
+    //      * pending_update_projects
+    //      * in_review_projects
+    //      */
+
+    //      /**
+    //      * options
+    //      * true
+    //      * false
+    //      */
+
+
+
+    //     // ownership based filters 
+    //     // myProjects = true    shows owned
+    //     if($this->myProjects == true){ 
+
+
+    //         if ($this->status == 'projects') {
+
+    //             $query->ownedBy($user->id); 
+
+    //         }else if($this->status == 'pending_update_projects'){
+
+    //             $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
+                
+    //         }else if($this->status == 'in_review_projects'){
+
+    //             $query->ownedBy($user->id)->inReview($query)->notDraft($query); 
+
+    //         }
+
+
+    //     }else{ // myProjects = false    shows all
+
+
+    //         if ($this->status == 'projects') {
+
+    //             $query->ownedBy($user->id); 
+
+    //         }else if($this->status == 'pending_update_projects'){
+
+    //             $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
+                
+    //         }else if($this->status == 'in_review_projects'){
+
+    //             $query->assignedToReviewer($user->id)->inReview($query)->notDraft($query); 
+
+    //         }
+
+    //     }
+
+
+
+    //     return $query;
+    // }
+
+
+
+     /**
+         * options for status
+         * projects
+         * pending_update_projects
+         * in_review_projects
+         */
+
+         /**
+         * options
+         * true
+         * false
          */
 
 
-        $projects = Project::select('projects.*');
+    
+    protected function applyRoleBasedFilters($query)
+    {
+        $user = Auth::user();
+
+        if ($user->hasRole('User')) {
 
 
+            // ownership based filters 
+            // myProjects = true    shows owned
+            if($this->myProjects == true){ 
 
 
+                if ($this->status == 'projects') {
 
-        if(!$this->routeIsMyProjects){ // if the route is for my projects only, only show hte user projects
+                    $query->ownedBy($user->id); 
 
-            /**Identify the records to disply by roles  */
-            if(Auth::user()->hasRole('User')){
-                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-            
+                }else if($this->status == 'pending_update_projects'){
 
-                /**Identify the records to display based on the current route */
-                /** User route for pending project updates for resubmission */
-                if($this->routeIsPendingProject){
-                    $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                        ->whereNot('status','draft')
-                        ->where('allow_project_submission',true)
-                        
-                        ->where('created_by',Auth::user()->id);
-                } 
-
-                // for other routes, user will display all of his projects
-                $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-
-
-            }elseif(Auth::user()->hasRole('Reviewer')){
-                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-                
-                if($this->routeIsReview){
-                    $projects = $projects->whereNot('status','approved')->whereNot('status','draft')
-                        ->whereHas('project_reviewers', function ($query) {
-                            $query->where('user_id', Auth::id())
-                                ->where('status', true)
-                                ; // Filter by the logged-in user's ID
-                        });
-
-                }else{
-                    // do not show drafts to reviewers
-                    $projects = $projects->whereNot('status','draft');
-
+                    $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
                     
+                }else if($this->status == 'in_review_projects'){
+
+                    $query->ownedBy($user->id)->inReview($query)->notDraft($query); 
+
                 }
 
-                
 
-            
-
+            }else{ // myProjects = false    shows all
 
 
-            }elseif(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin') ){
-                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-                
-                if($this->routeIsReview){
-                    $projects = $projects->whereNot('status','approved')->whereNot('status','draft')
-                        ->whereHas('project_reviewers', function ($query) {
-                            $query->where('status', true)
-                                ; // Filter by the logged-in user's ID
-                        })
-                        ->where('allow_project_submission',false);
+                if ($this->status == 'projects') {
 
-                }elseif($this->routeIsPendingProject){
-                    $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                        ->whereNot('status','draft')
-                        ->where('allow_project_submission',true);
-                        
-                        // ->where('created_by',Auth::user()->id);
-                } 
+                    // $query->ownedBy($user->id); 
 
-                // do not show drafts to reviewers
-                $projects = $projects->whereNot('status','draft');
+                }else if($this->status == 'pending_update_projects'){
+
+                    $query->pendingUpdate($query)->notDraft($query); 
+                    
+                }else if($this->status == 'in_review_projects'){
+
+                    $query->assignedToReviewer($user->id)->inReview($query)->notDraft($query); 
+
+                }
+
             }
-        
-        
 
-        }else{
 
-            // for other routes, user will display all of his projects
-            $projects = $projects->orWhere('projects.created_by', '=', Auth::user()->id); 
+           
+        }
+
+        elseif ($user->hasRole('Reviewer')) {
+            // if ($this->routeIsReview) {
+            //     $query->notDraft()->assignedToReviewer($user->id);
+            // } else {
+            //     $query->notDraft()->ownedBy($user->id);
+            // }
+
+            // $this->applyStatusBasedFilters($query, $user);
+
+
+            // ownership based filters 
+            // myProjects = true    shows owned
+            if($this->myProjects == true){ 
+
+
+                if ($this->status == 'projects') {
+
+                    $query->ownedBy($user->id); 
+
+                }else if($this->status == 'pending_update_projects'){
+
+                    $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
+                    
+                }else if($this->status == 'in_review_projects'){
+
+                    $query->ownedBy($user->id)->inReview($query)->notDraft($query); 
+
+                }
+
+
+            }else{ // myProjects = false    shows all
+
+
+                if ($this->status == 'projects') {
+
+                    $query->notDraft();
+
+                }else if($this->status == 'pending_update_projects'){
+
+                    $query->pendingUpdate($query)->notDraft($query); 
+                    
+                }else if($this->status == 'in_review_projects'){
+
+                    $query->assignedToReviewer($user->id)->inReview($query)->notDraft($query); 
+
+                }
+
+            }
+
+
+
 
         }
 
+        elseif ($user->hasRole('Admin') || $user->hasRole('DSI God Admin')) {
+            if ($this->routeIsReview) {
+                $query->notDraft()
+                    ->whereHas('project_reviewers', fn($q) => $q->where('status', true))
+                    ->where('allow_project_submission', false);
+            } elseif ($this->routeIsPendingProject) {
+                $query->pendingUpdate();
+            } else {
+                $query->notDraft();
+            }
+        }
+
+        return $query;
+    }
 
 
 
+    protected function applySorting($query)
+    {
+        switch ($this->sort_by) {
+            case "Name A - Z":
+                return $query->orderBy('projects.name', 'ASC');
+            case "Name Z - A":
+                return $query->orderBy('projects.name', 'DESC');
+            case "Description A - Z":
+                return $query->orderBy('projects.description', 'ASC');
+            case "Description Z - A":
+                return $query->orderBy('projects.description', 'DESC');
+            case "Federal Agency A - Z":
+                return $query->orderBy('projects.federal_agency', 'ASC');
+            case "Federal Agency Z - A":
+                return $query->orderBy('projects.federal_agency', 'DESC');
+            case "Nearest Submission Due Date":
+                return $query->withCount([
+                    'project_reviewers as pending_submission_count' => fn($q) => $q->where('status', true)->where('review_status', 'rejected'),
+                    'project_reviewers as not_fully_approved_count' => fn($q) => $q->where('status', true)->whereNot('review_status', 'approved')
+                ])->orderByDesc('pending_submission_count')
+                ->orderByDesc('not_fully_approved_count')
+                ->orderBy('submitter_due_date', 'ASC');
+            case "Farthest Submission Due Date":
+                return $query->withCount([
+                    'project_reviewers as pending_submission_count' => fn($q) => $q->where('status', true)->where('review_status', 'rejected'),
+                    'project_reviewers as not_fully_approved_count' => fn($q) => $q->where('status', true)->whereNot('review_status', 'approved')
+                ])->orderByDesc('pending_submission_count')
+                ->orderByDesc('not_fully_approved_count')
+                ->orderBy('submitter_due_date', 'DESC');
+            case "Nearest Reviewer Due Date":
+                return $query->withCount([
+                    'project_reviewers as pending_review_count' => fn($q) => $q->where('status', true)->where('review_status', 'pending'),
+                    'project_reviewers as not_fully_approved_count' => fn($q) => $q->where('status', true)->whereNot('review_status', 'approved')
+                ])->orderByDesc('pending_review_count')
+                ->orderByDesc('not_fully_approved_count')
+                ->orderBy('reviewer_due_date', 'ASC');
+            case "Farthest Reviewer Due Date":
+                return $query->withCount([
+                    'project_reviewers as pending_review_count' => fn($q) => $q->where('status', true)->where('review_status', 'pending'),
+                    'project_reviewers as not_fully_approved_count' => fn($q) => $q->where('status', true)->whereNot('review_status', 'approved')
+                ])->orderByDesc('pending_review_count')
+                ->orderByDesc('not_fully_approved_count')
+                ->orderBy('reviewer_due_date', 'DESC');
+            case "Latest Added":
+                return $query->orderBy('projects.created_at', 'DESC');
+            case "Oldest Added":
+                return $query->orderBy('projects.created_at', 'ASC');
+            case "Latest Updated":
+                return $query->orderBy('projects.updated_at', 'DESC');
+            case "Oldest Updated":
+                return $query->orderBy('projects.updated_at', 'ASC');
+            default:
+                // Default route-based sorting
+                if (request()->routeIs('project.pending_project_update')) {
+                    return $query->orderBy('projects.submitter_due_date', 'ASC');
+                } elseif (request()->routeIs('project.in_review')) {
+                    return $query->withCount([
+                        'project_reviewers as pending_review_count' => fn($q) => $q->where('review_status', 'pending')
+                    ])->orderByDesc('pending_review_count')
+                    ->orderBy('reviewer_due_date', 'ASC');
+                } else {
+                    return $query->orderBy('projects.updated_at', 'DESC');
+                }
+        }
+    }
 
 
+    public function getProjectsProperty()
+    {
+        $query = Project::query();
 
-
+        // if (!$this->routeIsMyProjects) {
+            $query = $this->applyRoleBasedFilters($query);
+        // } else {
+        //     $query->orWhere('created_by', Auth::id());
+        // }
 
         if (!empty($this->search)) {
-
-            // dd($this->search);
-            $search = $this->search;
-        
-            $projects = $projects->where(function($query) use ($search) {
-                $query->where('projects.name', 'LIKE', '%' . $search . '%')
-                    ->orWhere('projects.federal_agency', 'LIKE', '%' . $search . '%')
-                    ->orWhere('projects.type', 'LIKE', '%' . $search . '%')
-                    ->orWhere('projects.description', 'LIKE', '%' . $search . '%')
-                    ->orWhere('projects.location', 'LIKE', '%' . $search . '%')
-                    ->orWhere('projects.latitude', 'LIKE', '%' . $search . '%')
-                    ->orWhere('projects.longitude', 'LIKE', '%' . $search . '%')
-                    // ->orWhereHas('creator', function ($query) use ($search) {
-                    //     $query->where('users.name', 'LIKE', '%' . $search . '%')
-                    //         ->where('users.email', 'LIKE', '%' . $search . '%');
-                    // })
-                    // ->orWhereHas('updator', function ($query) use ($search) {
-                    //     $query->where('users.name', 'LIKE', '%' . $search . '%')
-                    //         ->where('users.email', 'LIKE', '%' . $search . '%');
-                    // })
-                    ->orWhereHas('project_reviewers.user', function ($query) use ($search) {
-                        $query->where('users.name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('users.email', 'LIKE', '%' . $search . '%');
-                    });
-            });
+            $query->withSearch($this->search);
         }
-
 
         if (!empty($this->location)) {
-            $locations = explode(',', $this->location); // Convert location string to an array
-            $locations = array_map('trim', $locations); // Remove extra spaces
-        
-            $projects = $projects->where(function($query) use ($locations) {
-                foreach ($locations as $location) {
-                    $query->where('projects.location', 'LIKE', '%' . $location . '%');
-                }
-            });
+            $locations = array_map('trim', explode(',', $this->location));
+            $query->withLocationFilter($locations);
         }
-        
 
         if (!empty($this->type)) {
-            $type = $this->type;
-        
-
-            $projects = $projects->where('projects.type', $type );
+            $query->where('type', $this->type);
         }
 
-        
-
-        // filter for project status
-        if(!empty($this->project_status) && $this->project_status !== ""){
-            // dd($this->routeIsReview);
-            $projects = $projects->where('status',$this->project_status);
+        if (!empty($this->project_status)) {
+            $query->where('status', $this->project_status);
         }
 
-        // Filter projects based on review_status in project_reviewers
-        if (!empty($this->review_status) && $this->review_status !== "") {
-
-            if($this->review_status == "approved"){
-                $projects = $projects->where('status', "approved");
-            }else{
-                $projects = $projects->whereHas('project_reviewers', function ($query) {
-                    $query->where('status', true)
-                        ->where('review_status', $this->review_status);
-                });
-            }
-            
-
-
+        if (!empty($this->review_status)) {
+            $query->withReviewStatus($this->review_status);
         }
 
+        // Add your sorting logic here (moved to another method for clarity if needed)
+        $query = $this->applySorting($query);
 
+        $paginated = $query->paginate($this->record_count);
+        $this->projects_count = $paginated->total();
 
-        
-        
-
-
-        
-
-
-        // dd($this->sort_by);
-        if(!empty($this->sort_by) && $this->sort_by != ""){
-            // dd($this->sort_by);
-            switch($this->sort_by){
-
-                case "Name A - Z":
-                    $projects =  $projects->orderBy('projects.name','ASC');
-                    break;
-
-                case "Name Z - A":
-                    $projects =  $projects->orderBy('projects.name','DESC');
-                    break;
-
-                case "Description A - Z":
-                    $projects =  $projects->orderBy('projects.description','ASC');
-                    break;
-
-                case "Description Z - A":
-                    $projects =  $projects->orderBy('projects.description','DESC');
-                    break;
-
-                case "Federal Agency A - Z":
-                    $projects =  $projects->orderBy('projects.federal_agency','ASC');
-                    break;
-    
-                case "Federal Agency Z - A":
-                    $projects =  $projects->orderBy('projects.federal_agency','DESC');
-                    break;
-
-                case "Nearest Submission Due Date":
-                    /** For submission, look for projects first that are rejected and needs resubmission */
-
-                    $projects = $projects->withCount([
-                        'project_reviewers as pending_submission_count' => function ($query) {
-                            $query->where('status', true)
-                                ->where('review_status', 'rejected');
-                        },
-                        'project_reviewers as not_fully_approved_count' => function ($query) {
-                            $query->where('status', true)
-                                ->whereNot('review_status', 'approved'); // Ensures at least one reviewer is not approved
-                        }
-                    ])
-                    ->orderByDesc('pending_submission_count') // Prioritize projects needing resubmission
-                    ->orderByDesc('not_fully_approved_count') // Prioritize projects where not all reviewers have approved
-                    ->orderBy('submitter_due_date', 'ASC'); // Then sort by due date
-                
-
-                    // $projects = $projects->orderBy('projects.submitter_due_date', 'ASC');
-                    break;
-                    
-                case "Farthest Submission Due Date":
-                    $projects = $projects->withCount([
-                        'project_reviewers as pending_submission_count' => function ($query) {
-                            $query->where('status', true)
-                                ->where('review_status', 'rejected');
-                        },
-                        'project_reviewers as not_fully_approved_count' => function ($query) {
-                            $query->where('status', true)
-                                ->whereNot('review_status', 'approved'); // Ensures at least one reviewer is not approved
-                        }
-                    ])
-                    ->orderByDesc('pending_submission_count') // Prioritize projects needing resubmission
-                    ->orderByDesc('not_fully_approved_count') // Prioritize projects where not all reviewers have approved
-                    ->orderBy('submitter_due_date', 'DESC'); // Then sort by due date
-                
-
-
-                    // $projects = $projects->orderBy('projects.submitter_due_date', 'DESC');
-                    break;
-                    
-                case "Nearest Reviewer Due Date":
-                    $projects = $projects->withCount([
-                        'project_reviewers as pending_review_count' => function ($query) {
-                            $query->where('status', true)
-                                ->where('review_status', 'pending');
-                        },
-                        'project_reviewers as not_fully_approved_count' => function ($query) {
-                            $query->where('status', true)
-                                ->whereNot('review_status', 'approved'); // Ensures at least one reviewer is not approved
-                        }
-                    ])
-                    ->orderByDesc('pending_review_count') // Prioritize projects needing review
-                    ->orderByDesc('not_fully_approved_count') // Prioritize projects where not all reviewers have approved
-                    ->orderBy('reviewer_due_date', 'ASC'); // Then sort by due date
-
-
-
-                    // $projects = $projects->orderBy('projects.reviewer_due_date', 'ASC');
-                    break;
-                    
-                case "Farthest Reviewer Due Date":
-                    $projects = $projects->withCount([
-                        'project_reviewers as pending_review_count' => function ($query) {
-                            $query->where('status', true)
-                                ->where('review_status', 'pending');
-                        },
-                        'project_reviewers as not_fully_approved_count' => function ($query) {
-                            $query->where('status', true)
-                                ->whereNot('review_status', 'approved'); // Ensures at least one reviewer is not approved
-                        }
-                    ])
-                    ->orderByDesc('pending_review_count') // Prioritize projects needing review
-                    ->orderByDesc('not_fully_approved_count') // Prioritize projects where not all reviewers have approved
-                    ->orderBy('reviewer_due_date', 'DESC'); // Then sort by due date
-
-                    // $projects = $projects->orderBy('projects.reviewer_due_date', 'DESC');
-                    break;
-
-                /**
-                 * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
-                * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
-                */
-
-                case "Latest Added":
-                    $projects =  $projects->orderBy('projects.created_at','DESC');
-                    break;
-
-                case "Oldest Added":
-                    $projects =  $projects->orderBy('projects.created_at','ASC');
-                    break;
-
-                case "Latest Updated":
-                    $projects =  $projects->orderBy('projects.updated_at','DESC');
-                    break;
-
-                case "Oldest Updated":
-                    $projects =  $projects->orderBy('projects.updated_at','ASC');
-                    break;
-                default:
-                    $projects =  $projects->orderBy('projects.updated_at','DESC');
-                    break;
-
-            }
-
-
-        }else{
-
-            /** Adjust the default sorting based on the user role and route */
-            /**Identify the records to disply by the current route  */
-            if(request()->routeIs('project.pending_project_update')){ // showing user projects pending update
-
-                /**
-                 * prioritized due date based on submitter_due_date
-                * @var mixed
-                */
-                $projects =  $projects->orderBy('projects.submitter_due_date','ASC');
-
-            }elseif(request()->routeIs('project.in_review')){
-
-                /**
-                 * prioritized due date based on reviewer_due_date
-                * @var mixed
-                */
-                // $projects =  $projects->orderBy('projects.reviewer_due_date','ASC');
-
-                $projects =  $projects->withCount([
-                    'project_reviewers as pending_review_count' => function ($query) {
-                        $query->where('review_status', 'pending');
-                    }
-                ])
-                ->orderByDesc('pending_review_count') // Prioritize projects with pending reviews
-                ->orderBy('reviewer_due_date', 'ASC'); // Then sort by due date
-
-
-            }else{
-                $projects =  $projects->orderBy('projects.updated_at','DESC');
-            }
-
-
-            
-
-        }
-
-
-        $this->projects_count = $projects->count();
-
-
-        $projects = $projects->paginate($this->record_count);
-
-        return $projects;
+        return $paginated;
     }
 
 

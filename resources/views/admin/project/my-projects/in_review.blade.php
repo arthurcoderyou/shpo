@@ -6,7 +6,7 @@
     </x-slot> 
 
     {{-- <livewire:admin.project.project-review-list />  --}}
-    <livewire:admin.project.project-list status="in_review_projects" :myProjects="false" /> 
+    <livewire:admin.project.project-list status="in_review_projects" :myProjects="true" /> 
 
 
 </x-app-layout>

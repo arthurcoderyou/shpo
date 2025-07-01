@@ -88,6 +88,8 @@ class ProjectCreate extends Component
     public $documentTypes = [];
 
 
+    
+
     public function mount(){
         $this->latitude = 13.4443;
         $this->longitude = 144.7937;
@@ -126,6 +128,7 @@ class ProjectCreate extends Component
 
         $this->documentTypes = DocumentType::orderBy('order','ASC')->get(); 
 
+  
 
     }
 
@@ -138,7 +141,31 @@ class ProjectCreate extends Component
         public function updatedQuery()
         {
             if (!empty($this->query)) {
-                $this->users = User::where('name', 'like', '%' . $this->query . '%')->limit(10)->get();
+                // $this->users = User::where('name', 'like', '%' . $this->query . '%') ->limit(10)->get();
+ 
+
+                $role = Auth::user()->getRoleNames()->first(); // Assumes user has one role
+
+                $this->users = User::where('name', 'like', '%' . $this->query . '%')
+                    ->when($role === 'Admin', function ($query) {
+                        $query->whereDoesntHave('roles', function ($q) {
+                            $q->where('name', 'DSI God Admin');
+                        });
+                    })
+                    ->when($role === 'Reviewer', function ($query) {
+                        $query->whereDoesntHave('roles', function ($q) {
+                            $q->whereIn('name', ['Admin', 'DSI God Admin']);
+                        });
+                    })
+                    ->when($role === 'User', function ($query) {
+                        $query->whereHas('roles', function ($q) {
+                            $q->where('name', 'User');
+                        });
+                    })
+                    ->limit(10)
+                    ->get();
+
+
             } else {
                 $this->users = [];
             }

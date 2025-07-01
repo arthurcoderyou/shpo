@@ -5,7 +5,10 @@
         </h2>
     </x-slot> 
 
-    <livewire:admin.project.project-list /> 
+
+    
+
+    <livewire:admin.project.project-list status="projects" :myProjects="false" /> 
 
 
 

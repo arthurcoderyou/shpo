@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Project extends Model
 {
@@ -38,6 +39,8 @@ class Project extends Model
 
         'project_number',
         'shpo_number',
+
+        
         'submitter_response_duration_type',
         'submitter_response_duration',
         'submitter_due_date',
@@ -489,9 +492,7 @@ class Project extends Model
      */
     static public function countProjectsForReview($status = null){
         $projects = Project::select('projects.*');
-
-
-
+ 
         if(Auth::user()->hasRole('Reviewer')){
             $projects = $projects->whereNot('status','approved')
                 ->whereHas('project_reviewers', function ($query) use ($status) {
@@ -501,11 +502,13 @@ class Project extends Model
                         if(!empty($status)){
                             $query = $query->where('review_status',$status);
                         }
-
-                        
-                         
+ 
                 });
+
+            $projects = $projects->where('allow_project_submission',false);
+
         }
+
         
 
         if(Auth::user()->hasRole('Admin')){
@@ -535,7 +538,7 @@ class Project extends Model
      * Count the number of projects based on needing for update
      * @return int
      */
-    static public function countProjectsForUpdate(){
+    static public function countProjectsForUpdate($owned = "no"){
         $projects = Project::select('projects.*');
 
         if(Auth::user()->hasRole('User')){
@@ -544,17 +547,29 @@ class Project extends Model
                 ->where('allow_project_submission',true)
                 
                 ->where('created_by',Auth::user()->id);
-        }
+        }elseif(Auth::user()->hasRole('Reviewer')){
 
-        if(Auth::user()->hasRole('Admin')){
             $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
                 ->whereNot('status','draft')
                 ->where('allow_project_submission',true);
-                
-                // ->where('created_by',Auth::user()->id);
+
+            
+
+
         }
 
+        // if(Auth::user()->hasRole('Admin')){
+        //     $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
+        //         ->whereNot('status','draft')
+        //         ->where('allow_project_submission',true);
+                
+        //         // ->where('created_by',Auth::user()->id);
+        // }
 
+        if($owned == "yes"){
+
+            $projects = $projects->where('created_by',Auth::user()->id);
+        }
 
 
         return $projects->count();
@@ -565,10 +580,12 @@ class Project extends Model
 
 
 
-    static public function countProjects($status = null){
+    static public function countProjects($status = null, $owned = "no"){
 
         $projects = Project::select('projects.*');
 
+        if($owned == "no"){
+          
             if(Auth::user()->hasRole('User')){
                 $projects =  $projects->where('created_by',Auth::user()->id);
 
@@ -594,8 +611,11 @@ class Project extends Model
 
 
                 }
+                
 
-                // do not show drafts to reviewers
+                // if route if my projects
+
+                // do not  count drafts to reviewers
                 $projects = $projects->whereNot('status','draft');
 
 
@@ -617,6 +637,33 @@ class Project extends Model
 
 
             }
+
+          
+        }else{
+
+
+            if(!empty($status)){
+
+                if($status == "in_review"){
+                    $projects = $projects->where(function ($query) {
+                        $query->where('status', 'in_review')
+                            ->orWhere(function ($subQuery) {
+                                $subQuery->where('status', '!=', 'approved')
+                                        ->where('status', '!=', 'draft')
+                                        ->where('allow_project_submission', false);
+                            });
+                    });
+                }else{
+                    $projects =  $projects->where('status',$status);
+                }
+
+                
+
+
+            }
+
+            $projects =  $projects->where('created_by',Auth::user()->id);
+        }
 
 
         return $projects->count();
@@ -825,5 +872,101 @@ class Project extends Model
 
         return false;
     }
+
+
+
+
+
+    // Scope based queries for the project list 
+    // when using this, remove the word scope
+
+    public function scopeOwnedBy(Builder $query, $userId)
+    {
+        return $query->where('created_by', $userId);
+    }
+
+    public function scopeNotDraft(Builder $query)
+    {
+        return $query->where('status', '!=', 'draft');
+    }
+
+
+    public function scopePendingUpdate(Builder $query)
+    {
+        return $query->where('status', '!=', 'approved')
+                    ->where('status', '!=', 'draft')
+                    ->where('allow_project_submission', true);
+    }
+
+    public function scopeInReview(Builder $query)
+    {
+        return $query->where(function ($q) {
+            $q
+                ->where('status', 'in_review')
+                ->orWhere(function ($subQuery) {
+                    $subQuery->where('status', '!=', 'approved')
+                            ->where('status', '!=', 'draft')
+                            ->where('allow_project_submission', false);
+            });
+        });
+    }
+
+// $projects = $projects->whereNot('status','approved')
+//                 ->whereHas('project_reviewers', function ($query) use ($status) {
+//                     $query->where('user_id', Auth::id())
+//                         ->where('status', true);
+
+//                         if(!empty($status)){
+//                             $query = $query->where('review_status',$status);
+//                         }
+ 
+//                 });
+
+    public function scopeAssignedToReviewer(Builder $query, $userId)
+    {
+        return $query->whereHas('project_reviewers', function ($q) use ($userId) {
+            $q->where('user_id', $userId)->where('status', true);
+        });
+    }
+
+    public function scopeWithSearch(Builder $query, $search)
+    {
+        return $query->where(function ($q) use ($search) {
+            $q->where('name', 'LIKE', "%$search%")
+            ->orWhere('federal_agency', 'LIKE', "%$search%")
+            ->orWhere('type', 'LIKE', "%$search%")
+            ->orWhere('description', 'LIKE', "%$search%")
+            ->orWhere('location', 'LIKE', "%$search%")
+            ->orWhere('latitude', 'LIKE', "%$search%")
+            ->orWhere('longitude', 'LIKE', "%$search%")
+            ->orWhereHas('project_reviewers.user', function ($q) use ($search) {
+                $q->where('users.name', 'LIKE', "%$search%")
+                    ->orWhere('users.email', 'LIKE', "%$search%") ;
+            });
+        });
+    }
+
+    public function scopeWithLocationFilter(Builder $query, array $locations)
+    {
+        return $query->where(function($q) use ($locations) {
+            foreach ($locations as $location) {
+                $q->where('location', 'LIKE', "%$location%") ;
+            }
+        });
+    }
+
+
+    public function scopeWithReviewStatus(Builder $query, $status)
+    {
+        if ($status == "approved") {
+            return $query->where('status', 'approved');
+        }
+        return $query->whereHas('project_reviewers', function ($q) use ($status) {
+            $q->where('status', true)->where('review_status', $status);
+        });
+    }
+
+
+
 
 }

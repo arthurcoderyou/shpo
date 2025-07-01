@@ -767,7 +767,8 @@
   --}}
         @include('sweetalert::alert')
 
-        <script>
+        <!-- There is something wrong with the scripts that disrupts the map -->
+        {{-- <script>
             let inactivityTime = function () {
                 let inactivityTimeout, alertTimeout;
                 const inactivityLimit = 600000; // 1 hour
@@ -810,7 +811,7 @@
             };
 
             window.onload = inactivityTime;
-        </script>  
+        </script>   --}}
 
 
 

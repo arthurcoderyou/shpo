@@ -106,33 +106,58 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
 
 
             # project
-                
-                Route::get('project',[ProjectController::class, 'index'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project all list view'])  
-                    ->name('project.index');
-                Route::get('project/my_projects',[ProjectController::class, 'index'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project list view'])  
-                    ->name('project.index.my-projects');
+                // General Project routes (accessible by anyone )
+                    // for reviewers, admin and dsi god admin
+                    Route::get('project',[ProjectController::class, 'index'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project all list view'])  
+                        ->name('project.index'); 
 
-                Route::get('project/in_review',[ProjectController::class, 'in_review'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project review list view']) 
-                    ->name('project.in_review'); // for reviewers to see projects pending reviews
-                Route::get('project/create',[ProjectController::class, 'create'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project list view']) 
-                    ->name('project.create');
-                Route::get('project/{project}/edit',[ProjectController::class, 'edit'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
-                    ->name('project.edit');
-                Route::get('project/{project}/show',[ProjectController::class, 'show'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project view']) 
-                    ->name('project.show');
-                Route::get('project/{project}/review',[ProjectController::class, 'review'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project review']) 
-                    ->name('project.review');
-                Route::get('project/pending_project_update',[ProjectController::class, 'pending_project_update'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:project update list view']) 
-                    ->name('project.pending_project_update'); // for users to see projects pending updates and resubmission
-            
+                    Route::get('project/in_review',[ProjectController::class, 'in_review'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project review all list view']) 
+                        ->name('project.in_review'); // for reviewers to see projects pending reviews 
+
+
+                    Route::get('project/pending_project_update',[ProjectController::class, 'pending_project_update'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project update all list view']) 
+                        ->name('project.pending_project_update'); // for users to see projects pending updates and resubmission
+
+
+                    Route::get('project/create',[ProjectController::class, 'create'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project create']) 
+                        ->name('project.create');
+                    Route::get('project/{project}/edit',[ProjectController::class, 'edit'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project edit']) 
+                        ->name('project.edit');
+                    Route::get('project/{project}/show',[ProjectController::class, 'show'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project view']) 
+                        ->name('project.show');
+
+
+                    Route::get('project/{project}/review',[ProjectController::class, 'review'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project review']) 
+                        ->name('project.review');
+
+
+                    
+
+
+
+                // Owner Project Routes (Specifically for Project Owners)
+                    // for project owners (user, reviewer)
+                    Route::get('project/my_projects',[ProjectController::class, 'my_projects_index'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project list view'])  
+                        ->name('project.index.my-projects');
+
+                    Route::get('project/in_review/my_projects',[ProjectController::class, 'my_projects_in_review'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project review list view']) 
+                        ->name('project.in_review.my-projects'); // for reviewers to see projects pending reviews 
+
+                    Route::get('project/pending_project_update/my_projects',[ProjectController::class, 'my_projects_pending_project_update'])
+                        ->middleware(['role.permission:role:DSI God Admin,permission:project update list view']) 
+                        ->name('project.pending_project_update.my-projects'); // for users to see projects pending updates and resubmission
+
+
+                
             # ./ project
 
             # project document
@@ -143,7 +168,7 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
  
             # reviewer
                 Route::get('project/{project}/project_reviewer/',[ProjectReviewerController::class,'index'])
-                    ->middleware(['role.permission:role:DSI God Admin,permission:reviewer list view']) 
+                    ->middleware(['role.permission:role:DSI God Admin,permission:project reviewer list view']) 
                     ->name('project.reviewer.index'); 
             # ./ reviewer
 

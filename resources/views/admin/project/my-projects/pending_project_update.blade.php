@@ -6,7 +6,7 @@
     </x-slot> 
 
     {{-- <livewire:admin.project.project-pending-update-list />  --}}
-    <livewire:admin.project.project-list status="pending_update_projects" :myProjects="false" /> 
+    <livewire:admin.project.project-list status="pending_update_projects" :myProjects="true" /> 
 
 
 </x-app-layout>

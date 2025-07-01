@@ -13,6 +13,26 @@ use Illuminate\Support\Facades\DB;
 class AdminDashboard extends Component
 {
 
+
+    protected $listeners = [
+        'projectCreated' => '$refresh',
+        'projectUpdated' => '$refresh',
+        'projectDeleted' => '$refresh',
+        'projectSubmitted' => '$refresh',
+        'projectQueued' => '$refresh', 
+        'projectTimerUpdated' => '$refresh',
+        'documentTypeCreated' => '$refresh',
+        'documentTypeUpdated' => '$refresh',
+        'documentTypeDeleted' => '$refresh',
+        'reviewerCreated' => '$refresh',
+        'reviewerUpdated' => '$refresh',
+        'reviewerDeleted' => '$refresh',
+
+        'projectDocumentCreated' => '$refresh',
+        'projectDocumentUpdated' => '$refresh',
+        'projectDocumentDeleted' => '$refresh',
+    ];
+
     public int $usersAllTime;
     public int $usersUpdatePending;
     public int $reviewersUpdatePending;

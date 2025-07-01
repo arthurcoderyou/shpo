@@ -180,14 +180,69 @@
 
 
                                 <div class="space-y-2 col-span-12   ">
-                                    <label for="project_review" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
+                                    <!-- <label for="project_review" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                         Review
-                                    </label>
+                                    </label> -->
+
+                                    <!--
+                                    <div class="grid space-y-3  mt-2.5">
+
+                                        <div class="py-3 flex items-center text-sm text-gray-800 before:flex-1 before:border-t before:border-gray-200 before:me-6 after:flex-1 after:border-t after:border-gray-200 after:ms-6 ">
+                                           Select a Project Document Review Status  
+                                        </div>
+
+                                        <div class="relative flex items-start">
+                                            <div class="flex items-center h-5 mt-1">
+                                            <input id="hs-checkbox-delete" name="hs-checkbox-delete" type="radio" class="border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" aria-describedby="hs-checkbox-delete-description" checked="">
+                                            </div>
+                                            <label for="hs-checkbox-delete" class="ms-3">
+                                                <span class="block text-sm font-semibold text-gray-800 dark:text-neutral-300">Review</span>
+                                                <span id="hs-checkbox-delete-description" class="block text-sm text-gray-600 dark:text-neutral-500">Submit a review on the project document</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="relative flex items-start">
+                                            <div class="flex items-center h-5 mt-1">
+                                            <input id="hs-checkbox-delete" name="hs-checkbox-delete" type="radio" class="border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" aria-describedby="hs-checkbox-delete-description" checked="">
+                                            </div>
+                                            <label for="hs-checkbox-delete" class="ms-3">
+                                                <span class="block text-sm font-semibold text-gray-800 dark:text-neutral-300">RFI</span>
+                                                <span id="hs-checkbox-delete-description" class="block text-sm text-gray-600 dark:text-neutral-500">Request for Information</span>
+                                            </label>
+                                        </div>
+
+                                         <div class="relative flex items-start">
+                                            <div class="flex items-center h-5 mt-1">
+                                            <input id="hs-checkbox-delete" name="hs-checkbox-delete" type="radio" class="border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" aria-describedby="hs-checkbox-delete-description" checked="">
+                                            </div>
+                                            <label for="hs-checkbox-delete" class="ms-3">
+                                                <span class="block text-sm font-semibold text-gray-800 dark:text-neutral-300">Approve Project Document</span>
+                                                <span id="hs-checkbox-delete-description" class="block text-sm text-gray-600 dark:text-neutral-500">Approves the project document </span>
+                                            </label>
+                                        </div>
+
+                                        <div class="relative flex items-start">
+                                            <div class="flex items-center h-5 mt-1">
+                                            <input id="hs-checkbox-delete" name="hs-checkbox-delete" type="radio" class="border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" aria-describedby="hs-checkbox-delete-description" checked="">
+                                            </div>
+                                            <label for="hs-checkbox-delete" class="ms-3">
+                                                <span class="block text-sm font-semibold text-gray-800 dark:text-neutral-300">Temporary Reject Document</span>
+                                                <span id="hs-checkbox-delete-description" class="block text-sm text-gray-600 dark:text-neutral-500">Rejects the project document and enables project resubmission.</span>
+                                            </label>
+                                        </div>
+ 
+
+                                    </div>
+                                -->
+
+                                    <div class="py-3 flex items-center text-sm text-gray-800 before:flex-1 before:border-t before:border-gray-200 before:me-6 after:flex-1 after:border-t after:border-gray-200 after:ms-6 ">
+                                        Review notes
+                                    </div>
 
                                     <textarea
                                     
                                     autofocus autocomplete="project_review"
-                                    wire:model="project_review"
+                                    wire:model="project_review" placeholder=""
                                     id="project_review"  class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder=""></textarea>
 
                                     @error('project_review')

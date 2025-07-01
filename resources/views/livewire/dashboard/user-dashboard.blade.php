@@ -15,7 +15,7 @@
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
           <p class="text-xs uppercase tracking-wide text-gray-500 ">
-            Project Update Pending
+            Your Projects Update Pending
           </p>
           <div class="mt-1 flex items-center gap-x-2">
             <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
@@ -31,7 +31,7 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.pending_project_update') }}">
+      href="{{ route('project.pending_project_update.my-projects') }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
@@ -44,11 +44,11 @@
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
           <p class="text-xs uppercase tracking-wide text-gray-500 ">
-            Projects
+            Your Projects
           </p>
           <div class="mt-1 flex items-center gap-x-2">
             <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
-              {{ $all_projects ?? 0 }}
+              {{ $my_projects ?? 0 }}
             </h3>
  
           </div>
@@ -61,7 +61,7 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.index') }}">
+      href="{{ route('project.index.my-projects') }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
@@ -73,7 +73,7 @@
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
           <p class="text-xs uppercase tracking-wide text-gray-500 ">
-            Projects In Review
+            Your Projects In Review
           </p>
           <div class="mt-1 flex items-center gap-x-2">
             <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
@@ -90,7 +90,7 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.index',['project_status' => 'in_review']) }}">
+      href="{{ route('project.in_review.my-projects') }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
@@ -102,7 +102,7 @@
       <div class="p-4 md:p-5 flex justify-between gap-x-3">
         <div>
           <p class="text-xs uppercase tracking-wide text-gray-500 ">
-            Approved Projects
+            Your Approved Projects
           </p>
           <div class="mt-1 flex items-center gap-x-2">
             <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
@@ -118,7 +118,7 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.index',['project_status' => 'approved']) }}">
+      href="{{ route('project.index.my-projects',['project_status' => 'approved']) }}">
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
