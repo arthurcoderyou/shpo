@@ -95,12 +95,28 @@ class ProjectHelper
             // dd(isProjectSubmissionAllowed());
         }
 
+        $project = Project::find($project_id);
+        
+
+
         if (!empty($errorMessages)) {
             $message = 'The project cannot be submitted because: ';
             $message .= implode(', ', $errorMessages);
             $message .= '. Please wait for the admin to configure these settings.';
             Alert::error('Error', $message);
-            return redirect()->route('project.index');
+
+
+            if($project->created_by == Auth::id()){ 
+                return redirect()->route('project.index.my-projects');
+
+            }else{ 
+
+                return redirect()->route('project.index');
+
+            }
+
+
+            
         }
 
 
@@ -108,13 +124,23 @@ class ProjectHelper
         // check if there are existing project reviewers 
         if(Reviewer::count() == 0){
             Alert::error('Error','Project reviewers are not added yet to the system');
-            return redirect()->route('project.index');
+
+            if($project->created_by == Auth::id()){ 
+                return redirect()->route('project.index.my-projects');
+
+            }else{ 
+
+                return redirect()->route('project.index');
+
+            }
+
+             
 
         }
 
 
         
-        $project = Project::find($project_id);
+        
 
         // dd($project->project_documents->count());
         $attachmemts = $project->project_documents->count();
@@ -124,8 +150,18 @@ class ProjectHelper
         
         // check if there are existing project documents as it is required 
         if($attachmemts == 0){
-            Alert::error('Error','There must be atleast one project documents to the submitted project');
-            return redirect()->route('project.index');
+            Alert::error('Error','There must be atleast one project documents to the submitted project'); 
+
+             if($project->created_by == Auth::id()){ 
+                return redirect()->route('project.index.my-projects');
+
+            }else{ 
+
+                return redirect()->route('project.index');
+
+            }
+
+
 
         }
 
@@ -218,6 +254,7 @@ class ProjectHelper
 
         if($project->created_by == auth()->user()->id){
             return redirect()->route('project.index.my-projects');
+            
         }else{
             return redirect()->route('project.index');
         }

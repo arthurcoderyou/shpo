@@ -2,11 +2,12 @@
 
 namespace App\Livewire\Admin\Project;
 
-use App\Models\ProjectDocument;
+use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Models\ProjectDocument;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -48,6 +49,9 @@ class ProjectLogs extends Component
  
     public $project_id;
     public $project_document_id;
+
+    public $home_route;
+
     public function mount($project_id, $project_document_id = null){
 
 
@@ -60,6 +64,17 @@ class ProjectLogs extends Component
             $this->log_filter = "Project Attachment Logs";
         }
 
+        $project = Project::findOrFail($project_id);
+
+
+        if($project->created_by == Auth::id()){
+            $this->home_route = route('project.index.my-projects');
+        }else{
+            $this->home_route = route('project.index');
+        }
+
+
+        
 
     }
 

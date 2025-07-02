@@ -93,6 +93,8 @@ class ProjectList extends Component
 
     public $status;
     public $myProjects;
+
+    public $home_route;
  
     public function mount($status = 'all', $myProjects  = false){
 
@@ -148,9 +150,47 @@ class ProjectList extends Component
         
         $this->projects_count = 0;
  
+        $this->setHomeRoute();
 
 
+    }
 
+
+    public function setHomeRoute(){
+
+        $user = Auth::user();
+
+        switch ($this->status) {
+            case 'projects':
+                if ($this->myProjects) {
+                    $this->home_route = route('project.index.my-projects');
+                } else {
+                    $this->home_route = route('project.index');
+                     
+                }
+                break;
+
+            case 'pending_update_projects':
+                if ($this->myProjects) {
+                    $this->home_route = route('project.pending_project_update.my-projects');
+                } else {
+                    $this->home_route = route('project.pending_project_update');
+                     
+                }
+                break;
+
+            case 'in_review_projects':
+                if ($this->myProjects) {
+                    $this->home_route = route('project.in_review.my-projects');
+                } else {
+                    $this->home_route = route('project.in_review'); 
+                }
+                break;
+
+            default:
+                $this->home_route = route('project.index.my-projects');
+                break;
+        }
     }
 
 

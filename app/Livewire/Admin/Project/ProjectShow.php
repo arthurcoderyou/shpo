@@ -76,10 +76,21 @@ class ProjectShow extends Component
 
  
     public $selectedUsers;
+
+    public $home_route;
     public function mount($id){
 
         $project = Project::find($id);
         $this->project = $project;
+
+
+        if($project->created_by == Auth::id()){
+            $this->home_route = route('project.index.my-projects');
+        }else{
+            $this->home_route = route('project.index');
+        }
+
+        
 
         $this->project_id = $project->id;
 
