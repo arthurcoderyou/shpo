@@ -6,7 +6,7 @@
     </x-slot>
 
     
-    @if(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin'))
+    @if(Auth::user()->can('system access admin') || Auth::user()->can('system access global admin') ||  Auth::user()->can('timer list view'))
         <livewire:admin.project-timer.project-timer-edit  />
 
     @endif 

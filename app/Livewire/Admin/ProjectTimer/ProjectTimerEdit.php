@@ -10,8 +10,12 @@ use App\Models\ActiveDays;
 use App\Models\ActivityLog;
 use App\Models\ProjectTimer;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\ProjectTimerUpdatedNotification;
+use App\Notifications\ProjectTimerUpdatedNotificationDB;
 
 class ProjectTimerEdit extends Component
 {
@@ -40,7 +44,7 @@ class ProjectTimerEdit extends Component
 
 
     public function mount(){
-
+        // dd("Here");
 
         //get the first record from the project_timers
         $this->loadProjectTimer();
@@ -182,9 +186,10 @@ class ProjectTimerEdit extends Component
                     $this->addError('project_submission_close_time', 'Close time must not be before open time.');
                 } else {
                     if ($this->project_submission_restrict_by_time) {
-                        $this->message_on_open_close_time = "Project submissions are strictly accepted between {$this->project_submission_open_time} and {$this->project_submission_close_time}. Submissions outside this time frame will not be accepted.";
+                        $this->message_on_open_close_time = "Project submissions are accepted between {$this->project_submission_open_time} and {$this->project_submission_close_time}, but submissions outside this time frame will be considered and put on que. It will be automatically submitted on the next working day";
                     } else {
-                        $this->message_on_open_close_time = "Project submissions are accepted between {$this->project_submission_open_time} and {$this->project_submission_close_time}, but submissions outside this time frame may still be considered.";
+                        // $this->message_on_open_close_time = "Project submissions are checked between {$this->project_submission_open_time} and {$this->project_submission_close_time}".
+                        $this->message_on_open_close_time = "Project submissions are checked between {$this->project_submission_open_time} and {$this->project_submission_close_time}";
                     }
                 }
             } catch (\Exception $e) {
@@ -244,6 +249,14 @@ class ProjectTimerEdit extends Component
 
 
     public function save(){
+
+
+        
+
+        // dd($users);
+
+
+
         $this->validate([
             'submitter_response_duration' => [
                 'required',
@@ -310,6 +323,42 @@ class ProjectTimerEdit extends Component
             }
         }
 
+        /** Email notification to every user  */
+
+         $targetPermissions = [
+            'system access user',
+            'system access admin',
+            'system access reviewer',
+            'system access global admin',
+        ];
+
+        $users = User::permission($targetPermissions)->get();
+
+        foreach ($users as $user) {
+            try {
+                Notification::send($user, new ProjectTimerUpdatedNotification($project_timer));
+            } catch (\Throwable $e) {
+                Log::error('Failed to send ProjectTimerUpdatedNotification notification: ' . $e->getMessage(), [
+                    'project_timer_id' => $project_timer->id,
+                    'user_id' => $user->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+            try {
+                Notification::send($user, new ProjectTimerUpdatedNotificationDB($project_timer));
+            } catch (\Throwable $e) {
+                Log::error('Failed to send ProjectTimerUpdatedNotificationDB notification: ' . $e->getMessage(), [
+                    'project_timer_id' => $project_timer->id,
+                    'user_id' => $user->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+        }
+ 
+        
+
 
         // ActivityLog::create([
         //     'log_action' => "Project timer  updated ",
@@ -317,8 +366,8 @@ class ProjectTimerEdit extends Component
         //     'created_by' => Auth::user()->id,
         // ]);
 
-        // Alert::success('Success','Project timer updated successfully');
-        // return redirect()->route('profile');
+        Alert::success('Success','Project timer updated successfully');
+        return redirect()->route('project_timer.index');
         
 
     }

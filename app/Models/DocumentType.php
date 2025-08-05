@@ -51,7 +51,7 @@ class DocumentType extends Model
             // event(new  \App\Events\DocumentTypeCreated($documentType));
 
             try {
-                event(new \App\Events\DocumentTypeCreated($documentType));
+                event(new \App\Events\DocumentTypeCreated($documentType,auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch DocumentTypeCreated event: ' . $e->getMessage(), [
@@ -60,6 +60,9 @@ class DocumentType extends Model
                 ]);
             }
 
+            
+
+
         });
 
         static::updated(function ($documentType) {
@@ -67,7 +70,7 @@ class DocumentType extends Model
 
 
             try {
-                event(new \App\Events\DocumentTypeUpdated($documentType));
+                event(new \App\Events\DocumentTypeUpdated($documentType,auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch DocumentTypeUpdated event: ' . $e->getMessage(), [

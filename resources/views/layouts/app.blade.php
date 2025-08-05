@@ -7,6 +7,20 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
+        {{--
+        <!-- Arc GIS-->
+            <!-- Load Calcite components from CDN -->
+            <script type="module" src="https://js.arcgis.com/calcite-components/3.2.1/calcite.esm.js"></script>
+
+            <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+            <link rel="stylesheet" href="https://js.arcgis.com/4.33/esri/themes/light/main.css" />
+            <script src="https://js.arcgis.com/4.33/"></script>
+
+            <!-- Load Map components from CDN-->
+            <script type="module" src="https://js.arcgis.com/4.33/map-components/"></script>
+        <!-- ./ Arc GIS-->
+         --}}
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -93,12 +107,165 @@
             }
 
 
+            function showAlert(message) {
+                const alertElement = document.getElementById('dismiss-alert');
+                const messageElement = alertElement.querySelector('h3');
+                messageElement.innerHTML = message;
+                alertElement.classList.remove('hidden');
+                alertElement.classList.add('opacity-100');
+
+                setTimeout(() => {
+                    alertElement.classList.add('hidden');
+                }, 10000);
+
+                        
+            }
+
+
+
             const currentUser = {
                 id: @json(auth()->user()->id),
                 roles: @json(auth()->user()->getRoleNames()), // returns ['Admin', ...]
+                permissions: @json(auth()->user()->getAllPermissions()->pluck('name')),
                 reviewerOfProjects: @json(auth()->user()->reviewed_projects->pluck('id')), // assuming relation exists
                 myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
             };
+            
+            /** notifications */
+            window.Echo
+                .private('notifications')
+                    .listen('.created', (e) => {
+                        console.log(e.message);
+                        Livewire.dispatch('notificationsCreated');
+                        // showAlert(e.message); // Assuming showAlert() is a global function
+                    })
+                    .listen('.updated', (e) => {
+                        console.log(e.message);
+                        Livewire.dispatch('notificationsUpdated');
+                        // showAlert(e.message); // Assuming showAlert() is a global function
+                    })
+                    .listen('.deleted', (e) => {
+                        console.log(e.message);
+                        Livewire.dispatch('notificationsDeleted');
+                        // showAlert(e.message); // Assuming showAlert() is a global function
+                    });
+
+            /** users */
+            window.Echo.private('users')
+                .listen('.created', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('userCreated');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('user list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+
+  
+
+                }).listen('.updated', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('userUpdated');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('user list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+
+
+                }).listen('.deleted', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('userDeleted');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('user list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+                });
+
+            /** ./ users */
+
+            /** roles */
+            window.Echo.private('roles')
+                .listen('.created', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('roleCreated');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('role list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+
+  
+
+                }).listen('.updated', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('roleUpdated');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('role list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+
+
+                }).listen('.deleted', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('roleDeleted');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('role list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+                });
+
+            /** ./ roles */
+
+
+            /** permissions */
+            window.Echo.private('permissions')
+                .listen('.created', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('permissionCreated');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('permission list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+
+  
+
+                }).listen('.updated', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('permissionUpdated');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('permission list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+
+
+                }).listen('.deleted', (e) => {
+                    console.log(e.message);
+                    Livewire.dispatch('permissionDeleted');
+
+                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('permission list view') ;
+
+                    if (shouldNotify) {
+                        showAlert(e.message);
+                    }
+                });
+
+            /** ./ permissions */
+
+
         
             /** project.discussions.global */
                 window.Echo.private("project.discussions.global")
@@ -113,7 +280,7 @@
                         const is_private = e.is_private;
 
                         
-                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                         const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                         const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -139,7 +306,7 @@
                         const is_private = e.is_private;
 
 
-                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                         const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                         const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -163,7 +330,7 @@
                         const is_private = e.is_private;
 
 
-                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                         const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                         const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -186,7 +353,7 @@
  
                         const is_private = e.is_private;
 
-                        const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                         const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                         const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -206,7 +373,7 @@
                     Livewire.dispatch('projectTimerUpdated');
 
  
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -225,7 +392,7 @@
                     Livewire.dispatch('documentTypeCreated');
 
   
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -239,7 +406,7 @@
                     Livewire.dispatch('documentTypeUpdated');
 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -253,7 +420,7 @@
                     Livewire.dispatch('documentTypeDeleted');
 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -271,7 +438,7 @@
                     Livewire.dispatch('reviewerCreated');
 
   
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -285,7 +452,7 @@
                     Livewire.dispatch('reviewerUpdated');
 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -299,7 +466,7 @@
                     Livewire.dispatch('reviewerDeleted');
 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin'); 
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
 
                     const shouldNotify =  (isAdmin || isReviewer) ;
 
@@ -324,7 +491,7 @@
 
    
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -347,7 +514,7 @@
 
  
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -370,7 +537,7 @@
 
  
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -393,7 +560,7 @@
 
  
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isReviewer = currentUser.roles.includes('Reviewer');
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -418,7 +585,7 @@
 
                     // const projectId = e.project_id; 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -444,7 +611,7 @@
 
    
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -468,7 +635,7 @@
 
                     // const projectId = e.project_id; 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -492,7 +659,7 @@
 
                     // const projectId = e.project_id; 
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
 
@@ -519,7 +686,7 @@
 
    
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isReviewer = currentUser.roles.includes('Reviewer');
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -543,7 +710,7 @@
 
  
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isReviewer = currentUser.roles.includes('Reviewer');
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -566,7 +733,7 @@
 
  
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isReviewer = currentUser.roles.includes('Reviewer');
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -593,7 +760,7 @@
 
    
 
-                    const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                     const isReviewer = currentUser.roles.includes('Reviewer');
                     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -613,7 +780,7 @@
 
                 //     const projectId = e.project_id; 
 
-                //     const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                 //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                 //     const isReviewer = currentUser.roles.includes('Reviewer');
                 //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -631,7 +798,7 @@
 
                 //     const projectId = e.project_id; 
 
-                //     const isAdmin = currentUser.roles.includes('Admin') || currentUser.roles.includes('DSI God Admin');
+                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
                 //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
                 //     const isReviewer = currentUser.roles.includes('Reviewer');
                 //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
@@ -858,9 +1025,8 @@
 
         <!-- Before the closing </body> tag -->
         @livewireScripts
-
-
-          
+ 
+   
 
 
     </body>

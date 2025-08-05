@@ -47,12 +47,12 @@ new #[Layout('layouts.guest')] class extends Component
         } 
 
         // If the user has the role Admin or DSI God Admin, skip 2FA
-        if ($user->hasRole('Admin') ) {
+        if ($user->can('system access admin') ) {
             session()->put('2fa_verified', true);
         }
 
         // If the user has the role Admin or DSI God Admin, skip 2FA
-        if ($user->hasRole('DSI God Admin') ) {
+        if ($user->can('system access global admin') ) {
                 session()->put('2fa_verified', true);
         }
 
@@ -88,19 +88,19 @@ new #[Layout('layouts.guest')] class extends Component
     }
 }; ?>
 
-<div>
+<div  >
 
     {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
     </div> --}}
 
-    <div wire:loading class="loading-overlay">
+    {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
             <div></div>
             <div></div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -113,7 +113,7 @@ new #[Layout('layouts.guest')] class extends Component
             <x-input-error :messages="$errors->get('form.email')" class="mt-2" />
         </div>
 
-        <!-- Password -->
+        {{-- <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
 
@@ -123,7 +123,47 @@ new #[Layout('layouts.guest')] class extends Component
                             required autocomplete="current-password" />
 
             <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
+        </div> --}}
+
+        <!-- Password -->
+        <div class="mt-4" x-data="{ show: false }">
+            <x-input-label for="password" :value="__('Password')" />
+
+            <div class="relative">
+                <x-text-input
+                    wire:model="form.password"
+                    x-bind:type="show ? 'text' : 'password'"
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="new-password"
+                    class="block mt-1 w-full pr-10"
+                />
+
+                <!-- Toggle Button -->
+                <button type="button"
+                        x-on:click="show = !show"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-800"
+                        tabindex="-1">
+                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.045 10.045 0 014.724-5.735M6.182 6.182l11.636 11.636M17.818 17.818L6.182 6.182"/>
+                    </svg>
+                </button>
+            </div>
+
+            <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
         </div>
+
+
 
         <!-- Remember Me -->
         <div class="block mt-4">
@@ -153,4 +193,30 @@ new #[Layout('layouts.guest')] class extends Component
             </a>
         </div>
     </form>
+
+
+    <!-- Fullscreen Cen ered Loader with Dark Background -->
+    <div wire:loading  wire:target="login"
+     
+     >
+        <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+            <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                <div class="text-sm font-medium">
+                    Logging in, please wait...
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+
+
+
+
 </div>

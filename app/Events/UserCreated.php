@@ -17,12 +17,19 @@ class UserCreated  implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public User $user;
+    public $message;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct(User $user)
+    public function __construct(User $user, $authId)
     {
         $this->user = $user;
+        $this->message = "New user '".$this->user->name."' created"; 
+        $this->authId = $authId;
+
+        
+
     }
 
     /**
@@ -33,7 +40,7 @@ class UserCreated  implements ShouldBroadcast, ShouldQueue
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('user'),
+            new PrivateChannel('users'),
         ];
     }
 
@@ -45,7 +52,7 @@ class UserCreated  implements ShouldBroadcast, ShouldQueue
     public function broadcastWith(){
          
         return [
-            'message' => "New user '".$this->user->name."' created",
+            'message' => $this->message ,
                 // ? 'Time settings updated by ' . $this->project_timer->updator->name . ' at ' . $this->project_timer->updated_at->toDateTimeString()
                 // : 'Time settings updated by ' . $user->name . ' at ' . now()->toDateTimeString(),
             'user_url' => route('user.index'),

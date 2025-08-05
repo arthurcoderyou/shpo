@@ -6,7 +6,7 @@
     </x-slot>
 
 
-    @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('document type create') )
+    @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type create') )
         <livewire:admin.document-type.document-type-create />
     @endif
 
@@ -15,7 +15,7 @@
     
 
 
-
+ 
 
 
 

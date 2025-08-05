@@ -15,7 +15,7 @@ class UserCreatedListener  implements ShouldQueue
      */
     public function __construct()
     {
-        //
+        
     }
 
     /**

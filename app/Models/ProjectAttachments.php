@@ -13,10 +13,13 @@ class ProjectAttachments extends Model
 
     protected $fillable = [
         'attachment',
+        'filesystem',
         'project_id',
         'project_document_id',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'last_submitted_at',
+        'last_submitted_by',
     ];
 
 
@@ -75,6 +78,19 @@ class ProjectAttachments extends Model
 
     }
 
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'last_submitted_at' => 'datetime', 
+        ];
+    }
+    
 
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Role;
 
+use App\Events\RoleUpdated;
 use Livewire\Component;
 
 use App\Models\ActivityLog;
@@ -13,6 +14,7 @@ class RoleEdit extends Component
 {
 
     public string $name = '';
+    public string $description = '';
 
     public $role_id;
 
@@ -21,6 +23,7 @@ class RoleEdit extends Component
 
         $this->role_id = $role->id;
         $this->name = $role->name;
+        $this->description = $role->description ?? '';
 
     }
 
@@ -30,6 +33,10 @@ class RoleEdit extends Component
                 'required',
                 'string',
                 'unique:roles,name,'.$this->role_id,
+            ],
+            'description' => [
+                'nullable',
+                'string', 
             ],
 
         ]);
@@ -47,14 +54,22 @@ class RoleEdit extends Component
                 'string',
                 'unique:roles,name,'.$this->role_id,
             ],
+            'description' => [
+                'nullable',
+                'string', 
+            ],
 
         ]);
 
         //save
         $role = Role::findOrFail($this->role_id);
         $role->name = $this->name;
+        $role->description = $this->description;  
         $role->updated_at = now();
         $role->save();
+
+
+        event(new RoleUpdated($role, auth()->user()->id));
 
         ActivityLog::create([
             'log_action' => "Role \"".$this->name."\" updated ",

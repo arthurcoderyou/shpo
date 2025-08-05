@@ -5,6 +5,9 @@ import Echo from 'laravel-echo';
 import { showAlert } from './alert';
 
 
+
+
+
 window.Echo.channel('forums')
     .listen('.create', (e) => {
         console.log(e.message);
@@ -26,12 +29,7 @@ window.Echo.channel('forums')
         showAlert(e.message);
     });
 
-window.Echo.channel('notifications')
-    .listen('.delete', (e) => {
-        console.log(e.message);
-        Livewire.dispatch('notificationsDeleted');
-        showAlert(e.message);
-    });
+
 
 
 // window.Echo.channel('project_discussions')

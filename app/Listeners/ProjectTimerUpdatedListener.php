@@ -2,10 +2,15 @@
 
 namespace App\Listeners;
 
+use App\Models\ProjectTimer;
+use App\Models\User;
 use App\Models\ActivityLog;
 use App\Events\ProjectTimerUpdated;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\ProjectTimerUpdatedNotification;
 
 class ProjectTimerUpdatedListener  implements ShouldQueue
 {
@@ -22,8 +27,8 @@ class ProjectTimerUpdatedListener  implements ShouldQueue
      */
     public function handle(ProjectTimerUpdated $event): void
     {
-        $user = auth()->user();
-        $timer = $event->project_timer;
+        $user = User::find($event->authId);
+        $timer = ProjectTimer::find($event->project_timer_id);
 
         $logMessage = $timer
             ? 'Time settings updated by ' . $timer->updator->name . ' at ' . $timer->updated_at->toDateTimeString()
@@ -34,5 +39,12 @@ class ProjectTimerUpdatedListener  implements ShouldQueue
             'log_username' => $logMessage,
             'log_action' => 'Updated Project Timer settings at ' . now()->toDateTimeString(),
         ]);
+
+
+
+        
+
+ 
+
     }
 }

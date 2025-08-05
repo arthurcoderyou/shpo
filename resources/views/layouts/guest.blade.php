@@ -32,7 +32,7 @@
 
             <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white/80 shadow-md overflow-hidden sm:rounded-lg ">
 
-                <div class="mb-12">
+                <div class="mb-6">
                     <a href="/" wire:navigate>
                         <x-application-logo class="w-auto shrink-0 fill-current text-gray-500" />
                     </a>

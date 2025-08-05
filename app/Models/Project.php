@@ -26,7 +26,7 @@ class Project extends Model
             // - company
 
         'status',
-        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',
+        # 'draft','submitted','in_review','approved','rejected','completed','cancelled', 'on_que'
         # on_que // status that the project is submitted but it is on que due to the submission restrictions    
         'allow_project_submission', // defines if the project can be submitted again
         # true to allow
@@ -49,7 +49,10 @@ class Project extends Model
         'reviewer_due_date', 
 
 
-        'latitude', 'longitude', 'location'
+        'latitude', 'longitude', 'location',
+
+        'last_submitted_at',
+        'last_submitted_by',
     ];
 
     // Automatically generate the project number
@@ -128,6 +131,41 @@ class Project extends Model
     }
 
 
+    // Projects that this project references
+    public function references()
+    {
+        return $this->belongsToMany(Project::class, 'project_references', 'project_id', 'referenced_project_id');
+    }
+
+    // Projects that reference this project
+    public function referencedBy()
+    {
+        return $this->belongsToMany(Project::class, 'project_references', 'referenced_project_id', 'project_id');
+    }
+
+
+
+    /**
+     * Get all of the project_references for the Project
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function project_references()
+    {
+        return $this->hasMany(ProjectReferences::class, 'project_id', 'id');
+    }
+
+    /**
+     * Get all of the referenced projects
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function referenced_project()
+    {
+        return $this->hasMany(ProjectReferences::class, 'referenced_project_id', 'id');
+    }
+
+
     /**
      * Get all of the ProjectDocument
      *
@@ -141,7 +179,7 @@ class Project extends Model
 
 
     /**
-     * Get the user that owns the Reviewer
+     * Get the user that owns the Project
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
@@ -150,14 +188,26 @@ class Project extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
+    
+
     /**
-     * Get the user that owns the Reviewer
+     * Get the user that owns the Project
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function updator() # : BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by', 'id');
+    }
+
+    /**
+     * Get the user that last submitted the project
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function last_submitter() # : BelongsTo
+    {
+        return $this->belongsTo(User::class, 'last_submitted_by', 'id');
     }
 
 
@@ -385,23 +435,23 @@ class Project extends Model
 
     public function getCurrentReviewer()
     {
-        // return $this->project_reviewers() 
-        //     ->where('status', true)  // find the first active reviewer
-        //     ->orderBy('order')
-        //     ->first(); // Return the User model of the reviewer
+        return $this->project_reviewers() 
+            ->where('status', true)  // find the first active reviewer
+            ->orderBy('order')
+            ->first(); // Return the User model of the reviewer
 
         // Iterate over all project documents ordered by id (i.e. oldest first)
-        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
-            $reviewer = $document->project_reviewers()
-                ->where('status', true)
-                ->where('review_status', '!=', 'approved')
-                ->orderBy('order')
-                ->first();
+        // foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+        //     $reviewer = $document->project_reviewers()
+        //         ->where('status', true)
+        //         ->where('review_status', '!=', 'approved')
+        //         ->orderBy('order')
+        //         ->first();
 
-            if ($reviewer) {
-                return $reviewer;
-            }
-        }
+        //     if ($reviewer) {
+        //         return $reviewer;
+        //     }
+        // }
 
 
     }
@@ -424,34 +474,90 @@ class Project extends Model
 
 
 
+    // public function resetCurrentProjectDocumentReviewers()
+    // {
+    //     foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+    //         $hasPendingReview = $document->project_reviewers()
+    //             ->where('review_status', '!=', 'approved')
+    //             ->exists();
+
+    //         if ($hasPendingReview) {
+    //             // Deactivate all reviewers
+    //             $document->project_reviewers()->update(['status' => false]);
+
+    //             // Activate the first reviewer by order
+    //             $firstReviewer = $document->project_reviewers()
+    //                 ->where('review_status', '!=', 'approved')
+    //                 ->orderBy('order')
+    //                 ->first();
+
+    //             if ($firstReviewer) {
+    //                 $firstReviewer->status = true;
+    //                 $firstReviewer->save();
+    //             }
+
+    //             break; // Stop after the first matching document
+    //         }
+    //     }
+    // }
+
+
+
+
+
     public function resetCurrentProjectDocumentReviewers()
     {
-        foreach ($this->project_documents()->orderBy('id')->get() as $document) {
-            $hasPendingReview = $document->project_reviewers()
+        $reviewerTypePriority = ['initial', 'document', 'final'];
+
+        // foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+        //     $hasPendingReview = $document->project_reviewers()
+        //         ->where('review_status', '!=', 'approved')
+        //         ->exists();
+
+        //     if ($hasPendingReview) {
+        //         // Deactivate all reviewers across all types
+        //         $document->project_reviewers()->update(['status' => false]);
+
+        //         // Activate the first eligible reviewer by reviewer_type priority and then order
+        //         foreach ($reviewerTypePriority as $type) {
+        //             $firstReviewer = $document->project_reviewers()
+        //                 ->where('review_status', '!=', 'approved')
+        //                 ->where('reviewer_type', $type)
+        //                 ->orderBy('order')
+        //                 ->first();
+
+        //             if ($firstReviewer) {
+        //                 $firstReviewer->status = true;
+        //                 $firstReviewer->save();
+        //                 break; // Only one active reviewer allowed
+        //             }
+        //         }
+
+        //         break; // Stop after first matching document
+        //     }
+        // }
+
+
+        
+
+        // Activate the first eligible reviewer by reviewer_type priority and then order
+        foreach ($reviewerTypePriority as $type) {
+            $firstReviewer = $this->project_reviewers()
                 ->where('review_status', '!=', 'approved')
-                ->exists();
+                ->where('reviewer_type', $type)
+                ->orderBy('order')
+                ->first();
 
-            if ($hasPendingReview) {
-                // Deactivate all reviewers
-                $document->project_reviewers()->update(['status' => false]);
-
-                // Activate the first reviewer by order
-                $firstReviewer = $document->project_reviewers()
-                    ->where('review_status', '!=', 'approved')
-                    ->orderBy('order')
-                    ->first();
-
-                if ($firstReviewer) {
-                    $firstReviewer->status = true;
-                    $firstReviewer->save();
-                }
-
-                break; // Stop after the first matching document
+            if ($firstReviewer) {
+                $firstReviewer->status = true;
+                $firstReviewer->save();
+                break; // Only one active reviewer allowed
             }
         }
+
+  
+
     }
-
-
 
 
 
@@ -528,11 +634,7 @@ class Project extends Model
         
     }
 
-
-    
-     
-
-
+ 
 
     /**
      * Count the number of projects based on needing for update
@@ -580,94 +682,94 @@ class Project extends Model
 
 
 
-    static public function countProjects($status = null, $owned = "no"){
+    // static public function countProjects($status = null, $owned = "no"){
 
-        $projects = Project::select('projects.*');
+    //     $projects = Project::select('projects.*');
 
-        if($owned == "no"){
+    //     if($owned == "no"){
           
-            if(Auth::user()->hasRole('User')){
-                $projects =  $projects->where('created_by',Auth::user()->id);
+    //         if(Auth::user()->hasRole('User')){
+    //             $projects =  $projects->where('created_by',Auth::user()->id);
 
 
-                if(!empty($status)){
+    //             if(!empty($status)){
 
-                    $projects =  $projects->where('status',$status);
-
-
-                }
+    //                 $projects =  $projects->where('status',$status);
 
 
-            }
+    //             }
 
 
-            if(Auth::user()->hasRole('Reviewer')){
+    //         }
+
+
+    //         if(Auth::user()->hasRole('Reviewer')){
                  
 
-                //add status
-                if(!empty($status)){
+    //             //add status
+    //             if(!empty($status)){
 
-                    $projects =  $projects->where('status',$status);
+    //                 $projects =  $projects->where('status',$status);
 
 
-                }
+    //             }
                 
 
-                // if route if my projects
+    //             // if route if my projects
 
-                // do not  count drafts to reviewers
-                $projects = $projects->whereNot('status','draft');
-
-
-            }
+    //             // do not  count drafts to reviewers
+    //             $projects = $projects->whereNot('status','draft');
 
 
-            if(Auth::user()->hasRole('Admin')){
+    //         }
+
+
+    //         if(Auth::user()->hasRole('Admin')){
                  
 
-                //add status
-                if(!empty($status)){
+    //             //add status
+    //             if(!empty($status)){
 
-                    $projects =  $projects->where('status',$status);
+    //                 $projects =  $projects->where('status',$status);
 
 
-                }
+    //             }
 
                  
 
 
-            }
+    //         }
 
           
-        }else{
+    //     }else{
 
 
-            if(!empty($status)){
+    //         if(!empty($status)){
 
-                if($status == "in_review"){
-                    $projects = $projects->where(function ($query) {
-                        $query->where('status', 'in_review')
-                            ->orWhere(function ($subQuery) {
-                                $subQuery->where('status', '!=', 'approved')
-                                        ->where('status', '!=', 'draft')
-                                        ->where('allow_project_submission', false);
-                            });
-                    });
-                }else{
-                    $projects =  $projects->where('status',$status);
-                }
+    //             if($status == "in_review"){
+    //                 $projects = $projects->where(function ($query) {
+    //                     $query->where('status', 'in_review')
+    //                         ->orWhere(function ($subQuery) {
+    //                             $subQuery->where('status', '!=', 'approved')
+    //                                     ->where('status', '!=', 'draft')
+    //                                     ->where('allow_project_submission', false);
+    //                         });
+    //                 });
+    //             }else{
+    //                 $projects =  $projects->where('status',$status);
+    //             }
 
                 
 
 
-            }
+    //         }
 
-            $projects =  $projects->where('created_by',Auth::user()->id);
-        }
+    //         $projects =  $projects->where('created_by',Auth::user()->id);
+    //     }
 
 
-        return $projects->count();
-    }
+    //     return $projects->count();
+    // }
 
 
 
@@ -684,14 +786,17 @@ class Project extends Model
 
 
             }
- 
-
-
-             
-
+  
 
         return $projects->count();
     }
+
+
+
+
+
+
+
 
 
 
@@ -965,6 +1070,146 @@ class Project extends Model
             $q->where('status', true)->where('review_status', $status);
         });
     }
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+    /**
+     * Count projects based on route context
+     *
+     * @param string $route   Route name
+     * @param string|null $status Optional project status filter
+     * @return int
+     */
+    public static function countProjects($route = 'project.index', $status = null)
+    {
+        $userId = Auth::id();
+        $query = Project::query();
+
+        switch ($route) {
+            case 'project.index':
+                // Owned projects
+                $query->where('created_by', $userId);
+                break;
+
+            case 'project.index.all':
+                // All projects  
+                break;
+
+            case 'project.index.all.no-drafts':
+                // All projects excluding drafts (same as above but for clarity)
+                $query->where('status', '!=', 'draft');
+                break;
+
+            case 'project.index.review-pending':
+                // Owned projects with pending reviews
+                $query->where('created_by', $userId)
+                    ->whereNotIn('status', ['approved', 'draft'])
+                    ->where('allow_project_submission', false)
+                    ->whereHas('project_reviewers', function ($q) {
+                        $q->where('status', true);
+                    });
+                break;
+
+            case 'project.index.update-pending':
+                // Owned projects pending update
+                $query->where('created_by', $userId)
+                    ->whereNotIn('status', ['approved', 'draft'])
+                    ->where('allow_project_submission', true);
+                break;
+
+            case 'project.index.update-pending.all-linked':
+                // Reviewer-linked projects that are pending update and not yet submitted
+                $query->whereNotIn('status', ['approved', 'draft'])
+                    ->where('allow_project_submission', true)
+                    ->whereHas('project_reviewers', function ($q) use ($userId) {
+                        $q->where('user_id', $userId)
+                        ->where('status', true);
+                    });
+                break;
+
+            case 'project.index.review-pending.all-linked':
+                // Reviewer-linked projects with pending review
+                $query->whereNotIn('status', ['approved', 'draft'])
+                    ->where('allow_project_submission', false)
+                    ->whereHas('project_reviewers', function ($q) use ($userId) {
+                        $q->where('user_id', $userId)
+                        ->where('status', true)
+                        // ->where('review_status','pending')
+                        ;
+                    });
+                break;
+
+            case 'project.index.update-pending.all':
+                // All projects pending update (not filtered by ownership or reviewers)
+                $query->whereNotIn('status', ['approved', 'draft'])
+                    ->where('allow_project_submission', true);
+                break;
+
+            case 'project.index.review-pending.all':
+                // All projects pending review (not filtered by ownership or reviewers)
+                $query->whereNotIn('status', ['approved', 'draft'])
+                    ->where('allow_project_submission', false);
+                break;
+                
+            
+            case 'project.index.open-review': 
+                // Projects with open review
+                $query->whereNotIn('status', ['approved', 'draft','in_review'])
+                    // ->where('allow_project_submission', false)
+                    ->whereHas('project_reviewers', function ($q) use ($userId) {
+                        $q->whereNull('user_id')
+                        ->where('status', true)
+                        // ->where('review_status','pending')
+                        ;
+                    }); 
+                break;
+
+
+            default:
+                // Fallback: owned projects
+                $query->where('created_by', $userId);
+                break;
+        }
+
+        // Optional status filter
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        return $query->count();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
 
 
 

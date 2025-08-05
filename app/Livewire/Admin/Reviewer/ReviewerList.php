@@ -2,26 +2,28 @@
 
 namespace App\Livewire\Admin\Reviewer;
 
+use App\Models\User;
+use App\Models\Review;
+use App\Models\Project;
+use Livewire\Component;
+use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
-use App\Models\DocumentTypeReviewer;
-use App\Models\Project;
+use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use App\Models\ProjectReviewer;
-use App\Models\Review;
-use App\Models\Reviewer;
-use App\Models\User;
-use App\Notifications\ProjectReviewerUpdatedNotification;
-use App\Notifications\ProjectReviewerUpdatedNotificationDB;
+use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
+use App\Events\ReviewerListUpdated;
+use Illuminate\Support\Facades\Log;
+use App\Models\DocumentTypeReviewer;
+use Illuminate\Support\Facades\Auth;
+use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\Rule;
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use Livewire\WithPagination;
-use RealRashid\SweetAlert\Facades\Alert;
-use Spatie\Permission\Models\Role;
+use App\Notifications\ProjectReviewerUpdatedNotification;
+use App\Notifications\ProjectReviewerUpdatedNotificationDB;
 
 class ReviewerList extends Component
 {
@@ -45,7 +47,7 @@ class ReviewerList extends Component
 
     public $document_type_id;
 
-    public $reviewer_type = "document";
+    public $reviewer_type = "";
 
     public $documentTypesWithoutReviewers;
     public $allDocumentTypesHaveReviewers;
@@ -72,11 +74,10 @@ class ReviewerList extends Component
 
     public function mount(){
 
-        $this->users = User::whereHas('roles', function ($query) {
-            $query->where('name', 'Reviewer');
-        })->pluck('id', 'name')->toArray();
-
-
+        $this->users = User::permission('system access reviewer')
+            ->pluck('id', 'name')
+            ->toArray();
+ 
 
         // DocumentTypes that don't have any reviewers
         $this->documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
@@ -136,6 +137,8 @@ class ReviewerList extends Component
         if ($this->reviewer_type == 'document') { 
             $this->document_type_id = DocumentType::first()->id ?? null;
         }
+
+        $this->reviewers = $this->getReviewersProperty();
       
     }   
 
@@ -645,7 +648,8 @@ class ReviewerList extends Component
     {
         $this->validateOnly($fields, [
             'user_id' => [
-                'required',
+                // 'required',
+                'nullable',
                 Rule::unique('reviewers', 'user_id')
                     ->where(function ($query) {
                     // Reviewer type is initial or final
@@ -695,6 +699,18 @@ class ReviewerList extends Component
 
 
 
+        // Custom validation for null user_id scenario
+        if (is_null($this->user_id)) {
+            $existingReviewer = Reviewer::whereNull('user_id')
+                ->where('reviewer_type', $this->reviewer_type)
+                ->where('document_type_id', $this->document_type_id)
+                ->first();
+
+            if ($existingReviewer) {
+                $this->addError('user_id', 'A record without a user ID already exists for this reviewer type.');
+            }
+        }
+
 
 
 
@@ -705,7 +721,10 @@ class ReviewerList extends Component
     public function validateReviewer()
     {
         $this->validate([
-            'user_id' => ['required'],
+            'user_id' => [
+                // 'required'
+                 'nullable',
+            ],
             'reviewer_type' => ['required'],
             'document_type_id' => [
                 function ($attribute, $value, $fail) {
@@ -724,6 +743,11 @@ class ReviewerList extends Component
 
         // Manual uniqueness check within the array
         foreach ($this->reviewers as $reviewer) {
+
+            
+
+
+
             if (
                 $reviewer['user_id'] == $this->user_id &&
                 $reviewer['reviewer_type'] == $this->reviewer_type &&
@@ -737,6 +761,18 @@ class ReviewerList extends Component
                                 ($this->reviewer_type === 'document' ? ' and document type.' : '.'),
                 ]);
             }
+
+
+            // // Check if there is already a record with a null user_id for the same reviewer type and document type
+            // if (is_null($reviewer['user_id']) && $reviewer['reviewer_type'] == $this->reviewer_type && ($this->reviewer_type !== 'document' || $reviewer['document_type_id'] == $this->document_type_id)) {
+            //     throw \Illuminate\Validation\ValidationException::withMessages([
+            //         'user_id' => 'A record without a user ID already exists for this reviewer type' .
+            //                     ($this->reviewer_type === 'document' ? ' and document type.' : '.'),
+            //     ]);
+            // }
+
+            
+
         }
     }
 
@@ -749,111 +785,7 @@ class ReviewerList extends Component
     public function add()
     {
         
-
-        // $this->validate([
-        //     'user_id' => [
-        //         'required',
-                
-
-        //         Rule::unique('reviewers', 'user_id')
-        //             ->where(function ($query) {
-        //                 // Reviewer type is initial or final
-        //                 if (in_array($this->reviewer_type, ['initial', 'final'])) {
-        //                     return $query->where('reviewer_type', $this->reviewer_type);
-        //                 }
-
-        //                 // Reviewer type is document — must match both type and document_type_id
-        //                 if ($this->reviewer_type === 'document') {
-        //                     return $query
-        //                         ->where('reviewer_type', 'document')
-        //                         ->where('document_type_id', $this->document_type_id);
-        //                 }
-
-        //                 // fallback to avoid error
-        //                 return $query->whereNull('id'); // guarantees no match
-        //             }),
-
-        //     ],
-        //     'reviewer_type' => [
-        //         'required',
-        //     ],
-
-        //     'document_type_id' => [
-        //         function ($attribute, $value, $fail) {
-        //             if (!empty($this->reviewer_type) &&  $this->reviewer_type == "document") {
-        //                 if (empty($value)) {
-        //                     $fail('The document type field is required');
-        //                 }
-        //             }
-        //         },
-        //     ],
-        //     'order' => [
-        //         'required',
-        //     ],
-        //     // 'status' => [
-        //     //     'required',
-        //     // ],
-        // ], [
-        //     'user_id.required' => 'User is required',
-        //     'user_id.unique' => 'User is already added for this document type',
-        //     'document_type_id.required' => 'Document type is required',
-        // ]);
-
-
-        // dd($this->reviewers);
-
-
-
-        /*
-        if ($this->order === 'top') {
-            if ($this->reviewer_type === 'document') {
-                // Move document reviewers with the same document_type_id up by 1
-                Reviewer::where('reviewer_type', 'document')
-                    ->where('document_type_id', $this->document_type_id)
-                    ->increment('order');
-            } else {
-                // Move initial or final reviewers of the same type up by 1 (no document_type_id needed)
-                Reviewer::where('reviewer_type', $this->reviewer_type)
-                    ->whereNull('document_type_id')
-                    ->increment('order');
-            }
-        
-            // Insert the new reviewer at the top (order = 1)
-            Reviewer::create([
-                'order' => 1,
-                'status' => $this->status,
-                'user_id' => $this->user_id,
-                'reviewer_type' => $this->reviewer_type,
-                'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]);
-        } elseif ($this->order === 'end') {
-            $lastOrder = 0;
-        
-            if ($this->reviewer_type === 'document') {
-                // Count document reviewers with the same document_type_id
-                $lastOrder = Reviewer::where('reviewer_type', 'document')
-                    ->where('document_type_id', $this->document_type_id)
-                    ->count();
-            } else {
-                // Count initial or final reviewers of the same type (no document_type_id)
-                $lastOrder = Reviewer::where('reviewer_type', $this->reviewer_type)
-                    ->whereNull('document_type_id')
-                    ->count();
-            }
-        
-            // Insert the new reviewer at the last order + 1
-            Reviewer::create([
-                'order' => $lastOrder + 1,
-                'status' => $this->status,
-                'user_id' => $this->user_id,
-                'reviewer_type' => $this->reviewer_type,
-                'document_type_id' => $this->reviewer_type === 'document' ? $this->document_type_id : null,
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]);
-        }*/
+ 
 
 
 
@@ -913,7 +845,9 @@ class ReviewerList extends Component
         $this->reviewers = collect($this->reviewers)->sortBy('order')->values()->toArray();
 
 
-         
+        
+       
+
  
      
         // Alert::success('Success','Reviewer added successfully');
@@ -931,7 +865,7 @@ class ReviewerList extends Component
 
     public function save()
     {
-        
+        // dd("here");
         $document_type_id = $this->document_type_id;
         $reviewer_type = $this->reviewer_type;
 
@@ -991,6 +925,21 @@ class ReviewerList extends Component
         $this->dispatch('formSaved');
 
 
+        $user = User::find(auth()->user()->id);
+
+        //send an update on the notifications 
+        try {
+
+            event(new ReviewerListUpdated(auth()->user()->id));
+        } catch (\Throwable $e) {
+            Log::error('Failed to send ReviewerListUpdated event: ' . $e->getMessage(), [ 
+                'user_id' => auth()->user()->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
+
+
         Alert::success('Success', 'Reviewer list saved successfully');
         return redirect()->route('reviewer.index', [
             'document_type_id' => $document_type_id,
@@ -1027,7 +976,7 @@ class ReviewerList extends Component
     //     }
 
     //     // Role-based filtering (example kept, optional)
-    //     if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+    //     if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
     //         $query = $query->whereHas('reviewer', function ($q) {
     //             $q->where('created_by', Auth::id());
     //         });
@@ -1090,6 +1039,23 @@ class ReviewerList extends Component
 
         $query = Reviewer::select('reviewers.*');
 
+        // Filter by reviewer type
+        if (!empty($this->reviewer_type)) {
+            $query = $query->where(function ($q) {
+                $q->where('reviewer_type', $this->reviewer_type);
+            });
+        }
+
+        // dd($this->reviewer_type);
+
+        // Filter by document_type_id or show default reviewers (where null)
+        if (!empty($this->document_type_id) && ($this->reviewer_type == "document") ) {
+            $query = $query->where(function ($q) {
+                $q->where('document_type_id', $this->document_type_id);
+            });
+        }
+
+
 
         if (!empty($this->search)) {
             $search = $this->search;
@@ -1110,21 +1076,7 @@ class ReviewerList extends Component
         }
 
 
-        // Filter by reviewer type
-        if (!empty($this->reviewer_type)) {
-            $query = $query->where(function ($q) {
-                $q->where('reviewer_type', $this->reviewer_type);
-            });
-        }
-
-        // dd($this->reviewer_type);
-
-        // Filter by document_type_id or show default reviewers (where null)
-        if (!empty($this->document_type_id)) {
-            $query = $query->where(function ($q) {
-                $q->where('document_type_id', $this->document_type_id);
-            });
-        }
+        
 
         /*
             // Find the role
@@ -1139,14 +1091,14 @@ class ReviewerList extends Component
             }
 
 
-            // if(!Auth::user()->hasRole('DSI God Admin')){
+            // if(!Auth::user()->can('system access global admin')){
             //     $query =  $query->where('reviewers.created_by','=',Auth::user()->id);
             // }
 
             // Adjust the query
-            if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+            if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
                 $query = $query->where('reviewers.created_by', '=', Auth::user()->id);
-            }elseif(Auth::user()->hasRole('Admin')){
+            }elseif(Auth::user()->can('system access admin')){
                 $query = $query->whereNotIn('reviewers.created_by', $dsiGodAdminUserIds);
             } else {
 
@@ -1272,14 +1224,14 @@ class ReviewerList extends Component
         //     }
 
 
-        //     // if(!Auth::user()->hasRole('DSI God Admin')){
+        //     // if(!Auth::user()->can('system access global admin')){
         //     //     $reviewers =  $reviewers->where('reviewers.created_by','=',Auth::user()->id);
         //     // }
 
         //     // Adjust the query
-        //     if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+        //     if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
         //         $reviewers = $reviewers->where('reviewers.created_by', '=', Auth::user()->id);
-        //     }elseif(Auth::user()->hasRole('Admin')){
+        //     }elseif(Auth::user()->can('system access admin')){
         //         $reviewers = $reviewers->whereNotIn('reviewers.created_by', $dsiGodAdminUserIds);
         //     } else {
 

@@ -1,10 +1,10 @@
 <!-- Table Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
+    {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
-    </div>
+    </div> --}}
  
     {{-- <form wire:submit="save"> --}}
     <div>
@@ -40,7 +40,7 @@
                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
 
                             @if(!empty($users) && count($users) > 0) 
-                                <option value="">Select User</option>
+                                <option value="">Open Review</option>
                                 @foreach ($users as $user_name => $user_id)
                                     <option value="{{ $user_id }}">{{ $user_name }}</option>
                                 @endforeach
@@ -78,7 +78,7 @@
 
                     </div>
 
-                    {{-- <div class="space-y-2 col-span-12 sm:col-span-4">
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
                         <label for="reviewer_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Reviewer Type
                         </label>
@@ -99,12 +99,12 @@
                         @enderror
 
 
-                    </div> --}}
+                    </div>
 
 
                     @if($reviewer_type == "document")
-                        {{-- <div class="space-y-2 col-span-12 "> --}}
-                        <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <div class="space-y-2 col-span-12 ">
+                        {{-- <div class="space-y-2 col-span-12 sm:col-span-4"> --}}
                             <label for="document_type_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                 Document Type
                             </label>
@@ -167,6 +167,10 @@
                 <p class="text-sm text-blue-600 mt-1">
                     <strong>Note:</strong> Please make sure to <span class="font-semibold">save your changes</span> before selecting another document type or leaving the page. Unsaved changes will be lost, and updates will only be applied once saved. Saved reviewers will be visible to all users. 
                 </p>
+                <p class="text-sm text-yellow-600 mt-1">
+                    <strong>OPEN REVIEW:</strong> An open review is a review type where all admins are notified and receive a review notification. The first admin to open the review will automatically become the assigned reviewer.  
+                </p>
+
                 </div>
 
                 <div>
@@ -220,7 +224,7 @@
                         </select>
                     </div>
 
-                    @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
+                    @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
                         <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
                             onclick="confirm('Are you sure, you want to apply this to all records? If you do this, all not approved projects will apply this list and order of reviewers. They will be notified on the changes of reviewers list and order. Are you still sure to proceed? ') || event.stopImmediatePropagation()"
                             wire:click.prevent="apply_to_all" 
@@ -366,9 +370,14 @@
                                                 @php   
                                                     $user =  getUser($reviewer['user_id']);
                                                 @endphp 
+                                                @if($reviewer['user_id'] && !empty($user))
+                                                    
 
-                                                <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
-                                                <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
+                                                    <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
+                                                    <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
+                                                @else 
+                                                    <span class="block text-sm text-gray-500 ">{{ __('Open Review') }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -405,7 +414,7 @@
 
                                          
 
-                                        @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer delete') )
+                                        @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer delete') )
                                         <!-- delete -->
                                          
                                         <button
@@ -489,10 +498,51 @@
         </div>
     </div>
     <!-- End Card -->
+
+
+    <!--  Loaders -->
+        {{-- wire:target="table"   --}}
+        <div wire:loading 
+            class="p-0 m-0"
+            style="padding: 0; margin: 0;">
+            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+                <div>   
+                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+                <div>
+                    Loading lists, please wait...
+                </div> 
+            </div>
+        </div>
+
+        {{-- wire:target="save"   --}}
+        <div wire:loading  wire:target="save"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Saving record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    <!--  ./ Loaders -->
+
+
 </div>
 <!-- End Table Section -->
 @push('scripts')
-<script>
+{{-- <script>
     let formDirty = false;
 
     // Watch for changes in inputs to mark form as dirty
@@ -512,5 +562,5 @@
     Livewire.on('formSaved', () => {
         formDirty = false;
     });
-</script>
+</script> --}}
 @endpush

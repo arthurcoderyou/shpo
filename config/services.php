@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'arcgis' => [
+        'client_id' => env('ARCGIS_CLIENT_ID'),
+        'client_secret' => env('ARCGIS_CLIENT_SECRET'),
+        'api_key' => env('ARCGIS_API_KEY'),
+    ],
+
+
+
 ];

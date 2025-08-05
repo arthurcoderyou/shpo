@@ -90,7 +90,7 @@ class ProjectEdit extends Component
         $this->project = $project;
 
         if($project->created_by == Auth::id()){
-            $this->home_route = route('project.index.my-projects');
+            $this->home_route = route('project.index');
         }else{
             $this->home_route = route('project.index');
         }
@@ -621,6 +621,13 @@ class ProjectEdit extends Component
             'log_username' => Auth::user()->name,
             'created_by' => Auth::user()->id,
         ]);
+
+
+        //update the project
+        $project = Project::find($project_document->project_id);
+        $project->updated_at = now();
+        $project->updated_by = Auth::user()->id;
+        $project->save();
 
         Alert::success('Success',"Project Document \"".$project_document->document_type->name."\" deleted ");
         return redirect()->route('project.edit',['project' => $this->project->id]);

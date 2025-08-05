@@ -21,8 +21,7 @@
 
         <livewire:admin.review.review-list :id="$project->id" /> 
          
-
-        {{-- <livewire:admin.review.review-list :id="$project->id" />  --}}
+ 
             
         <div  id="discussion" class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
             

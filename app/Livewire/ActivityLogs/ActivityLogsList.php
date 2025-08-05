@@ -35,8 +35,8 @@ class ActivityLogsList extends Component
      public function deleteSelected()
      {
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "activity log delete"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('activity log delete'))) {
+        // Check if the user has the role "system access global admin" OR the permission "activity log delete"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('activity log delete'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -78,8 +78,8 @@ class ActivityLogsList extends Component
 
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "activity log delete"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('activity log delete'))) {
+        // Check if the user has the role "system access global admin" OR the permission "activity log delete"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('activity log delete'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -123,19 +123,19 @@ class ActivityLogsList extends Component
         }
 
 
-        // if(!Auth::user()->hasRole('DSI God Admin')){
+        // if(!Auth::user()->hasRole('system access global admin')){
         //     $activity_logs =  $activity_logs->where('activity_logs.created_by','=',Auth::user()->id);
         // }
 
         // Adjust the query
-        if(Auth::user()->hasRole('DSI God Admin'))
+        if(Auth::user()->can('system access global admin'))
         {
 
 
         }
-        elseif (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+        elseif (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
             $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
-        }elseif(!Auth::user()->hasRole('Admin')){
+        }elseif(!Auth::user()->can('system access admin')){
             $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);
         } 
          
@@ -146,7 +146,7 @@ class ActivityLogsList extends Component
             $search = $this->search;
 
 
-            $activity_logs = $activity_logs->where(function($query) use ($search){
+            $activity_logs = $activity_logs->orWhere(function($query) use ($search){
                 $query =  $query->where('activity_logs.log_action','LIKE','%'.$search.'%')
                     ->orWhere('activity_logs.log_username','LIKE','%'.$search.'%');
                     
@@ -160,9 +160,9 @@ class ActivityLogsList extends Component
 
             
             // Adjust the query
-            if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+            if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
                 $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
-            }elseif(!Auth::user()->hasRole('Admin')){
+            }elseif(!Auth::user()->can('system access admin')){
                 $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);
             } 
 

@@ -2,15 +2,23 @@
 
 namespace App\Livewire\Admin\User;
 
+use App\Models\Review;
 use App\Models\User;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Services\CacheService;
+use App\Models\ProjectDocument;
+use App\Models\ProjectReviewer;
+use App\Models\ProjectSubscriber;
+use App\Models\ProjectAttachments;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth; 
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Livewire\Admin\Project\ProjectReview;
 
 class UserList extends Component
 {
@@ -18,6 +26,12 @@ class UserList extends Component
 
     use WithFileUploads;
     use WithPagination;
+
+    protected $listeners =[
+        'userCreated' => '$refresh',
+        'userUpdated' => '$refresh',
+        'userDeleted' => '$refresh',
+    ];
 
     public $search = '';
     public $sort_by = '';
@@ -37,17 +51,31 @@ class UserList extends Component
 
     public $user_count;
 
+    public $user_status_filter = 'active'; // options: active, deactivated, all
+
+
+
+
     public function mount(){
         $this->selected_role = request()->query('selected_role', ''); // Default to empty string if not set
         $this->role_request = request()->query('role_request', ''); // Default to empty string if not set
 
-        $this->roles = Role::select('roles.*');
+        
+        $roles = Role::query();
+        
+       if (!Auth::user()->can('system access global admin')) {
+            // Show roles that DO NOT HAVE the 'system access global admin' permission
+            $roles = $roles->whereDoesntHave('permissions', function ($query) {
+                $query->where('name', 'system access global admin');
+            });
+        }
 
-        if(!Auth::user()->hasRole('DSI God Admin')){
-            $this->roles = $this->roles->whereNot('name', 'DSI God Admin');
-                
-        } 
-        $this->roles = $this->roles->get();
+        $this->roles = $roles->get();
+
+
+
+        // update the cache
+        CacheService::updateUserStats();
 
     }
 
@@ -102,7 +130,7 @@ class UserList extends Component
     public function delete($id){
         $user = User::find($id);
 
-        if(!Auth::user()->hasRole('DSI God Admin')){ // the God Admin can override this 
+        if(!Auth::user()->can('system access global admin')){ // the God Admin can override this 
 
             if ($this->hasConnectedRecords($user)) { 
 
@@ -126,6 +154,7 @@ class UserList extends Component
             $project->attachments()->delete();
             $project->project_reviewers()->delete();
             $project->project_reviews()->delete();
+            
     
             // Finally, delete the project itself
             $project->delete();
@@ -134,15 +163,11 @@ class UserList extends Component
 
 
         // for projects that the user is currently part with 
-        
-
-
-
-
-
-
-
-
+        $activity_logs = ActivityLog::where('created_by',$user->id)->get();
+        foreach ($activity_logs as $activity_log) {
+            
+            $activity_log->delete();
+        }
 
         $user->delete();    
         $user->notifications()->delete();
@@ -151,6 +176,138 @@ class UserList extends Component
         return redirect()->route('user.index');
 
     }
+
+
+    /** Actions with Password Confirmation panel */
+        public $passwordConfirm = '';
+        public $passwordError = null;
+
+
+        /** Force Delete  */
+            public $confirmingForceDelete = false;
+            
+            public $deletingUserId = null; 
+            public function confirmForceDelete($userId)
+            {
+                $this->confirmingForceDelete = true;
+                $this->deletingUserId = $userId;
+                $this->passwordConfirm = '';
+                $this->passwordError = null;
+            }
+
+            public function executeForceDelete()
+            {
+                if (!Hash::check($this->passwordConfirm, auth()->user()->password)) {
+                    $this->passwordError = 'Incorrect password.';
+                    return;
+                }
+
+                $user = User::withTrashed()->findOrFail($this->deletingUserId);
+
+                // Fetch all projects created by the user, including soft-deleted ones
+                $projects = Project::withTrashed()->where('created_by', $user->id)->get();
+
+                foreach ($projects as $project) {
+                    // Delete all related data including soft-deleted ones
+                    $project->project_subscribers()->withTrashed()->forceDelete();
+                    $project->project_documents()->withTrashed()->forceDelete();
+                    $project->attachments()->withTrashed()->forceDelete();
+                    $project->project_reviewers()->withTrashed()->forceDelete();
+                    $project->project_reviews()->withTrashed()->forceDelete();
+
+                    // Force delete the project itself
+                    $project->forceDelete();
+                }
+
+                // Delete all activity logs created by the user (if soft deletes are used on ActivityLog)
+                $activity_logs = ActivityLog::withTrashed()->where('created_by', $user->id)->get();
+                foreach ($activity_logs as $activity_log) {
+                    $activity_log->forceDelete();
+                }
+
+                // Finally, force delete the user
+                $user->forceDelete();
+
+                $this->reset(['confirmingForceDelete', 'passwordConfirm', 'deletingUserId', 'passwordError']);
+                session()->flash('message', 'User permanently deleted.');
+            }
+
+        /** ./ Force Delete */
+
+
+        /** Recover  */
+
+
+            public $confirmingRecover = false; 
+            public $recoverUserId = null; 
+
+            public function confirmRecover($userId)
+            {
+                $this->confirmingRecover = true;
+                $this->recoverUserId = $userId;
+                $this->passwordConfirm = '';
+                $this->passwordError = null;
+            }
+
+
+            public function executeRecover()
+            {
+                if (!Hash::check($this->passwordConfirm, auth()->user()->password)) {
+                    $this->passwordError = 'Incorrect password.';
+                    return;
+                }
+
+                // Restore the user
+                $user = User::withTrashed()->findOrFail($this->recoverUserId); 
+                $user->restore();
+
+                // Restore all soft-deleted projects by this user
+                Project::onlyTrashed()
+                    ->where('created_by', $user->id)
+                    ->restore();
+
+                // Get the IDs of the user's projects, including restored ones
+                $projectIds = Project::where('created_by', $user->id)->pluck('id');
+
+                // Restore related soft-deleted models using whereIn
+                ProjectSubscriber::onlyTrashed()
+                    ->whereIn('project_id', $projectIds)
+                    ->restore();
+
+                ProjectDocument::onlyTrashed()
+                    ->whereIn('project_id', $projectIds)
+                    ->restore();
+
+                ProjectAttachments::onlyTrashed()
+                    ->whereIn('project_id', $projectIds)
+                    ->restore();
+
+                ProjectReviewer::onlyTrashed()
+                    ->whereIn('project_id', $projectIds)
+                    ->restore();
+
+                Review::onlyTrashed()
+                    ->whereIn('project_id', $projectIds)
+                    ->restore();
+
+                // Restore the user's soft-deleted activity logs
+                ActivityLog::onlyTrashed()
+                    ->where('created_by', $user->id)
+                    ->restore();
+
+                $this->reset([
+                    'confirmingRecover',
+                    'passwordConfirm',
+                    'recoverUserId',
+                    'passwordError'
+                ]);
+
+                session()->flash('message', 'User and related data restored successfully.');
+            }
+
+
+
+        /** ./ Recover */
 
 
 
@@ -200,137 +357,102 @@ class UserList extends Component
 
 
 
+    public function getUsersProperty()
+    {
+        $users = User::select('users.*');
+
+        // Apply soft delete filter
+        switch ($this->user_status_filter) {
+            case 'all':
+                $users = $users->withTrashed();
+                break;
+            case 'deactivated':
+                $users = $users->onlyTrashed();
+                break;
+            default:
+                // active (default) — no need to modify the query
+                break;
+        }
+
+
+        // Search filter
+        if (!empty($this->search)) {
+            $search = $this->search;
+            $users->where(function ($query) use ($search) {
+                $query->where('users.name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.email', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        // Filter by selected role
+        if (!empty($this->selected_role)) {
+            $users->when($this->selected_role, function ($query) {
+                if ($this->selected_role === 'no_role') {
+                    $query->whereDoesntHave('roles');
+                } else {
+                    $query->whereHas('roles', function ($roleQuery) {
+                        $roleQuery->where('id', $this->selected_role);
+                    });
+                }
+            });
+        }
+
+        // Filter by role_request
+        if (!empty($this->role_request)) {
+            $users->where('role_request', $this->role_request);
+        }
+
+        // Exclude system access global admin users if current user lacks permission
+        $globalAdminUserIds = User::permission('system access global admin')->pluck('id');
+        if (!auth()->user() || !auth()->user()->can('system access global admin')) {
+            $users->whereNotIn('users.id', $globalAdminUserIds);
+        }
+
+        // Sorting
+        switch ($this->sort_by) {
+            case "Name A - Z":
+                $users->orderBy('users.name', 'ASC');
+                break;
+            case "Name Z - A":
+                $users->orderBy('users.name', 'DESC');
+                break;
+            case "Email A - Z":
+                $users->orderBy('users.email', 'ASC');
+                break;
+            case "Email Z - A":
+                $users->orderBy('users.email', 'DESC');
+                break;
+            case "Latest Added":
+                $users->orderBy('users.created_at', 'DESC');
+                break;
+            case "Oldest Added":
+                $users->orderBy('users.created_at', 'ASC');
+                break;
+            case "Latest Updated":
+                $users->orderBy('users.updated_at', 'DESC');
+                break;
+            case "Oldest Updated":
+                $users->orderBy('users.updated_at', 'ASC');
+                break;
+            default:
+                $users->orderBy('users.updated_at', 'DESC');
+                break;
+        }
+
+        // Set filtered user count
+        $this->user_count = $users->count();
+
+        // Paginate results
+        return $users->paginate($this->record_count);
+    }
+
+
 
     public function render()
     {
-
-        $users = User::select('users.*');
-
-
-        if (!empty($this->search)) {
-            $search = $this->search;
-
-
-            $users = $users->where(function($query) use ($search){
-                $query =  $query->where('users.name','LIKE','%'.$search.'%')
-                    ->orWhere('users.email','LIKE','%'.$search.'%');
-            });
-
-
-        }
-
-
-        $users = $users->when($this->selected_role, function ($query) {
-            // $query->whereHas('roles', function ($roleQuery) {
-            //     $roleQuery->where('id', $this->selected_role);
-            // });
-
-            if ($this->selected_role === 'no_role') {
-                // Users without roles
-                $query->whereDoesntHave('roles');
-            } else {
-                // Users with the selected role
-                $query->whereHas('roles', function ($roleQuery) {
-                    $roleQuery->where('id', $this->selected_role);
-                });
-            }
-        });
-
-
-        if(!empty($this->role_request)){
-            $users = $users->where('role_request',$this->role_request); 
-
-        }
-        
-            // Find the role
-            $role = Role::where('name', 'DSI God Admin')->first();
-
-            if ($role) {
-                // Get user IDs only if role exists
-                $dsiGodAdminUserIds = $role->users()->pluck('id');
-            } else {
-                // Set empty array if role doesn't exist
-                $dsiGodAdminUserIds = [];
-            }
-
-
-            // if(!Auth::user()->hasRole('DSI God Admin')){
-            //     $users =  $users->where('users.created_by','=',Auth::user()->id);
-            // }
-
-            // Adjust the query
-            // if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
-            //     $users = $users->where('users.created_by', '=', Auth::user()->id);
-            // }else
-            
-            if(!Auth::user()->hasRole('DSI God Admin')){
-                $users = $users->whereNotIn('users.id', $dsiGodAdminUserIds);
-            } 
-            
-        
-
-
-        // dd($this->sort_by);
-        if(!empty($this->sort_by) && $this->sort_by != ""){
-            // dd($this->sort_by);
-            switch($this->sort_by){
-
-                case "Name A - Z":
-                    $users =  $users->orderBy('users.name','ASC');
-                    break;
-
-                case "Name Z - A":
-                    $users =  $users->orderBy('users.name','DESC');
-                    break;
-
-                case "Email A - Z":
-                    $users =  $users->orderBy('users.email','ASC');
-                    break;
-
-                case "Email Z - A":
-                    $users =  $users->orderBy('users.email','DESC');
-                    break;
-                /**
-                 * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
-                 * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
-                 */
-
-                case "Latest Added":
-                    $users =  $users->orderBy('users.created_at','DESC');
-                    break;
-
-                case "Oldest Added":
-                    $users =  $users->orderBy('users.created_at','ASC');
-                    break;
-
-                case "Latest Updated":
-                    $users =  $users->orderBy('users.updated_at','DESC');
-                    break;
-
-                case "Oldest Updated":
-                    $users =  $users->orderBy('users.updated_at','ASC');
-                    break;
-                default:
-                    $users =  $users->orderBy('users.updated_at','DESC');
-                    break;
-
-            }
-
-
-        }else{
-            $users =  $users->orderBy('users.updated_at','DESC');
-
-        }
-
-
-
-        $this->user_count = $users->count();
-
-        $users = $users->paginate($this->record_count);
-
-
+ 
         return view('livewire.admin.user.user-list',[
-            'users' => $users
+            'users' => $this->users
         ]);
 
 

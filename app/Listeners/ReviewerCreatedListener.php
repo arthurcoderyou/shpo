@@ -23,7 +23,8 @@ class ReviewerCreatedListener  implements ShouldQueue
     public function handle(ReviewerCreated $event): void
     {
 
-        $reviewer = $event->reviewer;
+        $reviewer = Reviewer::find($event->reviewer_id);
+        $auth_user = User::find($event->authId);
 
         if(!empty($reviewer->document_type)){
             $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
@@ -39,7 +40,7 @@ class ReviewerCreatedListener  implements ShouldQueue
 
         ActivityLog::create([
             'created_by' => $reviewer->created_by,
-            'log_username' => auth()->user()->name,
+            'log_username' => $auth_user->name,
             'log_action' => $message,
         ]);
     }

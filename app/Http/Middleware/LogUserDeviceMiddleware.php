@@ -36,14 +36,14 @@ class LogUserDeviceMiddleware
             // Check if the device is already logged
             $deviceLog = UserDeviceLog::firstOrCreate($data);
 
-            // If the user has the role Admin or DSI God Admin, skip 2FA
-            if ($user->hasRole('Admin') ) {
+            // If the user has the permission system access admin or system access global admin, skip 2FA
+            if ($user->can('system access admin') ) {
                 session()->put('2fa_verified', true);
                 return $next($request);
             }
 
-             // If the user has the role Admin or DSI God Admin, skip 2FA
-             if ($user->hasRole('DSI God Admin') ) {
+             // If the user has the role Admin or system access global admin, skip 2FA
+             if ($user->can('system access global admin') ) {
 
                 session()->put('2fa_verified', true);
                 return $next($request);

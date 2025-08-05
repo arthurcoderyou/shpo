@@ -7,6 +7,7 @@ use App\Models\User;
 // use App\Models\Forum;
 use App\Models\Review;
 use App\Models\Project;
+use App\Models\Setting;
 use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
@@ -88,11 +89,50 @@ class ProjectCreate extends Component
     public $documentTypes = [];
 
 
-    
+    //settings that checks if the project location is required or not 
+    public $project_location_bypass;
 
     public function mount(){
+
+        $this->project_location_bypass = Setting::getOrCreateWithDefaults('project_location_bypass');
+
+        // dd($this->project_location_bypass);
+
         $this->latitude = 13.4443;
         $this->longitude = 144.7937;
+
+
+
+        if(!empty($this->project_location_bypass) && $this->project_location_bypass->value == "ACTIVE"){
+            $project_default_latitude = Setting::getOrCreateWithDefaults('project_default_latitude'); 
+
+            if(!empty($project_default_latitude)){
+
+                $this->latitude = $project_default_latitude->value ;
+
+            }
+
+            $project_default_longitude = Setting::getOrCreateWithDefaults('project_default_longitude'); 
+
+            if(!empty($project_default_longitude)){
+
+                $this->longitude = $project_default_longitude->value ;
+
+            }
+
+            $project_default_location = Setting::getOrCreateWithDefaults('project_default_location') ; 
+
+            if(!empty($project_default_location)){
+
+                $this->location = $project_default_location->value ;
+
+            }
+             
+
+
+        }
+
+        // dd($this->location);
 
         // project timer 
         // set the reviewer response rate
@@ -141,35 +181,51 @@ class ProjectCreate extends Component
         public function updatedQuery()
         {
             if (!empty($this->query)) {
-                // $this->users = User::where('name', 'like', '%' . $this->query . '%') ->limit(10)->get();
- 
+                $user = Auth::user();
 
-                $role = Auth::user()->getRoleNames()->first(); // Assumes user has one role
+                $this->users = User::where(function ($mainQuery) use ($user) {
+                    $mainQuery->where('name', 'like', '%' . $this->query . '%');
 
-                $this->users = User::where('name', 'like', '%' . $this->query . '%')
-                    ->when($role === 'Admin', function ($query) {
-                        $query->whereDoesntHave('roles', function ($q) {
-                            $q->where('name', 'DSI God Admin');
+                    // Only apply filters if NOT global admin or admin
+                    if (!$user->can('system access global admin') && !$user->can('system access admin')) {
+
+                        $mainQuery->where(function ($q) use ($user) {
+
+                            if ($user->can('system access reviewer')) {
+                                // Reviewers can see users with 'system access user' or 'system access reviewer'
+                                $q->where(function ($inner) {
+                                    $inner->whereHas('permissions', function ($permQuery) {
+                                        $permQuery->whereIn('name', ['system access user', 'system access reviewer']);
+                                    })->orWhereHas('roles.permissions', function ($permQuery) {
+                                        $permQuery->whereIn('name', ['system access user', 'system access reviewer']);
+                                    });
+                                });
+                            } elseif ($user->can('system access user')) {
+                                // Users can only see users with 'system access user'
+                                $q->where(function ($inner) {
+                                    $inner->whereHas('permissions', function ($permQuery) {
+                                        $permQuery->where('name', 'system access user');
+                                    })->orWhereHas('roles.permissions', function ($permQuery) {
+                                        $permQuery->where('name', 'system access user');
+                                    });
+                                });
+                            }
+
                         });
-                    })
-                    ->when($role === 'Reviewer', function ($query) {
-                        $query->whereDoesntHave('roles', function ($q) {
-                            $q->whereIn('name', ['Admin', 'DSI God Admin']);
-                        });
-                    })
-                    ->when($role === 'User', function ($query) {
-                        $query->whereHas('roles', function ($q) {
-                            $q->where('name', 'User');
-                        });
-                    })
-                    ->limit(10)
-                    ->get();
+
+                    }
+                })
+                ->limit(10)
+                ->get();
 
 
             } else {
                 $this->users = [];
             }
+
+            // dd($this->users);
         }
+
 
         public function addSubscriber($userId)
         {
@@ -305,18 +361,29 @@ class ProjectCreate extends Component
     public function save()
     {
 
+        $document_upload_location = Setting::getOrCreateWithDefaults('document_upload_location');
+
+        if(empty($document_upload_location) && empty($document_upload_location->value) ){
+
+            Alert::error('Error','The Document Upload location had not been set by the administrator');
+            return redirect()->route('project.create' );
+
+        } 
+
+
+        
 
         // Check FTP connection before processing
         try {
-            Storage::disk('ftp')->exists('/'); // Basic check
-            // dd("ftp works");
+            Storage::disk($document_upload_location->value)->exists('/'); // Basic check
+            // dd($document_upload_location->value." works");
 
         } catch (\Exception $e) {
             // Handle failed connection
             // logger()->error("FTP connection failed: " . $e->getMessage());
             // return; // Exit or show error as needed
 
-            Alert::error('Error','Connection cannot be stablished with the FTP server');
+            Alert::error('Error','Connection cannot be stablished with the '.$document_upload_location->value.' server');
             return redirect()->route('project.create' );
 
         }
@@ -404,9 +471,7 @@ class ProjectCreate extends Component
 
         
         
-
-        
-
+ 
         //save
         $project = Project::create([
             'name' => $this->name,
@@ -430,27 +495,28 @@ class ProjectCreate extends Component
 
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
-        ]);
+        ]); 
 
         
 
         if (!empty($this->attachments)) {
 
+            // Check FTP connection before processing
             try {
-                Storage::disk('ftp')->exists('/'); // Basic check
-                // dd("ftp works");
+                Storage::disk($document_upload_location->value)->exists('/'); // Basic check
+                // dd($document_upload_location->value." works");
 
             } catch (\Exception $e) {
                 // Handle failed connection
-                logger()->error("FTP connection failed: " . $e->getMessage());
+                // logger()->error("FTP connection failed: " . $e->getMessage());
                 // return; // Exit or show error as needed
 
-                Alert::error('Error','Connection cannot be stablished with the FTP server');
+                Alert::error('Error','Connection cannot be stablished with the '.$document_upload_location->value.' server');
                 return redirect()->route('project.create' );
 
             }
 
-
+            
             //create the project document 
             $project_document = new ProjectDocument();
             $project_document->project_id = $project->id;
@@ -477,28 +543,127 @@ class ProjectCreate extends Component
             // event(new  \App\Events\ProjectDocumentCreated($project_document));
 
 
+            $disk = $document_upload_location->value;
+
+
+
             foreach ($this->attachments as $file) {
-        
-                // // Store the original file name
-                // $originalFileName = $file->getClientOriginalName(); 
+                
 
-                // // Generate a unique file name
-                // $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
+                // if filesystem: public  
+                /* 
+                if($this->$document_upload_location->value == "ftp")
+                {
 
-                // // Generate a unique file name
-                // $fileName = Carbon::now()->timestamp . '-' . $review->id . '-' . uniqid() . '.' . $file['extension'];
-
-
-                /*
                     $originalFileName = $file['name'] ?? 'attachment';
                     $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
+                    $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
 
-                    $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . pathinfo($originalFileName, PATHINFO_FILENAME) . '.' . $extension;
+                    $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id. '-pdt' .$project_document->document_type->name. '-' . $baseName . '.' . $extension;
 
-
-            
-                    // Move the file manually from temporary storage
                     $sourcePath = $file['path'];
+
+                    if (!file_exists($sourcePath)) {
+                        logger()->warning("Source file does not exist: $sourcePath");
+                        continue;
+                    }
+
+                    // Read the file content
+                    $fileContents = file_get_contents($sourcePath);
+
+                    // Destination path on FTP
+                    $ftpPath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
+
+                    // Create directory if not exists (Flysystem handles this automatically when uploading a file)
+                    $uploadSuccess = Storage::disk($document_upload_location->value)->put($ftpPath, $fileContents);
+
+                    if (!$uploadSuccess) {
+                        logger()->error("Failed to upload file to FTP: $ftpPath");
+                        continue;
+                    }
+
+                    // Delete local temp file
+                    unlink($sourcePath);
+
+
+
+                }elseif(in_array($disk, ['local', 'public'])){
+                    $originalFileName = $file['name'] ?? 'attachment';
+                    $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
+                    $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
+
+                    $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id. '-pdt' .$project_document->document_type->name. '-' . $baseName . '.' . $extension;
+
+                    $sourcePath = $file['path'];
+
+                    if (!file_exists($sourcePath)) {
+                        logger()->warning("Source file does not exist: $sourcePath");
+                        continue;
+                    }
+
+                    // Read the file content
+                    $fileContents = file_get_contents($sourcePath);
+
+                    // Destination path on FTP
+                    $ftpPath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
+
+                    // Create directory if not exists (Flysystem handles this automatically when uploading a file)
+                    $uploadSuccess = Storage::disk($document_upload_location->value)->put($ftpPath, $fileContents);
+
+                    if (!$uploadSuccess) {
+                        logger()->error("Failed to upload file to FTP: $ftpPath");
+                        continue;
+                    }
+
+                    // Delete local temp file
+                    unlink($sourcePath);
+
+                }
+                */
+                     
+
+
+                $disk = $document_upload_location->value;
+                $originalFileName = $file['name'] ?? 'attachment';
+                $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
+                $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
+
+                $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id . '-pdt' . $project_document->document_type->name . '-' . $baseName . '.' . $extension;
+
+                $sourcePath = $file['path'];
+
+                if (!file_exists($sourcePath)) {
+                    logger()->warning("Source file does not exist: $sourcePath");
+                    return;
+                }
+
+                // Read the file content once
+                $fileContents = file_get_contents($sourcePath);
+
+                // Common path used for all disks (relative)
+                $relativePath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
+
+                // ==========================
+                // 1. FTP Upload
+                // ==========================
+                if ($disk === 'ftp') {
+                    $uploadSuccess = Storage::disk('ftp')->put($relativePath, $fileContents);
+
+                    if (!$uploadSuccess) {
+                        logger()->error("FTP upload failed: $relativePath");
+                    } else {
+                        @unlink($sourcePath);
+                    }
+
+                    
+                }else{
+
+
+
+                    // ==========================
+                    // 2. Local Disk and Public Upload
+                    // ==========================
+                   
                     $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
             
                     // Ensure the directory exists
@@ -513,38 +678,11 @@ class ProjectCreate extends Component
                         // Log or handle the error (file might not exist at the temporary path)
                         continue;
                     }
-                */
 
-                $originalFileName = $file['name'] ?? 'attachment';
-                $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
-                $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
 
-                $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id. '-pdt' .$project_document->document_type->name. '-' . $baseName . '.' . $extension;
 
-                $sourcePath = $file['path'];
-
-                if (!file_exists($sourcePath)) {
-                    logger()->warning("Source file does not exist: $sourcePath");
-                    continue;
                 }
-
-                // Read the file content
-                $fileContents = file_get_contents($sourcePath);
-
-                // Destination path on FTP
-                $ftpPath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
-
-                // Create directory if not exists (Flysystem handles this automatically when uploading a file)
-                $uploadSuccess = Storage::disk('ftp')->put($ftpPath, $fileContents);
-
-                if (!$uploadSuccess) {
-                    logger()->error("Failed to upload file to FTP: $ftpPath");
-                    continue;
-                }
-
-                // Delete local temp file
-                unlink($sourcePath);
-
+ 
  
         
                 // Save to the database
@@ -560,6 +698,7 @@ class ProjectCreate extends Component
 
                 $attachment = new ProjectAttachments([
                     'attachment' => $fileName,
+                    'filesystem' => $document_upload_location->value,
                     'project_id' => $project->id,
                     'project_document_id' => $project_document->id,
                     'created_by' => Auth::user()->id,

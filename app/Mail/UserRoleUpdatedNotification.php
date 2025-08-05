@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class UserRoleUpdatedNotification extends Mailable 
-// implements ShouldQueue
+implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

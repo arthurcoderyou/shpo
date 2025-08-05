@@ -15,7 +15,7 @@
         <textarea wire:model.defer="body" required rows="4" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-300 placeholder-gray-500" placeholder="Write your question or note..."></textarea>
         
         <!-- Privacy Option for Admins/Reviewers -->
-        @if (!$parent && auth()->user()?->hasAnyRole(['DSI God Admin', 'Admin', 'Reviewer']))
+        @if (!$parent && auth()->user()?->hasAnyPermission(['system access global admin', 'system access user', 'system access reviewer']))
             <div class="flex items-center space-x-2">
                 <input type="checkbox" wire:model="is_private" class="text-blue-600">
                 <label for="is_private" class="text-sm text-gray-600">

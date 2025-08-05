@@ -350,7 +350,7 @@ class ReviewList extends Component
 
         $reviews = Review::select('reviews.*');
 
-        // if(Auth::user()->hasRole('Admin')){
+        // if(Auth::user()->can('system access admin')){
         //     if(!empty( $this->project_id)){
         //         $reviews = $reviews->where('project_id' ,$this->project_id);
         //     }
@@ -418,12 +418,12 @@ class ReviewList extends Component
             // }
 
 
-            // // if(!Auth::user()->hasRole('DSI God Admin')){
+            // // if(!Auth::user()->can('system access global admin')){
             // //     $reviews =  $reviews->where('reviews.created_by','=',Auth::user()->id);
             // // }
 
             // // Adjust the query
-            // if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+            // if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
 
             //     $reviews = $reviews->where('reviews.created_by', '=', Auth::user()->id);
 
@@ -431,7 +431,7 @@ class ReviewList extends Component
             
            
             // $reviews = $reviews->whereNotIn('reviews.created_by', $dsiGodAdminUserIds);
-            // if(Auth::user()->hasRole('User')){
+            // if(Auth::user()->can('system access user')){
             //     $reviews = $reviews->where('reviews.created_by', '=', Auth::user()->id);
             // }
          

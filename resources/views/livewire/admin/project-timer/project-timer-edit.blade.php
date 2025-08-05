@@ -1,12 +1,12 @@
 <!-- Card Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    <div wire:loading class="loading-overlay">
+    {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
             <div></div>
             <div></div>
         </div>
-    </div>
+    </div> --}}
     
 
     
@@ -21,7 +21,7 @@
                     Project Timer
                 </h2>
 
-                @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('timer apply to all'))
+                @if(Auth::user()->can('system access global admin')  || Auth::user()->can('timer apply to all'))
                 <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
                     onclick="confirm('Are you sure, you want to apply this to all records?') || event.stopImmediatePropagation()"
                     wire:click.prevent="apply_to_all" 
@@ -272,17 +272,66 @@
                         Cancel
                     </a>
 
-                    @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('timer edit'))
-                    <button type="submit" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-                    Update
-                    </button>
+                    @if(Auth::user()->can('system access global admin')  || Auth::user()->can('timer edit'))
+                        <button
+                            type="submit"
+                            onclick="return confirm('⚠️ This action will update the system-wide project time settings.\n\nAll users, reviewers, and administrators will be notified via email.\n\nAre you sure you want to proceed?')"
+                            class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+                        >
+                            Update
+                        </button>
                     @endif
+
                 </div>
 
             </form>
         </div>
     </div>
     <!-- End Card --> 
+
+
+    <!--  Loaders -->
+
+        {{-- loading action   --}}
+        <div wire:loading 
+            class="p-0 m-0"
+            style="padding: 0; margin: 0;">
+            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+                <div>   
+                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+                <div>
+                    Loading new data, please wait...
+                </div> 
+            </div>
+        </div>
+
+         
+
+        {{-- wire:target="save"   --}}
+        <div wire:loading  wire:target="save"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Saving record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    <!--  ./ Loaders -->
+
+
 </div>
 <!-- End Card Section -->
 

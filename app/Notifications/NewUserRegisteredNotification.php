@@ -9,8 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class NewUserRegisteredNotification extends Notification   
-// implements ShouldQueue
-// implements ShouldQueue
+implements ShouldQueue 
 {
     use Queueable;
 

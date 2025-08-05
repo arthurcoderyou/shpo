@@ -2,16 +2,22 @@
 
 namespace App\Livewire\Admin\Permission;
 
+use App\Events\PermissionDeleted;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Spatie\Permission\Models\Permission;
 
 class PermissionList extends Component
 {
 
-    
+    protected $listeners = [ 
+        'permissionCreated' => '$refresh',
+        'permissionUpdated' => '$refresh',
+        'permissionDeleted' => '$refresh',
+    ];
 
     use WithFileUploads;
     use WithPagination;
@@ -27,6 +33,9 @@ class PermissionList extends Component
 
     public $file;
 
+    public $module;
+
+
     // Method to delete selected records
     public function deleteSelected()
     {
@@ -34,6 +43,8 @@ class PermissionList extends Component
 
 
         $this->selected_records = []; // Clear selected records
+
+        event(new PermissionDeleted(null,auth()->user()->id));
 
         Alert::success('Success','Selected permissions deleted successfully');
         return redirect()->route('permission.index');
@@ -62,7 +73,7 @@ class PermissionList extends Component
 
 
         $permission->delete();
-
+        event(new PermissionDeleted($permission,auth()->user()->id));
 
         Alert::success('Success','Permission deleted successfully');
         return redirect()->route('permission.index');
@@ -90,6 +101,16 @@ class PermissionList extends Component
 
         }
 
+        if(!empty($this->module)){
+
+            $module = $this->module;
+            $permissions = $permissions->where(function($query) use ($module){
+                $query =  $query->where('permissions.module',$module);
+            });
+        }
+
+
+
         /*
             // Find the role
             $role = Role::where('name', 'DSI God Admin')->first();
@@ -103,7 +124,7 @@ class PermissionList extends Component
             }
 
 
-            // if(!Auth::user()->hasRole('DSI God Admin')){
+            // if(!Auth::user()->hasRole('DSI God Admin')){ 
             //     $permissions =  $permissions->where('permissions.created_by','=',Auth::user()->id);
             // }
 
@@ -178,9 +199,22 @@ class PermissionList extends Component
 
         $permissions = $permissions->paginate($this->record_count);
 
+
+        $module_permissions = Permission::orderBy('module', 'asc')->get();
+
+        if (!Auth::user()->hasRole('DSI God Admin')) {
+            $module_permissions = $module_permissions->reject(function ($permission) {
+                return $permission->module === 'Permission';
+            });
+        }
+
+        $module_permissions = $module_permissions->groupBy('module');
+        
+
         
         return view('livewire.admin.permission.permission-list',[
-            'permissions' => $permissions
+            'permissions' => $permissions,
+            'module_permissions' => $module_permissions,
         ]);
     }
 }

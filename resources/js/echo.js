@@ -3,6 +3,8 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
+
+
 // window.Echo = new Echo({
 //     broadcaster: 'reverb',
 //     key: import.meta.env.VITE_REVERB_APP_KEY,
@@ -29,7 +31,7 @@ window.Pusher = Pusher;
 
 
 
-/**PUSHER (uncomment if using pusher as the connection) */
+/**PUSHER (uncomment if using pusher as the connection)  */
  
 
 window.Echo = new Echo({
@@ -63,7 +65,7 @@ window.Echo.connector.pusher.connection.bind('error', (err) => {
 
 
 
-/**REVERB (uncomment if using reverb as the connection)  
+/**REVERB (uncomment if using reverb as the connection) 
 window.Echo = new Echo({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,

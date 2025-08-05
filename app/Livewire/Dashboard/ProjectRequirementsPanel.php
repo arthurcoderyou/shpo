@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Dashboard;
 
+use App\Models\User;
 use Livewire\Component;
 use App\Models\Reviewer;
 use App\Models\DocumentType;
@@ -18,6 +19,12 @@ class ProjectRequirementsPanel extends Component
         'reviewerCreated' => '$refresh',
         'reviewerUpdated' => '$refresh',
         'reviewerDeleted' => '$refresh',
+        'roleCreated' => '$refresh',
+        'roleUpdated' => '$refresh',
+        'roleDeleted' => '$refresh',
+        'userCreated' => '$refresh',
+        'userUpdated' => '$refresh',
+        'userDeleted' => '$refresh',
     ];
 
 
@@ -32,9 +39,22 @@ class ProjectRequirementsPanel extends Component
         // Check if all document types have at least one reviewer
         $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
 
+
+        $permissionNames = [ 
+            'system access admin', 
+        ];
+
+        $hasAdministrators = User::whereHas('permissions', function ($query) use ($permissionNames) {
+            $query->whereIn('name', $permissionNames);
+        })->orWhereHas('roles.permissions', function ($query) use ($permissionNames) {
+            $query->whereIn('name', $permissionNames);
+        })->exists();
+
+        
+
         // Check if there are reviewers by type
-        // $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
-        // $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
+        $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
+        $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
 
 
         $errors = [
@@ -52,8 +72,9 @@ class ProjectRequirementsPanel extends Component
             'no_reviewers' => Reviewer::count() === 0,
             'no_document_types' => DocumentType::count() === 0, // Add a new error condition
             'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
-            // 'no_initial_reviewers' => !$hasInitialReviewers,
-            // 'no_final_reviewers' => !$hasFinalReviewers,
+            'no_administrators' => !$hasAdministrators,
+            'no_initial_reviewers' => !$hasInitialReviewers,
+            'no_final_reviewers' => !$hasFinalReviewers,
         ];
         
         // dd(Reviewer::count() === 0);

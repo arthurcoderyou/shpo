@@ -2,9 +2,12 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
 use App\Events\UserUpdated;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class UserUpdatedListener  implements ShouldQueue
 {
@@ -21,6 +24,14 @@ class UserUpdatedListener  implements ShouldQueue
      */
     public function handle(UserUpdated $event): void
     {
-        //
+        $user = User::find($event->authId);
+
+        if(Auth::check() && !empty($user)){
+            ActivityLog::create([
+                'created_by' => $event->authId ?? $user->id,
+                'log_username' => $user->name,
+                'log_action' => $event->message,
+            ]);
+        }
     }
 }

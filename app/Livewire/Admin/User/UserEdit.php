@@ -23,13 +23,16 @@ class UserEdit extends Component
     public string $password = '';
     public string $password_confirmation = '';
 
-    public $role;
+    // public $selectedRoles = [];
+
+
+    // public $role;
 
     public $password_hidden = 1;
 
     public $user_id;
  
-    public $role_empty = false;
+    // public $role_empty = false;
 
     public function mount($id){
         $user = User::findOrFail($id);
@@ -37,10 +40,7 @@ class UserEdit extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->user_id = $user->id;
-        $this->role = !empty($user->roles->first()->id) ? $user->roles->first()->id : null;
-
-        $this->role_empty = $user->roles->isEmpty();
-
+         
     }
 
     //show password to text toggle
@@ -60,7 +60,7 @@ class UserEdit extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class.',id,'.$this->user_id],
             // 'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required']
+             
         ]);
 
     }
@@ -75,12 +75,10 @@ class UserEdit extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class.',id,'.$this->user_id],
             // 'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required']
+            // 'role' => ['required'] 
         ]);
 
- 
-
-
+  
 
         $user = User::findOrFail($this->user_id);
 
@@ -110,13 +108,13 @@ class UserEdit extends Component
         //     $user->assignRole($role);
         // }
 
-        if (!empty($this->role)) {
-            $role = Role::find($this->role);
-            if ($role) {
-                // Remove previous roles before assigning a new one
-                $user->syncRoles([$role->name]);
-            }
-        }
+        // if (!empty($this->role)) {
+        //     $role = Role::find($this->role);
+        //     if ($role) {
+        //         // Remove previous roles before assigning a new one
+        //         $user->syncRoles([$role->name]);
+        //     }
+        // }
         
 
         $user->updated_at = now();
@@ -124,42 +122,17 @@ class UserEdit extends Component
 
         $user->save();
 
-         // if the user has no roles before
-        if( $this->role_empty ){
-           
-            // send a notification to the user that his role had been updated and he can now access the websites and the functions for his role
-            Notification::send($user, new UserRoleUpdatedNotification($user));
-             
-            //send notification to the database
-            Notification::send($user, new UserRoleUpdatedNotificationDB($user));
+ 
 
-        }
-
-
-        ActivityLog::create([
-            'log_action' => 'User "'.$user->name.'" updated',
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','New User updated successfully');
+        Alert::success('Success','User updated successfully');
         return redirect()->route('user.index');
     }
 
 
     public function render()
     {
-        // $roles = Role::orderBy('name','asc')->get();
-
-        $roles = Role::select('roles.*');
-
-        if(!Auth::user()->hasRole('DSI God Admin')){
-            $roles = $roles->whereNot('name', 'DSI God Admin');
-                
-        } 
         
-        $roles  = $roles->orderBy('name','asc')->get();
         
-        return view('livewire.admin.user.user-edit',compact('roles'));
+        return view('livewire.admin.user.user-edit');
     }
 }

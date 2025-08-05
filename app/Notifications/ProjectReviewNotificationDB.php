@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ProjectReviewNotificationDB extends Notification
+class ProjectReviewNotificationDB extends Notification implements ShouldQueue
 {
     use Queueable;
 

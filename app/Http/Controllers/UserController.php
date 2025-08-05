@@ -15,17 +15,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        // Permission verification 
-            $user = Auth::user();
-            // Check if the user has the role "DSI God Admin" OR the permission "activity log list view"
-            if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('user list view'))) {
-                Alert::error('Error', 'You do not have permission to access this section.');
-
-                // If there is no previous URL, redirect to the dashboard
-                return redirect()->back()->withInput()->withErrors(['error' => 'Unauthorized Access'])
-                    ?: redirect()->route('dashboard');
-            }
-        // ./ Permission verification
+         
 
 
         return view('admin.user.index');
@@ -37,16 +27,9 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Permission verification 
-            $user = Auth::user(); 
-            if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('user create'))) {
-                Alert::error('Error', 'You do not have permission to access this section.');
-
-                // If there is no previous URL, redirect to the dashboard
-                return redirect()->back()->withInput()->withErrors(['error' => 'Unauthorized Access'])
-                    ?: redirect()->route('dashboard');
-            }
-        // ./ Permission verification
+         
+        
+         
 
 
         return view('admin.user.create');
@@ -58,20 +41,23 @@ class UserController extends Controller
     public function edit(int $id)
     {
 
-        // Permission verification 
-            $user = Auth::user(); 
-            if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('user edit'))) {
-                Alert::error('Error', 'You do not have permission to access this section.');
+       
 
-                // If there is no previous URL, redirect to the dashboard
-                return redirect()->back()->withInput()->withErrors(['error' => 'Unauthorized Access'])
-                    ?: redirect()->route('dashboard');
-            }
-        // ./ Permission verification
 
         $user = User::findOrFail($id);
 
         return view('admin.user.edit',['user' => $user]);
+    }
+
+
+    /**
+     * Show the form for editing the user role
+     */
+    public function edit_role(int $id)
+    { 
+        $user = User::findOrFail($id);
+
+        return view('admin.user.edit_role',['user' => $user]);
     }
 
 

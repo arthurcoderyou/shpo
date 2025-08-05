@@ -67,7 +67,7 @@ class ProjectReview extends Component
         $this->project = $project;
 
         if($project->created_by == Auth::id()){
-            $this->home_route = route('project.index.my-projects');
+            $this->home_route = route('project.index');
         }else{
             $this->home_route = route('project.index');
         }

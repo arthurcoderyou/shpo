@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Auth\Notifications\VerifyEmail as BaseVerifyEmail;
 
 class CustomVerifyEmail extends BaseVerifyEmail 
-// implements ShouldQueue
+implements ShouldQueue
 {
     use Queueable;
 

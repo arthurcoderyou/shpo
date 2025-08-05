@@ -9,6 +9,16 @@ export default {
         './resources/views/**/*.blade.php',
         './node_modules/preline/dist/*.js', // Add this line
     ],
+    safelist: [
+        'bg-blue-900',
+        'bg-yellow-900',
+        'bg-purple-900',
+        'bg-green-900',
+        'text-blue-100',
+        'text-yellow-100',
+        'text-purple-100',
+        'text-green-100',
+    ],
 
     theme: {
         extend: {

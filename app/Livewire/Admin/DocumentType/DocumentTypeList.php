@@ -36,7 +36,8 @@ class DocumentTypeList extends Component
 
     public function mount(){
         
-        
+        // default sorting 
+        $this->sort_by = 'Order 1 - 100';
 
         // dd($this->lastOrder);
 
@@ -92,15 +93,15 @@ class DocumentTypeList extends Component
 
 
         // dd($document_type->reviewers()->exists());
-  
-        // Check if document type has related records
-        if ($document_type->project_documents()->exists() || $document_type->reviewers()->exists()) {
-            Alert::error('Error', 'Cannot delete document type because it has related records such as projects and reviewers. ');
-            return redirect()->route('document_type.index');
+        if(!Auth::user()->can('system access global admin')){
+            // Check if document type has related records
+            if ($document_type->project_documents()->exists() || $document_type->reviewers()->exists()) {
+                Alert::error('Error', 'Cannot delete document type because it has related records such as projects and reviewers. ');
+                return redirect()->route('document_type.index');
+            }
         }
-
-
-
+        
+ 
         $document_type->delete();
         $this->resetOrder();
  

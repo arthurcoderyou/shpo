@@ -130,7 +130,7 @@ class ProjectPendingUpdateList extends Component
         
 
 
-        if(Auth::user()->hasRole('User')){
+        if(Auth::user()->can('system access user')){
             // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
         
             $projects = $projects->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
@@ -154,30 +154,18 @@ class ProjectPendingUpdateList extends Component
         }
 
          
-            // // Find the role
-            // $role = Role::where('name', 'DSI God Admin')->first();
+        // Get project IDs associated with users who have 'system access global admin' permission
+        $dsiGodAdminUserIds = \Spatie\Permission\Models\Permission::where('name', 'system access global admin')
+            ->first()
+            ?->users()
+            ->pluck('id') ?? [];
 
-            // if ($role) {
-            //     // Get user IDs only if role exists
-            //     $dsiGodAdminUserIds = $role->projects()->pluck('id');
-            // } else {
-            //     // Set empty array if role doesn't exist
-            //     $dsiGodAdminUserIds = [];
-            // }
-
-
-            // // if(!Auth::user()->hasRole('DSI God Admin')){
-            // //     $projects =  $projects->where('projects.created_by','=',Auth::user()->id);
-            // // }
-
-            // // Adjust the query
-            // if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
-
-            //     $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-
-            // }else
+        // Restrict project access if the user does NOT have either global admin or admin access
+        if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
+            $projects = $projects->where('projects.created_by', Auth::user()->id);
+        }
             
-           
+
             
          
 

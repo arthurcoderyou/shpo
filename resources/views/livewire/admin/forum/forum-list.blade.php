@@ -47,7 +47,7 @@
                         </select>
                     </div>
 
-                    {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->hasRole('DSI God Admin')) --}}
+                    {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->can('system access global admin')) --}}
                         <button
                             onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                             wire:click.prevent="deleteSelected"

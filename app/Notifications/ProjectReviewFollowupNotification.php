@@ -10,7 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class ProjectReviewFollowupNotification extends Notification   
-// implements ShouldQueue
+implements ShouldQueue
 {
     use Queueable;
 

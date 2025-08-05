@@ -68,7 +68,7 @@ class ProjectLogs extends Component
 
 
         if($project->created_by == Auth::id()){
-            $this->home_route = route('project.index.my-projects');
+            $this->home_route = route('project.index');
         }else{
             $this->home_route = route('project.index');
         }
@@ -88,8 +88,8 @@ class ProjectLogs extends Component
     public function deleteSelected()
         {
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "activity log delete"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('activity log delete'))) {
+        // Check if the user has the permission "system global admin" OR the permission "activity log delete"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('activity log delete'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -131,8 +131,8 @@ class ProjectLogs extends Component
 
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "activity log delete"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('activity log delete'))) {
+        // Check if the user has the permission "system global admin" OR the permission "activity log delete"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('activity log delete'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -155,7 +155,7 @@ class ProjectLogs extends Component
     }
 
 
-
+ 
 
     public function getActivityLogsProperty()
     {
@@ -222,19 +222,19 @@ class ProjectLogs extends Component
         // }
 
 
-        // if(!Auth::user()->hasRole('DSI God Admin')){
+        // if(!Auth::user()->can('system access global admin')){
         //     $activity_logs =  $activity_logs->where('activity_logs.created_by','=',Auth::user()->id);
         // }
 
         // Adjust the query
-        // if(Auth::user()->hasRole('DSI God Admin'))
+        // if(Auth::user()->can('system access global admin'))
         // {
 
 
         // }
-        // elseif (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+        // elseif (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
         //     $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
-        // }elseif(!Auth::user()->hasRole('Admin')){
+        // }elseif(!Auth::user()->can('system access admin')){
         //     $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);
         // } 
          
@@ -259,9 +259,9 @@ class ProjectLogs extends Component
 
             
             // Adjust the query
-            // if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+            // if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
             //     $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
-            // }elseif(!Auth::user()->hasRole('Admin')){
+            // }elseif(!Auth::user()->can('system access admin')){
             //     $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);
             // } 
 

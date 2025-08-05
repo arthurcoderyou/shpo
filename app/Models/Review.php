@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
+    use SoftDeletes;
     protected $table = "reviews";
     protected $fillable = [
         'viewed', // true or false
@@ -33,6 +35,11 @@ class Review extends Model
 
         'response_time_hours',
         'review_time_hours',
+
+
+        'requires_project_update',
+        'requires_document_update',
+        'requires_attachment_update',
     ];
 
 

@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -15,12 +16,18 @@ class UserDeleted  implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public User $user;
+    public $message;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(User $user,$authId)
     {
-        //
+        $this->user = $user;
+
+        $this->message = "User '".$this->user->name."' deleted"; 
+        $this->authId = $authId;
     }
 
     /**
@@ -31,7 +38,22 @@ class UserDeleted  implements ShouldBroadcast, ShouldQueue
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel('users'),
+        ];
+    }
+
+    public function broadcastAs(){
+        return "deleted";
+    }
+
+
+    public function broadcastWith(){
+         
+        return [
+            'message' => $this->message,
+                // ? 'Time settings updated by ' . $this->project_timer->updator->name . ' at ' . $this->project_timer->updated_at->toDateTimeString()
+                // : 'Time settings updated by ' . $user->name . ' at ' . now()->toDateTimeString(),
+            'user_url' => route('user.index'),
         ];
     }
 }

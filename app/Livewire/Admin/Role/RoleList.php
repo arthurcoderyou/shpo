@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Role;
 
+use App\Events\RoleDeleted;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -11,7 +12,11 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class RoleList extends Component
 {
-
+     protected $listeners = [ 
+        'roleCreated' => '$refresh',
+        'roleUpdated' => '$refresh',
+        'roleDeleted' => '$refresh',
+    ];
 
     use WithFileUploads;
     use WithPagination;
@@ -34,6 +39,8 @@ class RoleList extends Component
 
 
         $this->selected_records = []; // Clear selected records
+
+        event(new RoleDeleted(null, auth()->user()->id));
 
         Alert::success('Success','Selected roles deleted successfully');
         return redirect()->route('role.index');
@@ -62,7 +69,7 @@ class RoleList extends Component
 
 
         $role->delete();
-
+        event(new RoleDeleted($role, auth()->user()->id));
 
         Alert::success('Success','Role deleted successfully');
         return redirect()->route('role.index');
@@ -84,34 +91,24 @@ class RoleList extends Component
             });
 
 
+            // dd($this->search);
+
         }
 
-        /*
-            // Find the role
-            $role = Role::where('name', 'DSI God Admin')->first();
+        // if (Auth::user()->can('system access global admin')) {
+        //     // Show roles that HAVE the 'system access global admin' permission
+        //     $roles = Role::whereHas('permissions', function ($query) {
+        //         $query->where('name', 'system access global admin');
+        //     });
+        // }
+        
+        if (!Auth::user()->can('system access global admin')) {
+            // Show roles that DO NOT HAVE the 'system access global admin' permission
+            $roles = $roles->whereDoesntHave('permissions', function ($query) {
+                $query->where('name', 'system access global admin');
+            });
+        }
 
-            if ($role) {
-                // Get user IDs only if role exists
-                $dsiGodAdminUserIds = $role->roles()->pluck('id');
-            } else {
-                // Set empty array if role doesn't exist
-                $dsiGodAdminUserIds = [];
-            }
-
-
-            // if(!Auth::user()->hasRole('DSI God Admin')){
-            //     $roles =  $roles->where('roles.created_by','=',Auth::user()->id);
-            // }
-
-            // Adjust the query
-            if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
-                $roles = $roles->where('roles.created_by', '=', Auth::user()->id);
-            }elseif(Auth::user()->hasRole('Admin')){
-                $roles = $roles->whereNotIn('roles.created_by', $dsiGodAdminUserIds);
-            } else {
-
-            }
-        */
 
         
 

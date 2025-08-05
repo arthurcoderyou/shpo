@@ -8,7 +8,7 @@
 
     
 
-    <livewire:admin.project.project-list status="projects" :myProjects="false" /> 
+    <livewire:admin.project.project-list :route="$route" :myProjects="true"  /> 
 
 
 

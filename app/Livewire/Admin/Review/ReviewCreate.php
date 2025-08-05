@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Review;
 
+use App\Models\ProjectReferences;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Review;
@@ -9,6 +10,7 @@ use App\Models\Project;
 use Livewire\Component;
 
 use App\Models\ActivityLog;
+use App\Models\DocumentType;
 use Livewire\WithFileUploads;
 use App\Helpers\ProjectHelper;
 use Illuminate\Validation\Rule;
@@ -43,6 +45,8 @@ class ReviewCreate extends Component
 
     public $reviewer_due_date;
 
+     public $documentTypes = [];
+
     
     public function mount($id){
         $this->project = Project::findOrFail($id);
@@ -60,7 +64,11 @@ class ReviewCreate extends Component
         $this->reviewer_response_duration = $this->project->reviewer_response_duration;
         $this->reviewer_response_duration_type = $this->project->reviewer_response_duration_type; 
 
+        // Get used document_type_ids from the project's documents
+        $usedDocumentTypeIds = $this->project->project_documents->pluck('document_type_id')->toArray();
 
+        // Get only document types that are NOT used yet
+        $this->documentTypes = DocumentType::whereNotIn('id', $usedDocumentTypeIds)->orderBy('order','ASC')->get();
 
     }
 
@@ -77,6 +85,8 @@ class ReviewCreate extends Component
 
 
     public function update_project(){
+        // dd($this->selectedProjects);
+
 
         $this->validate([
             'shpo_number' => [
@@ -107,6 +117,41 @@ class ReviewCreate extends Component
  
         $project->save();
 
+
+
+        // delete existing project references 
+        if(!empty($project->project_references)){
+            // delete project_references
+            if(!empty($project->project_references)){
+                foreach($project->project_references as $project_reference){
+                    $project_reference->delete();
+                } 
+            }
+        }
+
+
+
+        // Save Project References (if any)
+        if (!empty($this->selectedProjects)) {
+            foreach ($this->selectedProjects as $selectedProject) {
+                ProjectReferences::create([
+                    'project_id' => $project->id,
+                    'referenced_project_id' => $selectedProject['id'],
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                ]);
+            }
+        }
+
+
+
+
+
+
+
+
+
+
         ActivityLog::create([
             'log_action' => "Project SHPO number on \"".$project->name."\" updated ",
             'log_username' => Auth::user()->name,
@@ -118,6 +163,76 @@ class ReviewCreate extends Component
         return redirect()->route('project.review',['project' => $this->project->id]);
 
     }
+
+
+    // For the Search Project Functionality
+        // For the Search Project Functionality
+        public $query = ''; // Search input
+        public $projects = []; // Search results
+        public $selectedProjects = []; // Selected project references
+
+        public function updatedQuery()
+        {
+            if (!empty($this->query)) {
+                $user = Auth::user();   
+
+                // Extract selected project IDs to exclude from results
+                $excludedIds = array_column($this->selectedProjects, 'id');
+
+
+                $this->projects = Project::whereNotNull('shpo_number')
+                    ->whereNotNull('project_number')
+                    ->whereNotIn('id', $excludedIds) // 👈 Exclude selected projects
+                    ->where(function ($mainQuery) use ($user) {
+                    $mainQuery->where('name', 'like', '%' . $this->query . '%')
+                            ->orWhere('shpo_number', 'like', '%' . $this->query . '%');
+
+                    // Optional: Apply access control if needed
+                    if (!$user->can('system access global admin') && !$user->can('system access admin')) {
+                        // Example: only show projects the user created or is assigned to
+                        $mainQuery->where(function ($q) use ($user) {
+                            $q->where('created_by', $user->id);
+                            // Add more project-level access rules here if needed
+                        });
+                    }
+
+                })
+                ->limit(10)
+                ->get();
+
+            } else {
+                $this->projects = [];
+            }
+        }
+
+        public function addProjectReference($projectId)
+        {
+            if (!in_array($projectId, array_column($this->selectedProjects, 'id'))) {
+                $project = Project::find($projectId);
+                $this->selectedProjects[] = [
+                    'id' => $project->id,
+                    'name' => $project->name,
+                    'shpo_number' => $project->shpo_number,
+                    'project_number' => $project->project_number,
+                    'location' => $project->location,
+                    'type' => $project->type,
+                    'federal_agency' => $project->federal_agency,
+                ];
+            }
+
+            $this->query = '';
+            $this->projects = [];
+        }
+
+        public function removeProjectReference($index)
+        {
+            unset($this->selectedProjects[$index]);
+            $this->selectedProjects = array_values($this->selectedProjects); // Re-index array
+        }
+
+    // ./// For the Search Project Functionality
+
+
 
 
 

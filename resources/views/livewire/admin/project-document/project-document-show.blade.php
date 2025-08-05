@@ -26,114 +26,114 @@
                         </p>
                     </div> --}}
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+                    <div class="flex justify-between items-start flex-wrap gap-6">
 
-    <!-- Left: Main Info -->
-    <div class="space-y-4">
-        <h1 class="text-2xl font-semibold text-sky-800">
-            {{ $project_document->document_type->name }}
-        </h1>
+                        <!-- Left: Main Info -->
+                        <div class="space-y-4">
+                            <h1 class="text-2xl font-semibold text-sky-800">
+                                <span class="text-gray-500">Project Document:</span> {{ $project_document->document_type->name }} 
+                            </h1>
 
-        @if(Auth::user()->hasRole('Reviewer') && $project->status !== "draft")
-            <a href="{{ route('project.review',['project' => $project->id ]) }}"
-               class="inline-block text-sm text-white bg-sky-600 hover:bg-sky-700 font-medium px-4 py-2 rounded shadow transition">
-                Click to Review
-            </a>
-        @endif
+                            @if(Auth::user()->hasRole('Reviewer') && $project->status !== "draft")
+                                <a href="{{ route('project.review',['project' => $project->id ]) }}"
+                                class="inline-block text-sm text-white bg-sky-600 hover:bg-sky-700 font-medium px-4 py-2 rounded shadow transition">
+                                    Click to Review
+                                </a>
+                            @endif
 
-        <h2 class="text-xl font-bold text-gray-800">
-            <a class="hover:text-sky-500" href="{{ route('project.show',['project' => $project->id]) }}">
-                <span class="text-gray-500">Project:</span> {{ $project->name }}
-            </a>
-        </h2>
+                            <h2 class="text-xl font-bold text-gray-800">
+                                <a class="hover:text-sky-500" href="{{ route('project.show',['project' => $project->id]) }}">
+                                    <span class="text-gray-500">Project:</span> {{ $project->name }}
+                                </a>
+                            </h2>
 
-        <!-- Action Buttons -->
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('project.show',['project' => $project->id]) }}"
-               class="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-700 transition">
-                View Project
-            </a>
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ route('project.show',['project' => $project->id]) }}"
+                                class="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-700 transition">
+                                    View Project
+                                </a>
 
-            <a href="{{ route('project.edit',['project' => $project->id]) }}"
-               class="px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-700 transition">
-                Edit Project
-            </a>
+                                <a href="{{ route('project.edit',['project' => $project->id]) }}"
+                                class="px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-700 transition">
+                                    Edit Project
+                                </a>
 
-            @if($project->status !== "draft")
-                <a href="#discussion"
-                   class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-500 text-gray-600 hover:border-gray-400 hover:text-gray-500 transition">
-                    Discussion
-                </a>
-            @endif
+                                @if($project->status !== "draft")
+                                    <a href="#discussion"
+                                    class="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-500 text-gray-600 hover:border-gray-400 hover:text-gray-500 transition">
+                                        Discussion
+                                    </a>
+                                @endif
 
-            <a href="#project_logs"
-               class="px-3 py-1.5 text-sm font-medium rounded-lg border border-teal-500 text-teal-600 hover:border-teal-400 hover:text-teal-500 transition">
-                Logs
-            </a>
-        </div>
+                                <a href="#project_logs"
+                                class="px-3 py-1.5 text-sm font-medium rounded-lg border border-teal-500 text-teal-600 hover:border-teal-400 hover:text-teal-500 transition">
+                                    Logs
+                                </a>
+                            </div>
 
-        <!-- Metadata -->
-        <p class="text-sm text-gray-600">{{ $project->federal_agency }}</p>
-        <p class="text-sm text-blue-600 font-medium">{{ $project->type }}</p>
+                            <!-- Metadata -->
+                            <p class="text-sm text-gray-600">{{ $project->federal_agency }}</p>
+                            <p class="text-sm text-blue-600 font-medium">{{ $project->type }}</p>
 
-        @unless(Auth::user()->hasRole('User'))
-            <div class="space-y-1">
-                <p class="text-sm text-green-600 font-medium">
-                    Project #: {{ $project->project_number ?? 'NOT SET' }}
-                </p>
-                <p class="text-sm text-yellow-600 font-medium">
-                    SHPO #: {{ $project->shpo_number ?? 'NOT SET' }}
-                </p>
-            </div>
-        @endunless
-    </div>
+                            @unless(Auth::user()->hasRole('User'))
+                                <div class="space-y-1">
+                                    <p class="text-sm text-green-600 font-medium">
+                                        Project #: {{ $project->project_number ?? 'NOT SET' }}
+                                    </p>
+                                    <p class="text-sm text-yellow-600 font-medium">
+                                        SHPO #: {{ $project->shpo_number ?? 'NOT SET' }}
+                                    </p>
+                                </div>
+                            @endunless
+                        </div>
 
-    <!-- Right: Status Info -->
-    <div class="space-y-4 text-sm text-gray-700">
-        <div>
-            <p><strong>Project Status:</strong> {!! $project->getStatus() !!}</p>
+                        <!-- Right: Status Info -->
+                        <div class="space-y-4 text-sm text-gray-700">
+                            <div>
+                                <p><strong>Project Status:</strong> {!! $project->getStatus() !!}</p>
 
-            @if($project->status !== "approved" && !empty($project->project_reviewer))
-                <p><strong>Review Status:</strong> {!! $project->project_reviewer->getReviewStatus() !!}</p>
-                <p><strong>Currently Reviewed by:</strong><br>{{ $project->project_reviewer->user->name }}</p>
-            @endif
-        </div>
+                                @if($project->status !== "approved" && !empty($project->project_reviewer))
+                                    <p><strong>Review Status:</strong> {!! $project->project_reviewer->getReviewStatus() !!}</p>
+                                    <p><strong>Currently Reviewed by:</strong><br>{{ $project->project_reviewer->user->name }}</p>
+                                @endif
+                            </div>
 
-        @if($project->status !== "approved" && $project->status !== "draft")
-            <hr>
+                            @if($project->status !== "approved" && $project->status !== "draft")
+                                <hr>
 
-            <div>
-                <p class="font-medium">Update Schedule:
-                    @if (\Carbon\Carbon::parse($project->submitter_due_date)->isPast())
-                        <span class="text-red-500 font-semibold">Overdue</span>
-                    @else
-                        <span class="text-lime-600 font-semibold">On Time</span>
-                    @endif
-                </p>
-                <p>Expected update submission:<br>
-                    <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->submitter_due_date)->format('M d, Y h:i A') }}</strong>
-                </p>
-            </div>
+                                <div>
+                                    <p class="font-medium">Update Schedule:
+                                        @if (\Carbon\Carbon::parse($project->submitter_due_date)->isPast())
+                                            <span class="text-red-500 font-semibold">Overdue</span>
+                                        @else
+                                            <span class="text-lime-600 font-semibold">On Time</span>
+                                        @endif
+                                    </p>
+                                    <p>Expected update submission:<br>
+                                        <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->submitter_due_date)->format('M d, Y h:i A') }}</strong>
+                                    </p>
+                                </div>
 
-            @unless(Auth::user()->hasRole('User'))
-                <hr>
+                                @unless(Auth::user()->hasRole('User'))
+                                    <hr>
 
-                <div>
-                    <p class="font-medium">Review Schedule:
-                        @if (\Carbon\Carbon::parse($project->reviewer_due_date)->isPast())
-                            <span class="text-red-500 font-semibold">Overdue</span>
-                        @else
-                            <span class="text-lime-600 font-semibold">On Time</span>
-                        @endif
-                    </p>
-                    <p>Expected review by:<br>
-                        <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}</strong>
-                    </p>
-                </div>
-            @endunless
-        @endif
-    </div>
-</div>
+                                    <div>
+                                        <p class="font-medium">Review Schedule:
+                                            @if (\Carbon\Carbon::parse($project->reviewer_due_date)->isPast())
+                                                <span class="text-red-500 font-semibold">Overdue</span>
+                                            @else
+                                                <span class="text-lime-600 font-semibold">On Time</span>
+                                            @endif
+                                        </p>
+                                        <p>Expected review by:<br>
+                                            <strong class="text-gray-800">{{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}</strong>
+                                        </p>
+                                    </div>
+                                @endunless
+                            @endif
+                        </div>
+                    </div>
 
 
                     <!-- Project Description -->
@@ -241,9 +241,50 @@
                                 @php($index++)
                             @endforeach
                     
+                        @else
+                            <div class="hs-accordion-group">
+                                <div class="hs-accordion" id="attachment-index">
+
+                                    <div  class=" 
+                                        py-3 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 rounded-lg disabled:opacity-50 disabled:pointer-events-none"
+                                        >
+                             
+                                        Attachments
+                                    </div>
 
 
+
+                                    <div class="flex items-center justify-center gap-2 border border-gray-200 rounded w-full h-14 bg-gray-100">
+                                        <div class="text-center text-slate-900 text-sm font-medium">
+                                            No Attachments Found. <a href="" class="text-sky-500 hover:text-blue-500">Click to add files</a>
+                                        </div>
+                                    </div>
+
+                        
+                                </div>
+                            </div>
                         @endif
+
+                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('project add attachment'))
+                            <div class="py-4">
+
+                                @if($project->allow_project_submission == true)
+                                    <!-- Add new project document -->
+                                    <a href="{{ route('project.project_document.edit_attachments',['project' => $project->id,'project_document' => $project_document->id]) }}" target="_blank" class="py-1 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border  bg-blue-500 text-white hover:bg-blue-700 focus:outline-hidden focus:border-blue-400  disabled:opacity-50 disabled:pointer-events-none">
+                                        Add/Edit attachments
+                                    </a>
+                                    <!-- Add new project document -->
+                                @else
+                                    <!-- Add new project document -->
+                                    <button disabled class="py-1 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border disabled:opacity-50 bg-blue-500 text-white hover:bg-blue-700 focus:outline-hidden focus:border-blue-400  disabled:opacity-50 disabled:pointer-events-none">
+                                        Add/Edit attachments
+                                    </button>
+                                    <!-- Add new project document -->
+                                @endif
+
+                            </div>
+                        @endif
+                        
 
 
                         <ul class="mt-5 flex flex-col gap-y-3">
@@ -277,8 +318,8 @@
                         @if($project->status !== "approved")
 
                             @if(
-                                Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasRole('Admin') || 
-                                (Auth::user()->hasRole('User') && $project->created_by == Auth::id() )
+                                Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || 
+                                (Auth::user()->can('system access user') && $project->created_by == Auth::id() )
                             )
 
                                 <a href="{{ route('project.edit',['project' => $project->id]) }}" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
@@ -287,6 +328,8 @@
 
                                 
                                 <button {{ $project->allow_project_submission ? '' : 'disabled' }} type="button"
+                                    onclick="confirm('Are you sure, you want to submit this project?') || event.stopImmediatePropagation()"
+                                    wire:click.prevent="submit_project({{ $project->id }})"
                                     class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                                     Submit
                                 </button> 
@@ -306,64 +349,7 @@
 
                 </div>
 
- 
-                @if(
-                    (
-                    Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasRole('Admin') || 
-                    ( $project->created_by == Auth::id() )
-                    ) &&
-
-                    $project->status !== "approved"
-
-                )
-                    <!-- New Project Document Attachments -->
-                    <form class="mt-4" wire:submit="save">
-                        <!-- Project Details Section -->
-                        <div class="bg-white rounded-2xl border-gray-500 shadow p-6 mb-6 space-y-6 ">
-                            <div class="grid grid-cols-12 gap-x-2  ">
-
-                            
-                                <div class="space-y-2 col-span-12     ">
-            
-                                
-                                
-                                    <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                                        Add New Document Attachments
-                                    </label>
-            
-                                    <livewire:dropzone
-                                        wire:model="attachments"
-                                        :rules="['file', 'mimes:png,jpeg,jpg,pdf,docx,xlsx,csv,txt,zip', 'max:20480']"
-                                        :multiple="true" />
-            
-            
-                                    @error('attachments')
-                                        <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                                    @enderror 
-            
-                                </div>
-                                <div class="mt-1.5 col-span-12 text-end ">
-                                    <a href="{{ route('project.edit',['project' => $project->id]) }}" class="py-2 px-3 inline-block items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                                        Cancel
-                                    </a>
-
-                                    
-                                    <button {{ $project->allow_project_submission ? '' : 'disabled' }} type="submit"
-                                        class="py-2 px-3 inline-block items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-                                        Add
-                                    </button> 
-                                </div>
-            
-            
-                            </div>
-                            <!-- End Grid -->
-                        </div>
-
-                    </form>
-                    <!-- ./ New Project Document Attachments -->
-                @endif
-
-
+  
                         
             </div> 
         </div>

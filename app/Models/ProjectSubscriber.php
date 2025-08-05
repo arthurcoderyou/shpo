@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
 class ProjectSubscriber extends Model
 {
-
+    use SoftDeletes;
     // /**
     //  * Run the migrations.
     //  */

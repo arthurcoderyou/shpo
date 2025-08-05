@@ -1,10 +1,10 @@
 <!-- Table Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
+    {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
-    </div>
+    </div> --}}
 
     <!-- Card -->
     <div class="flex flex-col">
@@ -71,7 +71,7 @@
  
                     </th> --}}
 
-                    @if(Auth::user()->hasRole('Admin') || Auth::user()->can('project reviewer edit') || Auth::user()->hasRole('DSI God Admin'))
+                    @if(Auth::user()->can('system access admin') || Auth::user()->can('project reviewer edit') || Auth::user()->can('system access global admin'))
                     <th scope="col" class="px-2 py-3 text-start">
                         
                     </th>
@@ -119,7 +119,7 @@
                             <tr>
                               
 
-                                @if(Auth::user()->hasRole('Admin') || Auth::user()->can('project reviewer edit') || Auth::user()->hasRole('DSI God Admin'))
+                                @if(Auth::user()->can('system access admin') || Auth::user()->can('project reviewer edit') || Auth::user()->can('system access global admin'))
                                     <td class="w-10 whitespace-nowrap flex flex-row items-center">
                                         
 
@@ -203,7 +203,7 @@
 
                                 <td class="w-4 whitespace-nowrap text-end">
                                     <div class="px-2 py-2">
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('document type edit') )
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type edit') )
                                         <!-- edit -->
                                         <a href="{{ route('document_type.edit',['document_type' => $document_type->id]) }}" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M402.6 83.2l90.2 90.2c3.8 3.8 3.8 10 0 13.8L274.4 405.6l-92.8 10.3c-12.4 1.4-22.9-9.1-21.5-21.5l10.3-92.8L388.8 83.2c3.8-3.8 10-3.8 13.8 0zm162-22.9l-48.8-48.8c-15.2-15.2-39.9-15.2-55.2 0l-35.4 35.4c-3.8 3.8-3.8 10 0 13.8l90.2 90.2c3.8 3.8 10 3.8 13.8 0l35.4-35.4c15.2-15.3 15.2-40 0-55.2zM384 346.2V448H64V128h229.8c3.2 0 6.2-1.3 8.5-3.5l40-40c7.6-7.6 2.2-20.5-8.5-20.5H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V306.2c0-10.7-12.9-16-20.5-8.5l-40 40c-2.2 2.3-3.5 5.3-3.5 8.5z"/></svg>
@@ -211,9 +211,9 @@
                                         @endif
                                          
 
-                                        {{-- @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer delete') ) --}}
+                                        {{-- @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer delete') ) --}}
                                         <!-- delete -->
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('document type delete') )
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type delete') )
                                         <button
                                         onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
                                         wire:click.prevent="delete({{ $document_type->id }})"
@@ -279,5 +279,50 @@
         </div>
     </div>
     <!-- End Card -->
+
+    <!--  Loaders -->
+        {{-- wire:target="table"   --}}
+        <div wire:loading 
+            class="p-0 m-0"
+            style="padding: 0; margin: 0;">
+            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+                <div>   
+                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+                <div>
+                    Loading lists, please wait...
+                </div> 
+            </div>
+        </div>
+
+        {{-- wire:target="delete"   --}}
+        <div wire:loading  wire:target="delete"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Deleting record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+ 
+
+
+
+    <!-- ./  Loaders -->
+
+
 </div>
 <!-- End Table Section -->

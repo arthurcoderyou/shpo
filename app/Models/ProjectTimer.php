@@ -25,18 +25,24 @@ class ProjectTimer extends Model
     protected $table = "project_timers";
     protected $fillable = [
         
+        // system access user
+        'project_submission_open_time',
+        'project_submission_close_time',
+        'message_on_open_close_time',
+
+
+        // system access reviewer   system access admin     system access global admin
+        'project_submission_restrict_by_time', 
         'submitter_response_duration_type',
         'submitter_response_duration', 
         'reviewer_response_duration',
-        'reviewer_response_duration_type', 
+        'reviewer_response_duration_type',  
         'created_by',
         'updated_by',
         'created_at',
         'updated_at',
-        'project_submission_open_time',
-        'project_submission_close_time',
-        'message_on_open_close_time',
-        'project_submission_restrict_by_time'
+        
+        
         
     ];
 
@@ -65,7 +71,7 @@ class ProjectTimer extends Model
             // event(new \App\Events\ProjectTimerUpdated($projectTimer));
 
             try {
-                event(new \App\Events\ProjectTimerUpdated($projectTimer));
+                event(new \App\Events\ProjectTimerUpdated($projectTimer, auth()->user()->id));
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [

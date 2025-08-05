@@ -16,13 +16,14 @@ new #[Layout('layouts.guest')] class extends Component
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
-    public string $role_request = 'user';
+    public string $role_request = 'user'; 
 
     public function mount(){
 
 
         $role_request = request('role');
-
+        
+        
         if($role_request != 'reviewer'){
             $role_request = 'user';
         }
@@ -46,6 +47,12 @@ new #[Layout('layouts.guest')] class extends Component
             'role_request' => ['required']
         ]);
 
+        // Determine role_request automatically based on email
+        $email = strtolower($validated['email']);
+        $role_request = User::getRoleRequestByEmail($email);
+
+        $validated['role_request'] = $role_request;
+
         $validated['password'] = Hash::make($validated['password']);
 
         event(new Registered($user = User::create($validated)));
@@ -66,16 +73,48 @@ new #[Layout('layouts.guest')] class extends Component
 
 <div>
 
-    <div wire:loading class="loading-overlay">
+    {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
             <div></div>
             <div></div>
         </div>
-    </div>
+    </div> --}}
 
     <form wire:submit="register">
+        <div class=" rounded-xl bg-white shadow-sm ring-1 ring-gray-200 p-6">
+            <fieldset>
+                <legend class="text-base font-semibold text-gray-900">What will you use this account for?</legend>
+                <p class="mt-1 text-sm text-gray-600">Select the role that matches your purpose for using the site.</p>
+
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <input wire:model="role_request" id="role_user" name="role_request" type="radio" value="user"
+                            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-600"
+                        >
+                        <label for="role_user" class="block text-sm font-medium text-gray-900">
+                            <span class="font-semibold">User</span> — Create and manage projects
+                        </label>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <input wire:model="role_request" id="role_reviewer" name="role_request" type="radio" value="reviewer"
+                            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-600"
+                        >
+                        <label for="role_reviewer" class="block text-sm font-medium text-gray-900">
+                            <span class="font-semibold">Reviewer</span> — Review submitted projects
+                        </label>
+                    </div>
+                </div>
+
+                <x-input-error :messages="$errors->get('role_request')" class="mt-2" />
+            </fieldset>
+        </div>
+
+
+
+
         <!-- Name -->
-        <div>
+        <div class="mt-4">
             <x-input-label for="name" :value="__('Name')" />
             <x-text-input wire:model="name" id="name" class="block mt-1 w-full" type="text" name="name" required autofocus autocomplete="name" />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
@@ -89,29 +128,82 @@ new #[Layout('layouts.guest')] class extends Component
         </div>
 
         <!-- Password -->
-        <div class="mt-4">
+        <div class="mt-4" x-data="{ show: false }">
             <x-input-label for="password" :value="__('Password')" />
 
-            <x-text-input wire:model="password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
+            <div class="relative">
+                <x-text-input
+                    wire:model="password"
+                    x-bind:type="show ? 'text' : 'password'"
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="new-password"
+                    class="block mt-1 w-full pr-10"
+                />
+
+                <!-- Toggle Button -->
+                <button type="button"
+                        x-on:click="show = !show"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-800"
+                        tabindex="-1">
+                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.045 10.045 0 014.724-5.735M6.182 6.182l11.636 11.636M17.818 17.818L6.182 6.182"/>
+                    </svg>
+                </button>
+            </div>
 
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <input type="hidden" wire:model="role_request" name="role_request" >
-
+      
         <!-- Confirm Password -->
-        <div class="mt-4">
+        <div class="mt-4" x-data="{ show: false }">
             <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
 
-            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
+            <div class="relative">
+                <x-text-input
+                    wire:model="password_confirmation"
+                    x-bind:type="show ? 'text' : 'password'"
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    required
+                    autocomplete="new-password"
+                    class="block mt-1 w-full pr-10"
+                />
+
+                <!-- Toggle Button -->
+                <button type="button"
+                        x-on:click="show = !show"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-gray-800"
+                        tabindex="-1">
+                    <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.045 10.045 0 014.724-5.735M6.182 6.182l11.636 11.636M17.818 17.818L6.182 6.182"/>
+                    </svg>
+                </button>
+            </div>
 
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
+
 
         <div class="flex items-center justify-end mt-4">
             <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}" wire:navigate>
@@ -130,9 +222,27 @@ new #[Layout('layouts.guest')] class extends Component
             @endif 
         </div>
     </form>
+ 
 
-    {{-- <div class="hidden hover:block">
-        <button class="text-sm px-2 py-2">Register as Reviewer</button>
-    </div> --}}
+    <!-- Loaders -->
+        {{-- wire:target="register"   --}}
+        <div wire:loading  wire:target="register"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Registering your account, please wait...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    <!-- ./ Loaders -->
 
 </div>

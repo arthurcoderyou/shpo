@@ -21,13 +21,13 @@ class TwoFactorMiddleware
 
             $user = Auth::user();
 
-            // If the user has the role Admin or DSI God Admin, skip 2FA
-            if ($user->hasRole('Admin') ) {
+            // If the user has the permission system access admin or system access global admin, skip 2FA
+            if ($user->can('system access admin') ) {
                 return $next($request);
             }
 
-             // If the user has the role Admin or DSI God Admin, skip 2FA
-             if ($user->hasRole('DSI God Admin') ) {
+             // If the user has the role system access admin or system access global admin, skip 2FA
+             if ($user->can('system access global admin') ) {
                 return $next($request);
             }
  

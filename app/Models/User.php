@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Notifications\CustomVerifyEmail; 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,15 +24,21 @@ class User extends Authenticatable implements MustVerifyEmail
         parent::boot();
         
         static::created(function ($user) {
-            event(new  \App\Events\UserCreated($user));
+
+            $authId = auth::check() ? auth()->user()->id : $user->id;
+
+            event(new  \App\Events\UserCreated($user,$authId)); 
+            // \App\Services\CacheService::updateUserStats(); 
         });
 
         static::updated(function ($user) {
-            // event(new  \App\Events\DocumentTypeUpdated($user));
+            event(new  \App\Events\UserUpdated($user, auth()->check() ?? auth()->user()->id )); 
+            // \App\Services\CacheService::updateUserStats();
         });
 
         static::deleted(function ($user) {
-            // event(new  \App\Events\DocumentTypeDeleted($user));
+            event(new  \App\Events\UserDeleted( $user, auth()->user()->id ));
+            // \App\Services\CacheService::updateUserStats();
         });
     }
 
@@ -88,7 +95,15 @@ class User extends Authenticatable implements MustVerifyEmail
     //     return $this->morphMany(\App\Models\Notification::class, 'notifiable')->orderBy('created_at', 'desc');
     // }
 
-
+     /**
+     * Get all of the activity logs for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function activity_logs()
+    {
+        return $this->hasMany(ActivityLog::class, 'created_by', 'id');
+    }
 
     /**
      * Get all of the projects for the User
@@ -133,41 +148,44 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
 
-    static public function countUsers($selected_role = null,$role_request = null){
-
+    static public function countUsers($selected_role = null, $role_request = null, $noRoleOnly = false, $with_dsi_admin = false)
+    {
         $users = User::select('users.*');
 
-         
-        
-        if(!empty($selected_role)){
-            $users = $users->when($selected_role, function ($query) use ($selected_role) {
-                // $query->whereHas('roles', function ($roleQuery) {
-                //     $roleQuery->where('id', $selected_role);
-                // });
-    
+        // Filter by role if provided
+        if (!empty($selected_role)) {
+            $users->when($selected_role, function ($query) use ($selected_role) {
                 if ($selected_role === 'no_role') {
-                    // Users without roles
                     $query->whereDoesntHave('roles');
                 } else {
-                    // Users with the selected role
                     $query->whereHas('roles', function ($roleQuery) use ($selected_role) {
                         $roleQuery->where('id', $selected_role);
                     });
                 }
             });
-
- 
-        }
-        
-
-        if(!empty($role_request)){
-            $users = $users->where('role_request',$role_request);
-            
         }
 
+        // Filter for users with NO roles (override parameter)
+        if ($noRoleOnly) {
+            $users = $users->whereDoesntHave('roles');
+        }
+
+        // Get user IDs with 'system access global admin' permission
+        $globalAdminUserIds = User::permission('system access global admin')->pluck('id');
+
+        // If logged-in user lacks permission, exclude global admin users
+        // if (!auth()->user() || !auth()->user()->can('system access global admin')) {
+
+        if($with_dsi_admin == false){
+            $users = $users->whereNotIn('users.id', $globalAdminUserIds);
+        }
+
+        // Optional: Filter by role_request
+        if (!empty($role_request)) {
+            $users = $users->where('role_request', $role_request);
+        }
 
         return $users->count();
-
     }
 
 
@@ -189,7 +207,23 @@ class User extends Authenticatable implements MustVerifyEmail
 
 
 
-    
+    static public function getRoleRequestByEmail($email)
+    {
+        $email = strtolower($email);
+
+        $reviewerDomains = [
+            '@gmail.com',
+            '@khlgassociates.com',
+        ];
+
+        foreach ($reviewerDomains as $pattern) {
+            if (str_ends_with($email, $pattern)) {
+                return 'reviewer';
+            }
+        }
+
+        return 'user';
+    }
 
 
 

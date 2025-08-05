@@ -49,7 +49,7 @@ class ProjectReviewerList extends Component
 
     public $project_document_id;
 
-    public $reviewer_type = "document";
+    public $reviewer_type = "";
 
 
 
@@ -143,6 +143,8 @@ class ProjectReviewerList extends Component
             $this->project_document_id = $this->project->project_documents->first()->id ?? null;
         }
       
+        $this->reviewers = $this->getReviewersProperty();
+
     }   
 
 
@@ -1001,6 +1003,15 @@ class ProjectReviewerList extends Component
             ->where('project_id',$this->project->id)
             ;
 
+        // Filter by reviewer type
+        if (!empty($this->reviewer_type)) {
+
+            // dd($this->reviewer_type);
+            $query = $query->where(function ($q) {
+                $q->where('reviewer_type', $this->reviewer_type);
+            });
+        }
+
 
         if (!empty($this->search)) {
             $search = $this->search;
@@ -1021,14 +1032,7 @@ class ProjectReviewerList extends Component
         }
 
 
-        // Filter by reviewer type
-        if (!empty($this->reviewer_type)) {
-
-            // dd($this->reviewer_type);
-            $query = $query->where(function ($q) {
-                $q->where('reviewer_type', $this->reviewer_type);
-            });
-        }
+        
 
         // dd($this->reviewer_type);
 
@@ -1052,14 +1056,14 @@ class ProjectReviewerList extends Component
             }
 
 
-            // if(!Auth::user()->hasRole('DSI God Admin')){
+            // if(!Auth::user()->can('system access global admin')){
             //     $query =  $query->where('reviewers.created_by','=',Auth::user()->id);
             // }
 
             // Adjust the query
-            if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+            if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
                 $query = $query->where('reviewers.created_by', '=', Auth::user()->id);
-            }elseif(Auth::user()->hasRole('Admin')){
+            }elseif(Auth::user()->can('system access admin')){
                 $query = $query->whereNotIn('reviewers.created_by', $dsiGodAdminUserIds);
             } else {
 
@@ -1165,14 +1169,14 @@ class ProjectReviewerList extends Component
             }
 
 
-            // if(!Auth::user()->hasRole('DSI God Admin')){
+            // if(!Auth::user()->can('system access global admin')){
             //     $reviewers =  $reviewers->where('project_reviewers.created_by','=',Auth::user()->id);
             // }
 
             // Adjust the query
-            if (!Auth::user()->hasRole('DSI God Admin') && !Auth::user()->hasRole('Admin')) {
+            if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
                 $reviewers = $reviewers->where('project_reviewers.created_by', '=', Auth::user()->id);
-            }elseif(Auth::user()->hasRole('Admin')){
+            }elseif(Auth::user()->can('system access admin')){
                 $reviewers = $reviewers->whereNotIn('project_reviewers.created_by', $dsiGodAdminUserIds);
             } else {
 

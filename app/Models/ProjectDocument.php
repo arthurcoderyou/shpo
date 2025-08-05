@@ -16,7 +16,9 @@ class ProjectDocument extends Model
         'document_type_id',
         'created_by',
         'updated_by',
-        'status'
+        'status',
+        'last_submitted_at',
+        'last_submitted_by',
     ];
      
     public static function boot()
@@ -74,6 +76,17 @@ class ProjectDocument extends Model
     }
 
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'last_submitted_at' => 'datetime', 
+        ];
+    }
 
 
     /**
@@ -152,6 +165,20 @@ class ProjectDocument extends Model
         return $this->belongsTo(User::class, 'updated_by', 'id');
     }
 
+
+    // // get the current reviewer based on the project document 
+    // public function getCurrentReviewer(): bool
+    // { 
+    //     $reviewers = $this->project_reviewers()->orderBy('order')->get();
+
+    //     foreach ($reviewers as $reviewer) {
+    //         if ($reviewer->review_status !== 'approved' && $reviewer->status === true) {
+    //             return $reviewer;
+    //         }
+    //     } 
+
+    //     return false;
+    // }
 
 
 }

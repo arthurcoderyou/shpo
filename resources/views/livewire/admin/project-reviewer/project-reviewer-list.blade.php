@@ -1,14 +1,14 @@
 <!-- Table Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
+    {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
-    </div>
+    </div> --}}
     
 
 
-    @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
+    @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
     {{-- <form wire:submit="save"> --}}
     <div>
         <!-- Card -->
@@ -81,7 +81,7 @@
 
                     </div>
 
-                    {{-- <div class="space-y-2 col-span-12 sm:col-span-4">
+                    <div class="space-y-2 col-span-12 sm:col-span-4">
                         <label for="reviewer_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                             Reviewer Type
                         </label>
@@ -102,12 +102,12 @@
                         @enderror
 
 
-                    </div> --}}
+                    </div>
 
 
                     @if($reviewer_type == "document")
                         {{-- <div class="space-y-2 col-span-12 "> --}}
-                        <div class="space-y-2 col-span-12 sm:col-span-4">
+                        <div class="space-y-2 col-span-12  ">
                             <label for="project_document_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
                                 Project Document 
                             </label>
@@ -220,15 +220,17 @@
                 <h2 class="text-xl font-semibold text-gray-800 ">
                     Project Reviewers for <a href="{{ route('project.show',['project'=> $project->id]) }}" class="text-sky-500 font-bold hover:text-sky-800">"{{ $project->name }}" </a> 
                 </h2>
-                 <p class="text-sm text-blue-600 mt-1">
+                @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
+                 <p class="text-sm text-blue-600 mt-1 ">
                     <strong>Note:</strong> Please make sure to <span class="font-semibold">save your changes</span> before selecting another document type or leaving the page. Unsaved changes will be lost, and updates will only be applied once saved. Saved reviewers will be visible to all users and they will be notified about the changes as well. 
                 </p>
+                @endif
                 </div>
 
                 <div>
                 <div class="inline-flex gap-x-2">
 
-                    {{--
+                    
                     <input type="text" wire:model.live="search"
                         class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
                         placeholder="Search">
@@ -242,7 +244,7 @@
                             
                         </select>
                     </div>
-                    --}}
+                   
 
                     @if($reviewer_type == "document")
                         <div class="inline-flex items-center gap-x-2">
@@ -275,7 +277,7 @@
                         </select>
                     </div> --}}
 
-                    {{-- @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
+                    {{-- @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
                         <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
                             onclick="confirm('Are you sure, you want to apply this to all records? If you do this, all not approved projects will apply this list and order of reviewers. They will be notified on the changes of reviewers list and order. Are you still sure to proceed? ') || event.stopImmediatePropagation()"
                             wire:click.prevent="apply_to_all" 
@@ -302,7 +304,7 @@
             <table class="min-w-full divide-y divide-gray-200 ">
                 <thead class="bg-gray-50 ">
                 <tr>
-                    @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
+                    @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
                     <th scope="col" class="px-2 py-3 text-start">
                         {{-- <label for="hs-at-with-checkboxes-main" class="flex">
                             <input
@@ -322,6 +324,13 @@
                         <div class="flex items-center gap-x-2">
                             <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                             Reviewer
+                            </span>
+                        </div>
+                    </th>
+                    <th scope="col" class="px-2 py-3 text-start">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
+                            Type
                             </span>
                         </div>
                     </th>
@@ -369,7 +378,7 @@
                     @if(!empty($reviewers) && count($reviewers) > 0)
                         @foreach ($reviewers as $key => $reviewer)
                             <tr>
-                                @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
+                                @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
                                 <td class="w-10 whitespace-nowrap flex flex-row items-center">
                                     {{-- <div class="px-2 py-2 align-self-center">
                                         <label for="reviewer_{{ $key }}" class="flex">
@@ -434,13 +443,16 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
+                                                @if(!empty($reviewer['user_id']))
+                                                    @php   
+                                                        $user =  getUser($reviewer['user_id']);
+                                                    @endphp 
 
-                                               @php   
-                                                    $user =  getUser($reviewer['user_id']);
-                                                @endphp 
-
-                                                <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
-                                                <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
+                                                    <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
+                                                    <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
+                                                @else
+                                                    Open Review
+                                                @endif
 
                                             </div>
                                         </div>
@@ -452,6 +464,16 @@
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
                                                 <span class="block text-sm text-gray-500 ">{{ $reviewer['order'] }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="size-auto whitespace-nowrap">
+                                    <div class="px-2 py-2">
+                                        <div class="flex items-center gap-x-3">
+                                            <div class="grow">
+                                                <span class="block text-sm text-gray-500 uppercase">{{ $reviewer['reviewer_type'] }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -498,7 +520,7 @@
 
                                          
 
-                                        @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('project reviewer delete') )
+                                        @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer delete') )
                                         <!-- delete -->
                                          
                                         <button
@@ -518,7 +540,7 @@
 
                             </tr>
                         @endforeach
-                        @if( Auth::user()->hasRole('DSI God Admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
+                        @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
                         <tr>
                             <td colspan="7" class=" text-center px-2 py-2">
                                 <button type="button" 
@@ -579,5 +601,45 @@
         </div>
     </div>
     <!-- End Card -->
+
+
+    <!--  Loaders --> 
+        {{-- wire:target="table"   --}}
+        <div wire:loading 
+            class="p-0 m-0"
+            style="padding: 0; margin: 0;">
+            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+                <div>   
+                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+                <div>
+                    Loading lists, please wait...
+                </div> 
+            </div>
+        </div>
+
+        {{-- wire:target="save"   --}}
+        <div wire:loading  wire:target="save"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Saving record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    <!--  ./ Loaders -->
+    
 </div>
 <!-- End Table Section -->

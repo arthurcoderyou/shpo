@@ -30,10 +30,12 @@
 >
 
     <script src="https://cdn.jsdelivr.net/npm/@preline/remove-element@2.6.0/index.min.js"></script>
-    <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
+
+
+    {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
-    </div>
+    </div> --}}
 
     <!-- Card -->
     <div class="flex flex-col">
@@ -106,7 +108,7 @@
                         </select>
                     </div>
 
-                    {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->hasRole('DSI God Admin')) 
+                    {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->can('system access global admin')) 
                         <button
                             onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                             wire:click.prevent="deleteSelected"
@@ -660,7 +662,7 @@
 
                                         <!-- delete -->
 
-                                        {{-- @if( Auth::role()->can('role delete')  ||  Auth::role()->hasRole('DSI God Admin')) --}}
+                                        {{-- @if( Auth::role()->can('role delete')  ||  Auth::role()->hasRole('system access global admin')) --}}
 
                                         @if($review->project->creator->id == Auth::user()->id )
                                             @if($review->viewed == false)
@@ -885,7 +887,27 @@
 
 
 
+    <!--  Loaders -->
+        {{-- wire:target="table"   --}}
+        <div wire:loading 
+            class="p-0 m-0"
+            style="padding: 0; margin: 0;">
+            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+                <div>   
+                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+                <div>
+                    Loading lists, please wait...
+                </div> 
+            </div>
+        </div>
 
+         
+
+    <!-- ./  Loaders -->
 
 
 

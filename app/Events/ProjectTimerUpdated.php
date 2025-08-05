@@ -18,13 +18,18 @@ class ProjectTimerUpdated  implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public ?ProjectTimer $project_timer;
+    public $project_timer_id;
+    public $authId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(ProjectTimer $project_timer = null)
+    public function __construct(ProjectTimer $project_timer = null,$authId)
     {
         $this->project_timer = $project_timer;
+        $this->project_timer_id = $project_timer->id;
+        $this->authId = $authId;
+
     }
 
     /**
@@ -49,6 +54,8 @@ class ProjectTimerUpdated  implements ShouldBroadcast, ShouldQueue
         $user = auth()->user();
 
         return [
+            'authId' => $this->authId,
+            'project_timer_id' => $this->project_timer_id,
             'message' => $this->project_timer
                 ? 'Time settings updated by ' . $this->project_timer->updator->name . ' at ' . $this->project_timer->updated_at->toDateTimeString()
                 : 'Time settings updated by ' . $user->name . ' at ' . now()->toDateTimeString(),

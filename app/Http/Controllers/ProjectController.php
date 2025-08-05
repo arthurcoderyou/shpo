@@ -15,41 +15,235 @@ class ProjectController extends Controller
     // You are just adding the route in order to not make any route mistakes
 
 
+    // own 
+        // index
+        public function index(){
 
-    // index
-    public function index(){
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
 
-        $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project list view'))) {
-            Alert::error('Error', 'You do not have permission to access this section.');
-
-            // If there is no previous URL, redirect to the dashboard
-            return redirect()->route('dashboard');
-               
-             
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index'
+            ]);
         }
+
+        // index_update_pending
+        public function index_update_pending(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view update pending'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.update-pending'
+            ]);
+        }
+
+        // index_review_pending
+        public function index_review_pending(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view review pending'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.review-pending'
+            ]);
+        }
+
  
-        return view('admin.project.index');
-    }
+
+
+
+
+    // ./ own
+
+
+    // all
+        // index_all
+        public function index_all(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.all'
+            ]);
+        }
+
+
+        // index_all_no_drafts
+        public function index_all_no_drafts(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view all no drafts'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.all.no-drafts'
+            ]);
+        }
+
+
+
+        // index_update_pending_all_linked
+        public function index_update_pending_all_linked(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view update pending all linked'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.update-pending.all-linked'
+            ]);
+        }
+
+        // index_review_pending_all_linked
+        public function index_review_pending_all_linked(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view review pending all linked'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.review-pending.all-linked'
+            ]);
+        }
+
+
+        // index_update_pending_all
+        public function index_update_pending_all(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view update pending all'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.update-pending.all'
+            ]);
+        }
+
+        // index_review_pending_all
+        public function index_review_pending_all(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view review pending all'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.review-pending.all'
+            ]);
+        }
+
+
+        // index_open_review
+        public function index_open_review(){
+
+            $user = Auth::user();
+            // Check if the user has the role "system access global admin" OR the permission "project list view"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view open review'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->route('dashboard');
+                
+                
+            }
+    
+            return view('admin.project.index',[
+                'route' => 'project.index.open-review'
+            ]);
+        }
+
+
+    // ./all
+
+
+
+
 
 
     // my_projects_index
-    public function my_projects_index(){
+    // public function my_projects_index(){
 
-        $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project list view'))) {
-            Alert::error('Error', 'You do not have permission to access this section.');
+    //     $user = Auth::user();
+    //     // Check if the user has the role "system access global admin" OR the permission "project list view"
+    //     if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view'))) {
+    //         Alert::error('Error', 'You do not have permission to access this section.');
 
-            // If there is no previous URL, redirect to the dashboard
-            return redirect()->route('dashboard');
+    //         // If there is no previous URL, redirect to the dashboard
+    //         return redirect()->route('dashboard');
                
              
-        }
+    //     }
  
-        return view('admin.project.my-projects.index');
-    }
+    //     return view('admin.project.my-projects.index');
+    // }
 
  
 
@@ -58,8 +252,8 @@ class ProjectController extends Controller
     public function in_review(){
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project review list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project review list view'))) {
+        // Check if the user has the role "system access global admin" OR the permission "project review list view"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review list view'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -77,8 +271,8 @@ class ProjectController extends Controller
     public function my_projects_in_review(){
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project review list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project review list view'))) {
+        // Check if the user has the role "system access global admin" OR the permission "project review list view"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review list view'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -95,10 +289,43 @@ class ProjectController extends Controller
 
 
     public function review($id){
-        
+         
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project review"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project review'))) {
+        $project = Project::findOrFail($id);
+
+
+        // check if the current project reviewer is an open review
+        if(!empty($project->getCurrentReviewer()) && empty($project->getCurrentReviewer()->user_id) ){
+            // Check if the user has the role "system access global admin" OR the permission "project review"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review create'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->to(url()->previous() ?? route('dashboard'));
+                
+                
+            }
+
+
+            //
+
+            // dd("Open Review");
+
+            $project_reviewer = $project->getCurrentReviewer();
+            $project_reviewer->user_id = Auth::user()->id;
+            $project_reviewer->updated_at = now();
+            $project_reviewer->updated_by = Auth::user()->id;
+            $project_reviewer->save();
+
+
+
+
+        }
+
+
+
+        // Check if the user has the role "system access global admin" OR the permission "project review"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review create'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -109,7 +336,7 @@ class ProjectController extends Controller
 
 
  
-        $project = Project::findOrFail($id);
+       
 
 
         // update the status of the project if it is submitted and when the reviewer enter this view, the new status should be in_review
@@ -141,8 +368,8 @@ class ProjectController extends Controller
     // create
     public function create(){
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project create"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project create'))) {
+        // Check if the user has the role "system access global admin" OR the permission "project create"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project create'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -158,8 +385,8 @@ class ProjectController extends Controller
     public function edit($id){
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project edit"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project edit'))) {
+        // Check if the user has the role "system access global admin" OR the permission "project edit"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project edit'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -177,7 +404,7 @@ class ProjectController extends Controller
             Alert::error('Error', 'Your project is submitted and to be reviewed by the reviewer. Editing is prohibited. Please wait until the review is complete');
 
             // If there is no previous URL, redirect to the dashboard
-            return redirect()->route('project.index.my-projects');
+            return redirect()->route('project.index');
         }
         
 
@@ -191,10 +418,10 @@ class ProjectController extends Controller
     public function show($id){
  
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project view"
+        // Check if the user has the role "system access global admin" OR the permission "project view"
         if (!$user ||
         
-            (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project view')) 
+            (!$user->can('system access global admin') && !$user->hasPermissionTo('project view')) 
             
             ) {
             Alert::error('Error', 'You do not have permission to access this section.');
@@ -220,8 +447,8 @@ class ProjectController extends Controller
     public function pending_project_update(){
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project update list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project update list view'))) {
+        // Check if the user has the role "system access global admin" OR the permission "project update list view"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project update list view'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
@@ -238,8 +465,8 @@ class ProjectController extends Controller
     public function my_projects_pending_project_update(){
 
         $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "project update list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('project update list view'))) {
+        // Check if the user has the role "system access global admin" OR the permission "project update list view"
+        if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project update list view'))) {
             Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard

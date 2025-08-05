@@ -1,12 +1,12 @@
 <!-- Card Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    <div wire:loading class="loading-overlay">
+    {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
             <div></div>
             <div></div>
         </div>
-    </div>
+    </div> --}}
 
     <form wire:submit="save">
         <!-- Card -->
@@ -89,5 +89,30 @@
         </div>
         <!-- End Card -->
     </form>
+
+    <!--  Loaders -->
+         
+
+        {{-- wire:target="save"   --}}
+        <div wire:loading  wire:target="save"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Saving record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    <!--  ./ Loaders -->
+
+    
 </div>
 <!-- End Card Section -->

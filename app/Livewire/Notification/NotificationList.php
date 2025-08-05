@@ -6,12 +6,25 @@ use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Events\NotificationsUpdated;
+use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class NotificationList extends Component
 {   
     protected $listeners = [
+        'notificationsCreated' => '$refresh',
         'notificationsDeleted' => '$refresh',
+        'notificationsUpdated' => '$refresh',
+        
+        'projectTimerUpdated' => '$refresh',
+        'documentTypeCreated' => '$refresh',
+        'documentTypeUpdated' => '$refresh',
+        'documentTypeDeleted' => '$refresh',
+        'activitylogCreated' => '$refresh',
+        'reviewerCreated' => '$refresh', 
+        'reviewerUpdated' => '$refresh',
+        'reviewerDeleted' => '$refresh',
     ];
 
     use WithFileUploads;
@@ -35,7 +48,7 @@ class NotificationList extends Component
     public $unread_count;
 
     public function mount(){
-        $this->unread_count = auth()->user()->notifications()
+        $this->unread_count = Auth::user()->notifications()
             ->whereNull('read_at') // Unread notifications
             ->count();
     }
@@ -43,9 +56,9 @@ class NotificationList extends Component
     // Method to delete selected records
     public function deleteSelected()
     {
-        auth()->user()->notifications()->whereIn('id', $this->selected_records)->delete(); // Delete the selected records
+        Auth::user()->notifications()->whereIn('id', $this->selected_records)->delete(); // Delete the selected records
 
-        auth()->user()->notifications()->whereIn('id', $this->selected_records)->notifications()->delete();
+        Auth::user()->notifications()->whereIn('id', $this->selected_records)->notifications()->delete();
 
 
         $this->selected_records = []; // Clear selected records
@@ -83,7 +96,17 @@ class NotificationList extends Component
         $this->count = 0;
         $this->selectAll = false;
 
+        $databaseNotification = auth()->user()->notifications()->whereIn('id', $this->selected_records)->first();
 
+        try {
+            // Dispatch your custom event or log it
+            event(new NotificationsUpdated($databaseNotification,Auth::user()->id));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch NotificationsUpdated event: ' . $e->getMessage(), [
+                'notification_id' => $databaseNotification->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
         
  
     }
@@ -101,12 +124,61 @@ class NotificationList extends Component
     public function toggleSelectAll()
     {
         if ($this->selectAll) {
-            $this->selected_records = auth()->user()->notifications()->pluck('id')->toArray(); // Select all records
+
+
+            $notifications = auth()->user()->notifications(); // Paginate 10 per page
+
+            // **Search by Message**
+            if (!empty($this->search)) {
+                $notifications->whereJsonContains('data->message', $this->search);
+            }
+            // **Search by Message using LIKE**
+            // if (!empty($this->search)) {
+            //     $notifications->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(data, '$.message')) LIKE ?", ["%{$this->search}%"]);
+            // }
+
+            // **Date Filter**
+            if ($this->date_filter === 'today') {
+                $notifications->whereDate('created_at', Carbon::today());
+            } elseif ($this->date_filter === 'this_week') {
+                $notifications->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+            } elseif ($this->date_filter === 'this_month') {
+                $notifications->whereMonth('created_at', Carbon::now()->month);
+            }
+
+
+            // **Read/Unread Filter**
+            if ($this->read_filter === 'unread') {
+                $notifications->whereNull('read_at'); // Unread notifications
+            } elseif ($this->read_filter === 'read') {
+                $notifications->whereNotNull('read_at'); // Read notifications
+            }
+
+
+            // **Sorting**
+            if ($this->sort_by === 'latest') {
+                $notifications->orderBy('created_at', 'DESC');
+            } elseif ($this->sort_by === 'oldest') {
+                $notifications->orderBy('created_at', 'ASC');
+            }
+
+
+
+            // **Pagination**
+            $this->selected_records = $notifications->pluck('id')->toArray();
+
+
+
+
+
+            // $this->selected_records = auth()->user()->notifications()->pluck('id')->toArray(); // Select all records
         } else {
             $this->selected_records = []; // Deselect all
         }
 
         $this->count = count($this->selected_records);
+
+        // dd($this->selected_records);
     }
 
     public function delete($notificationId){
@@ -142,7 +214,7 @@ class NotificationList extends Component
         }
 
         Alert::error('Error','Invalid notification or URL not found');
-        return redirect()->route('user.index');
+        return redirect()->route('dashboard');
     }
 
 
@@ -150,13 +222,13 @@ class NotificationList extends Component
         $notifications = auth()->user()->notifications(); // Paginate 10 per page
 
         // **Search by Message**
-        // if (!empty($this->search)) {
-        //     $notifications->whereJsonContains('data->message', $this->search);
-        // }
-        // **Search by Message using LIKE**
         if (!empty($this->search)) {
-            $notifications->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(data, '$.message')) LIKE ?", ["%{$this->search}%"]);
+            $notifications->whereJsonContains('data->message', $this->search);
         }
+        // **Search by Message using LIKE**
+        // if (!empty($this->search)) {
+        //     $notifications->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(data, '$.message')) LIKE ?", ["%{$this->search}%"]);
+        // }
 
         // **Date Filter**
         if ($this->date_filter === 'today') {

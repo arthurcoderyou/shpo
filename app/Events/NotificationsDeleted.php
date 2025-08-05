@@ -16,12 +16,14 @@ class NotificationsDeleted implements ShouldBroadcast,ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
     public DatabaseNotification $databaseNotification;
+    public $authId;
     /** 
      * Create a new event instance.
      */
-    public function __construct( DatabaseNotification $databaseNotification)
+    public function __construct( DatabaseNotification $databaseNotification,$authId)
     {
         $this->databaseNotification = $databaseNotification;
+        $this->$authId = $authId;
     }
 
     /**
@@ -31,8 +33,8 @@ class NotificationsDeleted implements ShouldBroadcast,ShouldQueue
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('notifications'),
+       return [
+            new PrivateChannel('notifications' ),
         ];
     }
 

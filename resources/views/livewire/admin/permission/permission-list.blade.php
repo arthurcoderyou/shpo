@@ -1,11 +1,11 @@
 <!-- Table Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    <!-- Loading for list -->
+    {{-- <!-- Loading for list -->
     <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
-    </div>
+    </div> --}}
 
     <!-- Card -->
     <div class="flex flex-col">
@@ -13,7 +13,7 @@
         <div class="p-1.5 min-w-full inline-block align-middle">
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden ">
             <!-- Header -->
-            <div class=" px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 ">
+            <div class=" px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 text-nowrap">
                 <div>
                 <h2 class="text-xl font-semibold text-gray-800 ">
                     Permissions
@@ -28,7 +28,7 @@
 
 
                     <input type="text" wire:model.live="search"
-                        class="min-w-32 py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
+                        class="min-w-32 py-2 px-3 inline-flex items-center gap-x-2 border-gray-200  rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
                         placeholder="Search">
 
 
@@ -45,7 +45,24 @@
                         </select>
                     </div>
 
-                    {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->hasRole('DSI God Admin')) --}}
+                    <div class="inline-flex items-center gap-x-2">
+
+                        <select wire:model.live="module" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500   ">
+                            <option value="">Select module</option>
+
+                            @if(!empty($module_permissions))
+
+                                @foreach ($module_permissions as $module => $module_permission_options)
+                                    <option>{{ $module }}</option> 
+                                @endforeach
+                                    
+                            @endif
+
+                            
+                        </select>
+                    </div>
+
+                    {{-- @if( Auth::user()->can('activity log delete') || Auth::user()->can('system access global admin')) --}}
                         <button
                             onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                             wire:click.prevent="deleteSelected"
@@ -242,5 +259,91 @@
         </div>
     </div>
     <!-- End Card -->
+
+
+    <!--  Loaders -->
+        {{-- wire:target="table"   --}}
+        <div wire:loading 
+            class="p-0 m-0"
+            style="padding: 0; margin: 0;">
+            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+                <div>   
+                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                </div>
+                <div>
+                    Loading lists, please wait...
+                </div> 
+            </div>
+        </div>
+
+        {{-- wire:target="delete"   --}}
+        <div wire:loading  wire:target="delete"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Deleting record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+
+        
+
+        {{-- wire:target="executeForceDelete"   --}}
+        <div wire:loading  wire:target="executeForceDelete"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Deleting record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+
+        
+        {{-- wire:target="executeRecover"   --}}
+        <div wire:loading  wire:target="executeRecover"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Recovering record...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+
+
+    <!-- ./  Loaders -->
+    
 </div>
 <!-- End Table Section -->

@@ -15,7 +15,12 @@ new class extends Component
 {
 
 
-    protected $listeners = ['autoLogout'];
+    protected $listeners = [
+        'autoLogout',
+        'projectTimerUpdated' => 'handleProjectTimerUpdated',
+        // 'notificationsCreated' => '$refresh',
+        // 'notificationsDeleted' => '$refresh',
+    ];
 
     public function autoLogout()
     {
@@ -32,7 +37,7 @@ new class extends Component
     public $document_types_exists = false;
     public $time_setup = false;
 
-    public $unread_count;
+    // public $unread_count;
 
 
     public ?Project $current_route_project;
@@ -50,15 +55,26 @@ new class extends Component
         $this->document_types_exists = DocumentType::count() > 0;
         $this->time_setup = $this->isProjectTimerSetup();
 
-        $this->unread_count = auth()->user()->notifications()
-            ->whereNull('read_at') // Unread notifications
-            ->count();
+        // $this->unread_count = auth()->user()->notifications()
+        //     ->whereNull('read_at') // Unread notifications
+        //     ->count();
 
 
         $this->current_route_project = !empty(request()->route('project')) ? Project::find(request()->route('project')) : null;
 
 
 
+    }
+
+
+    
+
+
+    public function handleProjectTimerUpdated()
+    {
+        $this->unread_count = auth()->user()->notifications()
+            ->whereNull('read_at')
+            ->count();
     }
 
 
@@ -75,6 +91,11 @@ new class extends Component
             $projectTimer->reviewer_response_duration_type;
     }
 
+    public function updateUnreadCount()
+    {
+        // This will trigger the computed property to be reevaluated
+        $this->unreadCount = $this->getUnreadCountProperty();
+    }
 
 
     public function markDeviceAsTrusted($answer)
@@ -302,14 +323,17 @@ new class extends Component
                             Dashboard
                         </a>
 
-                        <!-- only show for users that has role -->
-                        @if(Auth::user()->roles->isNotEmpty())
+                        <!-- only show for users that has role and permissions for project  -->
+                        @if(Auth::user()->roles->isNotEmpty()  )
+
+                            @if(authorizeWithModules(['Project Own', 'Project Own Override']))
                             <!-- Projects -->
                             <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
                                 <button id="hs-header-base-dropdown" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
-                                {{ request()->routeIs('project.index.my-projects')  ||
-                                    request()->routeIs('project.in_review.my-projects')  ||
-                                    request()->routeIs('project.pending_project_update.my-projects') ||
+                                {{ 
+                                    // request()->routeIs('project.index.my-projects')  ||
+                                    // request()->routeIs('project.in_review.my-projects')  ||
+                                    // request()->routeIs('project.pending_project_update.my-projects') ||
                                     request()->routeIs('project.index') || request()->routeIs('project.in_review') ||
                                     request()->routeIs('reviewer.index') || request()->routeIs('project.edit') || 
                                     request()->routeIs('project.create') || request()->routeIs('project.show') || 
@@ -318,7 +342,8 @@ new class extends Component
                                     request()->routeIs('project_timer.index') || 
                                     request()->routeIs('document_type.index') || request()->routeIs('document_type.edit') || 
                                     request()->routeIs('project.pending_project_update') || 
-                                    request()->routeIs('review.index') 
+                                    request()->routeIs('review.index') || 
+                                    request()->routeIs('project.index.open-review')
 
                                 ? $active : $inactive }}
                                 " 
@@ -333,7 +358,7 @@ new class extends Component
                                 <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 " role="menu" aria-orientation="vertical" aria-labelledby="hs-header-base-dropdown">
                                     <div class="py-1 md:px-1 space-y-0.5">
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project create'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('project create'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project.create') 
 
                                             ? $active : $inactive }}" 
@@ -347,9 +372,164 @@ new class extends Component
                                         @endif
 
 
-                                        {{-- ALL --}}
+                                        {{-- ALL  --}}
 
-                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update all list view'))
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view all'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.all') ||  
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.all') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        All Projects &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.all'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending all'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.update-pending.all')     
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.update-pending.all') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        All Projects Update Pending &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.update-pending.all'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending all'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.review-pending.all')     
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.review-pending.all') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        All Projects Review Pending &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.review-pending.all'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view all no drafts'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.all.no-drafts') ||  
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.all.no-drafts') }}">
+ 
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        All Projects No Drafts  &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.all.no-drafts'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view open review'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.open-review') 
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.open-review') }}">
+ 
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Open Review Projects  &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.open-review'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending all linked'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.update-pending.all-linked')     
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.update-pending.all-linked') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Linked Projects Update Pending &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.update-pending.all-linked'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending all linked'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.review-pending.all-linked')     
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.review-pending.all-linked') }}">
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Linked Projects Review Pending &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.review-pending.all-linked'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            {{-- @if(Auth::user()->can('system access global admin') || Auth::user()->can('project update all list view'))
                                                 <a class="p-2 md:px-3  flex items-center text-sm {{ 
                                                 request()->routeIs('project.in_review')  
                                                 ? $active : $inactive }}" 
@@ -370,7 +550,7 @@ new class extends Component
 
 
 
-                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update all list view'))
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project update all list view'))
                                                 <a class="p-2 md:px-3  flex items-center text-sm {{ 
                                                 request()->routeIs('project.pending_project_update')  
                                                 ? $active : $inactive }}" 
@@ -387,32 +567,11 @@ new class extends Component
                                                     title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
                                                     >{{ $projects_for_review }}</span>
                                                 </a>
-                                            @endif
+                                            @endif --}}
 
                                               
 
-                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project all list view'))
-                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                    request()->routeIs('project.index') ||  
-                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
-                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
-                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
-
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.index') }}">
-
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-                                                        All Projects &nbsp;&nbsp;
-                                                    </span>
-                                                    @php 
-                                                        $projects_count = 0;
-                                                        $projects_count = Project::countProjects(); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
-                                                        >{{ $projects_count }}</span>
-                                                </a>
-                                            @endif
+                                            
                                              
 
                                             
@@ -423,43 +582,22 @@ new class extends Component
 
 
                                         {{-- OWNED --}}
-                                           
-
-                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project update list view'))
-                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
-                                                request()->routeIs('project.pending_project_update.my-projects')  
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.pending_project_update.my-projects') }}">
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-
-                                                    Your Projects Update Pending    &nbsp; 
-                                                    </span>
-                                                    @php 
-                                                        $projects_for_review = 0;
-                                                        $projects_for_review = Project::countProjectsForUpdate("yes"); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
-                                                    >{{ $projects_for_review }}</span>
-                                                </a>
-                                            @endif
-
-                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project list view'))
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view'))
                                                 <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                    request()->routeIs('project.index.my-projects') ||  
+                                                    request()->routeIs('project.index') ||  
                                                     ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
                                                     ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
                                                     ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
 
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.index.my-projects') }}">
+                                                href="{{ route('project.index') }}">
 
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
                                                         Your Projects &nbsp;&nbsp;
                                                     </span>
                                                     @php 
                                                         $projects_count = 0;
-                                                        $projects_count = Project::countMyProjects(); 
+                                                        $projects_count = Project::countProjects('project.index'); 
                                                     @endphp
                                                     <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
                                                         title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
@@ -467,18 +605,18 @@ new class extends Component
                                                 </a>
                                             @endif  
 
-
-                                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('project review list view'))
-                                                <a class="p-2 md:px-3  flex items-center justify-center text-sm {{ request()->routeIs('project.in_review.my-projects')  || request()->routeIs('project.review')   
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending'))
+                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
+                                                request()->routeIs('project.index.update-pending')  
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.in_review.my-projects') }}">
+                                                href="{{ route('project.index.update-pending') }}">
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
-                                                        Your Projects In Review    &nbsp;&nbsp; 
-                                                    </span> 
-                                                    
+
+                                                    Your Projects Update Pending    &nbsp; 
+                                                    </span>
                                                     @php 
                                                         $projects_for_review = 0;
-                                                        $projects_for_review = Project::countProjects("in_review","yes"); 
+                                                        $projects_for_review = Project::countProjects('project.index.update-pending'); 
                                                     @endphp
                                                     <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
                                                     title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
@@ -486,13 +624,34 @@ new class extends Component
                                                 </a>
                                             @endif
 
+                                            
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending'))
+                                                <a class="p-2 md:px-3  flex items-center justify-center text-sm {{ request()->routeIs('project.index.review-pending')  || request()->routeIs('project.review')   
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.review-pending') }}">
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Your Projects In Review    &nbsp;&nbsp; 
+                                                    </span> 
+                                                    
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjects('project.index.review-pending'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif 
+
 
                                         {{-- ./ OWNED --}}
 
                                         
 
 
-                                        @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('review list view'))
+                                        @if(Auth::user()->can('system access global admin')  || Auth::user()->can('review list view'))
                                             <a class="p-2 md:px-3  flex items-center text-sm {{ 
                                             request()->routeIs('review.index')  
                                             ? $active : $inactive }}" 
@@ -512,7 +671,7 @@ new class extends Component
 
  
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('reviewer list view'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('reviewer list view'))
                                             <a class="p-2 md:px-3 flex   items-center text-sm {{ request()->routeIs('reviewer.index')  ? $active : $inactive }}" 
                                             href="{{ route('reviewer.index') }}">
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
@@ -531,7 +690,7 @@ new class extends Component
 
                                         
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('timer list view'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('timer list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project_timer.index')  ? $active : $inactive }}" 
                                             href="{{ route('project_timer.index') }}">
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
@@ -547,7 +706,7 @@ new class extends Component
                                             </a>
                                         @endif
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('document type list view'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('document_type.index')  ? $active : $inactive }}" 
                                             href="{{ route('document_type.index') }}">
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
@@ -568,11 +727,21 @@ new class extends Component
                                 </div>
                             </div>
                             <!-- End Projects -->
+                            @endif
+
+                            @if(authorizeWithModules(['User','Role','Permission']))
 
                             <!-- Dropdown -->
                             <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
 
-                                @if(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin'))
+                                @if(
+                                    Auth::user()->can('system access global admin') || 
+                                    Auth::user()->can('user list view') ||
+                                    Auth::user()->can('role list view') ||
+                                    Auth::user()->can('permission list view') || 
+                                    Auth::user()->can('role list view')
+                                
+                                    )
                                 <button id="user_manager" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
                                     @if(request()->routeIs('projects') ||
                                         request()->routeIs('user.index') || request()->routeIs('user.edit') || request()->routeIs('user.create') ||
@@ -588,11 +757,11 @@ new class extends Component
                                     User Manager
                                     <svg class="hs-dropdown-open:-rotate-180 md:hs-dropdown-open:rotate-0 duration-300 shrink-0 size-4 ms-auto md:ms-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                 </button>
-                                @endif
+                                {{-- @endif --}}
                                 <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 " role="menu" aria-orientation="vertical" aria-labelledby="user_manager">
                                     <div class="py-1 md:px-1 space-y-0.5">
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('user list view'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('user list view'))
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('user.index') || request()->routeIs('user.edit') || request()->routeIs('user.create') ? $active : $inactive }}"
                                         href="{{ route('user.index') }}">
                                             Users
@@ -600,14 +769,14 @@ new class extends Component
                                         @endif
 
                                         
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('role list view'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('role list view'))
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('role.index') || request()->routeIs('role.edit') || request()->routeIs('role.create') || request()->routeIs('role.add_permissions') ? $active : $inactive }}" 
                                         href="{{ route('role.index') }}">
                                             Roles
                                         </a>
                                         @endif
 
-                                        @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('permission list view'))
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('permission list view'))
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('permission.index') || request()->routeIs('permission.edit') || request()->routeIs('permission.create') ? $active : $inactive }}"
                                         href="{{ route('permission.index') }}">
                                             Permissions
@@ -616,16 +785,70 @@ new class extends Component
 
                                     </div>
                                 </div>
+
+                                @endif
+
                             </div>
                             <!-- End Dropdown -->
-
+                            @endif
                             
-                            @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('activity log list view'))  
+                            @if(authorizeWithModules(['Activity Logs']))  
                             <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('activity_logs.index') ? $active : $inactive }} "
                                 href="{{ route('activity_logs.index') }}" >
                                 <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 Activity Logs
                             </a>
+                            @endif
+
+                           @if(authorizeWithModules(['Setting']))
+
+                            <!-- Dropdown -->
+                            <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
+
+                                @if(
+                                    Auth::user()->can('system access global admin') 
+                                
+                                    )
+                                <button id="user_manager" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
+                                    @if(
+                                        request()->routeIs('setting.index')  || request()->routeIs('setting.edit') || request()->routeIs('setting.create') ||
+                                         request()->routeIs('setting.manager') || request()->routeIs('setting.manager.edit')
+                                        )
+                                        {{ $active }}
+                                    @else
+                                        {{  $inactive  }}
+                                    @endif
+                                    " aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
+                                    <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 2.5-2.5L3 5"/><path d="m3 19 2.5-2.5L3 14"/><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/></svg>
+                                    Settings
+                                    <svg class="hs-dropdown-open:-rotate-180 md:hs-dropdown-open:rotate-0 duration-300 shrink-0 size-4 ms-auto md:ms-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+                                {{-- @endif --}}
+                                <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 " role="menu" aria-orientation="vertical" aria-labelledby="user_manager">
+                                    <div class="py-1 md:px-1 space-y-0.5">
+
+                                        @if( Auth::user()->can('system access global admin') )
+                                        <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('setting.manager') || request()->routeIs('setting.manager.edit') ? $active : $inactive }}"
+                                        href="{{ route('setting.manager') }}">
+                                            Settings Manager
+                                        </a>
+                                        @endif
+
+                                        
+                                        @if(Auth::user()->can('system access global admin') )
+                                        <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('setting.index') || request()->routeIs('setting.edit') || request()->routeIs('setting.create')  ? $active : $inactive }}" 
+                                        href="{{ route('setting.index') }}">
+                                            Setting Keys
+                                        </a>
+                                        @endif
+ 
+                                    </div>
+                                </div>
+
+                                @endif
+
+                            </div>
+                            <!-- End Dropdown -->
                             @endif
 
                             {{-- <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('forum.index') ? $active : $inactive }} "
@@ -681,7 +904,7 @@ new class extends Component
 
                 <!-- Button Group -->
                 <div class=" flex flex-wrap items-center gap-x-1.5">
-                    @if(Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('profile update information'))
+                    @if(authorizeWithModules(['Profile']) || Auth::user()->can('profile update information'))
                     <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('profile') ? $active : $inactive }} " href="{{ route('profile') }}" >
                         <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         {{-- Profile --}}
@@ -698,21 +921,12 @@ new class extends Component
                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 25.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416l400 0c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4l0-25.4c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm0 96c61.9 0 112 50.1 112 112l0 25.4c0 47.9 13.9 94.6 39.7 134.6L72.3 368C98.1 328 112 281.3 112 233.4l0-25.4c0-61.9 50.1-112 112-112zm64 352l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7s18.7-28.3 18.7-45.3z"/></svg>
     
                     </button> --}}
-
-                    <button type="button" class="relative overflow-visible inline-flex justify-center items-center size-8 text-sm font-semibold rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 focus:outline-hidden focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
-                    aria-haspopup="dialog" aria-expanded="false" aria-controls="notification-panel" data-hs-overlay="#notification-panel"
-                    
-                    >
-                        <svg class="shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
-                          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
-                        </svg>
-                        <span class="absolute top-0 end-0 inline-flex items-center py-0.5 px-1.5 rounded-full text-xs font-medium transform -translate-y-1/2 translate-x-1/2 bg-red-500 text-white">{{ $unread_count ?? 0 }}</span>
-                    </button>
-
+                    @if(authorizeWithModules(['Notifications']) )
+                        
+                    <livewire:notification.notification-counter/>
 
                     <livewire:layout.notification-panel />
-                    
+                    @endif
 
 
                 <div class="my-2 md:my-0 md:mx-2">
@@ -737,7 +951,24 @@ new class extends Component
     </header>
     <!-- ========== END HEADER ========== -->
 
+    <!-- Loaders -->
+        {{-- wire:target="logout"   --}}
+        <div wire:loading  wire:target="logout"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Logging out...
+                    </div>
+                </div>
+            </div>
 
-   
-    
+            
+        </div>
+    <!-- ./Loaders -->
 </nav>

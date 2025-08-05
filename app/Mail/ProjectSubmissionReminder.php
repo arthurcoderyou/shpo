@@ -14,7 +14,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class ProjectSubmissionReminder extends Mailable 
-// implements ShouldQueue
+implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

@@ -51,10 +51,7 @@
               <h3 class="text-xl sm:text-2xl font-medium text-gray-800 ">
                 {{ $reviewersUpdatePending ?? 0 }}
               </h3>
-
-              
-
-
+ 
 
             </div>
           </div>

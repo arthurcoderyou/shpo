@@ -91,15 +91,15 @@ class ProjectList extends Component
     ];
 
 
-    public $status;
+    public $route;
     public $myProjects;
 
     public $home_route;
  
-    public function mount($status = 'all', $myProjects  = false){
+    public function mount($route = 'project.index' ){
+        // dd($route);
 
-
-        $this->status = $status;
+        $this->route = $route;
         /**
          * options for status
          * projects
@@ -108,15 +108,7 @@ class ProjectList extends Component
          */
 
 
-        $this->myProjects = $myProjects;
-        /**
-         * options
-         * true
-         * false
-         */
-
-
-
+         
 
         // get the current route
         // dd(request()->routeIs('project.index'));
@@ -134,14 +126,7 @@ class ProjectList extends Component
         $this->setReviewStatusArray();
 
 
-
-        // route controllers 
-            $this->routeIsMyProjects = request()->routeIs('project.index.my-projects');
-            $this->routeIsReview = request()->routeIs('project.in_review');
-            $this->routeIsPendingProject = request()->routeIs('project.pending_project_update');
-
-
-
+ 
 
 
         $this->project_status = request()->query('project_status', ''); // Default to empty string if not set
@@ -150,48 +135,51 @@ class ProjectList extends Component
         
         $this->projects_count = 0;
  
-        $this->setHomeRoute();
+        $this->home_route = route($route);
+
+        // dd($this->home_route);
+
 
 
     }
 
 
-    public function setHomeRoute(){
+    // public function setHomeRoute(){
 
-        $user = Auth::user();
+    //     $user = Auth::user();
 
-        switch ($this->status) {
-            case 'projects':
-                if ($this->myProjects) {
-                    $this->home_route = route('project.index.my-projects');
-                } else {
-                    $this->home_route = route('project.index');
+    //     switch ($this->status) {
+    //         case 'projects':
+    //             if ($this->myProjects) {
+    //                 $this->home_route = route('project.index');
+    //             } else {
+    //                 $this->home_route = route('project.index');
                      
-                }
-                break;
+    //             }
+    //             break;
 
-            case 'pending_update_projects':
-                if ($this->myProjects) {
-                    $this->home_route = route('project.pending_project_update.my-projects');
-                } else {
-                    $this->home_route = route('project.pending_project_update');
+    //         case 'pending_update_projects':
+    //             if ($this->myProjects) {
+    //                 $this->home_route = route('project.pending_project_update.my-projects');
+    //             } else {
+    //                 $this->home_route = route('project.pending_project_update');
                      
-                }
-                break;
+    //             }
+    //             break;
 
-            case 'in_review_projects':
-                if ($this->myProjects) {
-                    $this->home_route = route('project.in_review.my-projects');
-                } else {
-                    $this->home_route = route('project.in_review'); 
-                }
-                break;
+    //         case 'in_review_projects':
+    //             if ($this->myProjects) {
+    //                 $this->home_route = route('project.in_review.my-projects');
+    //             } else {
+    //                 $this->home_route = route('project.in_review'); 
+    //             }
+    //             break;
 
-            default:
-                $this->home_route = route('project.index.my-projects');
-                break;
-        }
-    }
+    //         default:
+    //             $this->home_route = route('project.index');
+    //             break;
+    //     }
+    // }
 
 
     public function setProjectStatusArray()
@@ -205,8 +193,13 @@ class ProjectList extends Component
 
         ];
 
-        if (auth()->user()->hasRole('DSI God Admin') || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('User')) {
-           $this->project_status_options = ["draft" => "Draft"] + $this->project_status_options; // Add "Draft" at the beginning
+        if ( (auth()->user()->can('system access global admin') || auth()->user()->can('project list view all')) || request()->routeIs('project.index')  ) {
+           $this->project_status_options = [
+                "draft" => "Draft",
+                "on_que" => "On Que",
+            ] + $this->project_status_options; // Add "Draft" and "On Que at the beginning 
+
+
         }
  
     }
@@ -227,65 +220,68 @@ class ProjectList extends Component
 
     public function updateTitleAndSub()
     {
-        $user = Auth::user();
-
-        switch ($this->status) {
-            case 'projects':
-                if ($this->myProjects) {
-                    // if ($user->hasRole('User')) {
-                    //     $this->title = 'My Projects';
-                    //     $this->subtitle = 'Listing of your submitted projects';
-                    // } elseif ($user->hasRole('Reviewer')) {
-                    //     $this->title = 'Assigned Projects';
-                    //     $this->subtitle = 'Projects assigned to you for review';
-                    // } elseif ($user->hasRole('Admin') || $user->hasRole('DSI God Admin')) {
-                    //     $this->title = 'Managed Projects';
-                    //     $this->subtitle = 'Projects managed under admin view';
-                    // } else {
-                        $this->title = 'Your Projects';
-                        $this->subtitle = 'Listing of your projects';
-                    // }
-                } else {
-                    $this->title = 'All Projects';
-                    $this->subtitle = 'Listing of all projects';
-                }
+        switch ($this->route) {
+            case 'project.index':
+                $this->title = 'Your Projects';
+                $this->subtitle = 'Listing of your projects';
                 break;
 
-            case 'pending_update_projects':
-                if ($this->myProjects) {
-                    $this->title = 'Your Projects to Update';
-                    $this->subtitle = 'Projects you submitted that need updates';
-                } else {
-                    $this->title = 'Projects for Update';
-                    $this->subtitle = 'All projects that need to be updated';
-                }
+            case 'project.index.update-pending':
+                $this->title = 'Your Projects - Update Pending';
+                $this->subtitle = 'Projects you own that have pending updates';
                 break;
 
-            case 'in_review_projects':
-                if ($this->myProjects) {
-                    
-                    $this->title = 'Your Projects in Review';
-                    $this->subtitle = 'Your projects currently under review';
-                    
-                } else {
-                     if ($user->hasRole('Reviewer')) {
-                        $this->title = 'Projects Pending Review';
-                        $this->subtitle = 'Projects assigned to you for review';
-                    } else{
-                        $this->title = 'Projects for Review';
-                        $this->subtitle = 'All projects that need to be reviewed';
-                    }
-
-                    
-                }
+            case 'project.index.review-pending':
+                $this->title = 'Your Projects - Review Pending';
+                $this->subtitle = 'Projects you own that are pending review';
                 break;
+
+            case 'project.index.all':
+                $this->title = 'All Projects';
+                $this->subtitle = 'Listing of all submitted projects';
+                break;
+
+            case 'project.index.update-pending.all':
+                $this->title = 'All Projects - Update Pending';
+                $this->subtitle = 'All projects in the system that have pending updates';
+                break;
+
+            case 'project.index.review-pending.all':
+                $this->title = 'All Projects - Review Pending';
+                $this->subtitle = 'All projects in the system that are pending review';
+                break;
+
+
+
+            case 'project.index.all.no-drafts':
+                $this->title = 'All Projects (No Drafts)';
+                $this->subtitle = 'Listing of all non-draft projects';
+                break;
+
+            case 'project.index.update-pending.all-linked':
+                $this->title = 'Linked Projects - Update Pending';
+                $this->subtitle = 'Projects you are reviewing that require updates';
+                break;
+
+            case 'project.index.review-pending.all-linked':
+                $this->title = 'Linked Projects - Review Pending';
+                $this->subtitle = 'Projects you are reviewing that are pending review';
+                break;
+
+            case 'project.index.open-review':
+                $this->title = 'Open Review projects';
+                $this->subtitle = 'Projects without a confirmed reviewer';
+                break;  
+
+            
 
             default:
                 $this->title = 'Projects';
-                $this->subtitle = 'Project listing';
+                $this->subtitle = 'General project listing';
                 break;
         }
     }
+
 
 
 
@@ -305,7 +301,7 @@ class ProjectList extends Component
 
             // check if project is not created by the user or the project is not draft
             /**Identify the records to disply by roles  */
-            if(Auth::user()->hasRole('User')){
+            if(Auth::user()->can('system access user')){
                  
                 if($project->created_by !== Auth::id()){
                     Alert::error('Error', 'Selected projects are not yours');
@@ -319,7 +315,7 @@ class ProjectList extends Component
                 
 
 
-            }elseif(Auth::user()->hasRole('Reviewer')){
+            }elseif(Auth::user()->can('system access reviewer')){
                 if($project->created_by !== Auth::id()){
                     Alert::error('Error', 'Selected projects are not yours');
                     return redirect()->route('project.index');
@@ -331,7 +327,7 @@ class ProjectList extends Component
                 }
 
 
-            }elseif(Auth::user()->hasRole('Admin')){
+            }elseif(Auth::user()->can('system access admin')){
 
             }
 
@@ -412,7 +408,7 @@ class ProjectList extends Component
         Alert::success('Success', 'Selected projects deleted successfully');
 
         // if($project->created_by == auth()->user()->id){
-        //     return redirect()->route('project.index.my-projects');
+        //     return redirect()->route('project.index');
 
         // }else{
 
@@ -436,7 +432,7 @@ class ProjectList extends Component
 
 
             /**Identify the records to disply by roles  */
-            if(Auth::user()->hasRole('User')){
+            if(Auth::user()->can('system access user')){
                 // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
             
 
@@ -454,7 +450,7 @@ class ProjectList extends Component
                 $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
 
 
-            }elseif(Auth::user()->hasRole('Reviewer')){
+            }elseif(Auth::user()->can('system access reviewer')){
                 // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
                 
                 if($this->routeIsReview){
@@ -471,7 +467,7 @@ class ProjectList extends Component
                 $this->selected_records = $this->selected_records->whereNot('status','draft');
 
 
-            }elseif(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin')){
+            }elseif(Auth::user()->can('system access admin') || Auth::user()->can('system access global admin')){
                 // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
                 
                 if($this->routeIsReview){
@@ -506,18 +502,28 @@ class ProjectList extends Component
     public function delete($id){
         $project = Project::find($id);
 
+        if( Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('project delete override')  ){
+        }else{
+ 
+            if($project->status !== "draft"  ){
+                Alert::error('Error','Project is not draft. It cannot be deleted. Please contact administrator if you want to delete the project ');
 
-        if($project->status !== "draft" || !Auth::user()->hasRole('DSI God Admin') || !Auth::user()->hasRole('Admin')  ){
-            Alert::error('Error','Project is not draft. It cannot be deleted. Please contact administrator if you want to delete the project ');
+                if($project->created_by == auth()->user()->id){
+                    return redirect()->route('project.index');
+                }else{
+                    return redirect()->route($this->home_route);
+                }
 
-            if($project->created_by == auth()->user()->id){
-                return redirect()->route('project.index.my-projects');
-            }else{
-                return redirect()->route('project.index');
+                
             }
 
             
         }
+            
+
+
+        // $project->status == "draft" && Auth::user()->id == $project->created_by
+
 
 
 
@@ -592,14 +598,19 @@ class ProjectList extends Component
         // return redirect()->route('project.index');
 
         // if($project->created_by == auth()->user()->id){
-        //     return redirect()->route('project.index.my-projects');
+        //     return redirect()->route('project.index');
 
         // }else{
 
         //     return redirect()->route('project.index');
         // }
 
-        return redirect()->back();
+        // return ProjectHelper::returnHomeRouteBasedOnProject($project);
+        if($project->created_by == auth()->user()->id){
+            return redirect()->route('project.index');
+        }else{
+            return redirect($this->home_route);
+        }
 
 
 
@@ -611,6 +622,12 @@ class ProjectList extends Component
     public function submit_project($project_id){
 
         ProjectHelper::submit_project($project_id);
+
+    }
+
+    public function open_review_project($project_id){
+
+        ProjectHelper::open_review_project($project_id);
 
     }
     
@@ -781,199 +798,90 @@ class ProjectList extends Component
 
     }
  
+ 
 
 
-    // protected function applyStatusBasedFilters($query,$user){
-
-    //     /**
-    //      * options for status
-    //      * projects
-    //      * pending_update_projects
-    //      * in_review_projects
-    //      */
-
-    //      /**
-    //      * options
-    //      * true
-    //      * false
-    //      */
-
-
-
-    //     // ownership based filters 
-    //     // myProjects = true    shows owned
-    //     if($this->myProjects == true){ 
-
-
-    //         if ($this->status == 'projects') {
-
-    //             $query->ownedBy($user->id); 
-
-    //         }else if($this->status == 'pending_update_projects'){
-
-    //             $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
-                
-    //         }else if($this->status == 'in_review_projects'){
-
-    //             $query->ownedBy($user->id)->inReview($query)->notDraft($query); 
-
-    //         }
-
-
-    //     }else{ // myProjects = false    shows all
-
-
-    //         if ($this->status == 'projects') {
-
-    //             $query->ownedBy($user->id); 
-
-    //         }else if($this->status == 'pending_update_projects'){
-
-    //             $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
-                
-    //         }else if($this->status == 'in_review_projects'){
-
-    //             $query->assignedToReviewer($user->id)->inReview($query)->notDraft($query); 
-
-    //         }
-
-    //     }
-
-
-
-    //     return $query;
-    // }
-
-
-
-     /**
-         * options for status
-         * projects
-         * pending_update_projects
-         * in_review_projects
-         */
-
-         /**
-         * options
-         * true
-         * false
-         */
-
-
-    
-    protected function applyRoleBasedFilters($query)
+    protected function applyRouteBasedFilters($query)
     {
         $user = Auth::user();
+        $userId = $user->id;
 
-        if ($user->hasRole('User')) {
+        if ($this->route) {
+            switch ($this->route) {
+                case 'project.index':
+                    // Owned projects
+                    $query->ownedBy($userId);
+                    break;
 
+                case 'project.index.update-pending':
+                    // Owned, update pending, not draft
+                    $query->ownedBy($userId)
+                        ->pendingUpdate($query)
+                        ->notDraft($query);
+                    break;
 
-            // ownership based filters 
-            // myProjects = true    shows owned
-            if($this->myProjects == true){ 
+                case 'project.index.review-pending':
+                    // Owned, review pending, not draft
+                    $query->ownedBy($userId)
+                        ->inReview($query)
+                        ->notDraft($query);
+                    break;
 
+                case 'project.index.all':
+                    break;
 
-                if ($this->status == 'projects') {
+                case 'project.index.all.no-drafts':
+                    // All, no draft
+                    $query->notDraft($query);
+                    break;
 
-                    $query->ownedBy($user->id); 
+                case 'project.index.update-pending.all-linked':
+                    // User is reviewer; project is update pending and linked to user
+                    $query->pendingUpdate($query)
+                        ->notDraft($query)
+                        ->whereHas('project_reviewers', function ($q) use ($userId) {
+                            $q->where('user_id', $userId)->where('status', true);
+                        });
+                    break;
 
-                }else if($this->status == 'pending_update_projects'){
+                case 'project.index.review-pending.all-linked':
+                    // User is reviewer; project is review pending and linked to user
+                    $query->inReview($query)
+                        ->notDraft($query)
+                        ->whereHas('project_reviewers', function ($q) use ($userId) {
+                            $q->where('user_id', $userId)
+                                ->where('status', true)
+                                // ->where('review_status','pending')
+                                ;
+                        });
+                    break;
 
-                    $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
-                    
-                }else if($this->status == 'in_review_projects'){
+                case 'project.index.update-pending.all':
+                    // All update-pending projects
+                    $query->pendingUpdate($query)->notDraft($query);
+                    break;
 
-                    $query->ownedBy($user->id)->inReview($query)->notDraft($query); 
+                case 'project.index.review-pending.all':
+                    // All review-pending projects
+                    $query->inReview($query)->notDraft($query);
+                    break;
 
-                }
+                case 'project.index.open-review':
+                    // User is reviewer; project is review pending and linked to user
+                    $query->inReview($query)
+                        ->notDraft($query)
+                        ->whereHas('project_reviewers', function ($q) use ($userId) {
+                            $q->whereNull('user_id')
+                                ->where('status', true)
+                                // ->where('review_status','pending')
+                                ;
+                        });
+                    break;
 
-
-            }else{ // myProjects = false    shows all
-
-
-                if ($this->status == 'projects') {
-
-                    // $query->ownedBy($user->id); 
-
-                }else if($this->status == 'pending_update_projects'){
-
-                    $query->pendingUpdate($query)->notDraft($query); 
-                    
-                }else if($this->status == 'in_review_projects'){
-
-                    $query->assignedToReviewer($user->id)->inReview($query)->notDraft($query); 
-
-                }
-
-            }
-
-
-           
-        }
-
-        elseif ($user->hasRole('Reviewer')) {
-            // if ($this->routeIsReview) {
-            //     $query->notDraft()->assignedToReviewer($user->id);
-            // } else {
-            //     $query->notDraft()->ownedBy($user->id);
-            // }
-
-            // $this->applyStatusBasedFilters($query, $user);
-
-
-            // ownership based filters 
-            // myProjects = true    shows owned
-            if($this->myProjects == true){ 
-
-
-                if ($this->status == 'projects') {
-
-                    $query->ownedBy($user->id); 
-
-                }else if($this->status == 'pending_update_projects'){
-
-                    $query->ownedBy($user->id)->pendingUpdate($query)->notDraft($query); 
-                    
-                }else if($this->status == 'in_review_projects'){
-
-                    $query->ownedBy($user->id)->inReview($query)->notDraft($query); 
-
-                }
-
-
-            }else{ // myProjects = false    shows all
-
-
-                if ($this->status == 'projects') {
-
-                    $query->notDraft();
-
-                }else if($this->status == 'pending_update_projects'){
-
-                    $query->pendingUpdate($query)->notDraft($query); 
-                    
-                }else if($this->status == 'in_review_projects'){
-
-                    $query->assignedToReviewer($user->id)->inReview($query)->notDraft($query); 
-
-                }
-
-            }
-
-
-
-
-        }
-
-        elseif ($user->hasRole('Admin') || $user->hasRole('DSI God Admin')) {
-            if ($this->routeIsReview) {
-                $query->notDraft()
-                    ->whereHas('project_reviewers', fn($q) => $q->where('status', true))
-                    ->where('allow_project_submission', false);
-            } elseif ($this->routeIsPendingProject) {
-                $query->pendingUpdate();
-            } else {
-                $query->notDraft();
+                default:
+                    // Default to owned
+                    $query->ownedBy($userId);
+                    break;
             }
         }
 
@@ -1053,11 +961,7 @@ class ProjectList extends Component
     {
         $query = Project::query();
 
-        // if (!$this->routeIsMyProjects) {
-            $query = $this->applyRoleBasedFilters($query);
-        // } else {
-        //     $query->orWhere('created_by', Auth::id());
-        // }
+        $query = $this->applyRouteBasedFilters($query);
 
         if (!empty($this->search)) {
             $query->withSearch($this->search);
@@ -1073,6 +977,8 @@ class ProjectList extends Component
         }
 
         if (!empty($this->project_status)) {
+            // dd( $this->project_status);
+
             $query->where('status', $this->project_status);
         }
 

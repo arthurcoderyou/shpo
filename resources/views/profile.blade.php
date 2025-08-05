@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
 
-            @if(Auth::user()->hasRole('DSI God Admin')   )
+            @if(Auth::user()->can('system access global admin')   )
                 <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                     <div class="max-w-xl">
                         <livewire:profile.test-component />
@@ -17,7 +17,7 @@
                 </div>
             @endif
 
-            @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('profile update information'))
+            @if(Auth::user()->can('system access global admin')  || Auth::user()->can('profile update information'))
                 <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                     <div class="max-w-xl">
                         <livewire:profile.update-profile-information-form />
@@ -25,7 +25,7 @@
                 </div>
             @endif
 
-            @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('profile update password'))
+            @if(Auth::user()->can('system access global admin')  || Auth::user()->can('profile update password'))
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
                     <livewire:profile.update-password-form />
@@ -33,7 +33,7 @@
             </div>
             @endif
 
-            @if(Auth::user()->hasRole('DSI God Admin')  || Auth::user()->can('profile delete account'))
+            @if(Auth::user()->can('system access global admin')  || Auth::user()->can('profile delete account'))
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
                     <livewire:profile.delete-user-form />

@@ -85,9 +85,13 @@ class ProjectShow extends Component
 
 
         if($project->created_by == Auth::id()){
-            $this->home_route = route('project.index.my-projects');
-        }else{
             $this->home_route = route('project.index');
+        }elseif(Auth::user()->can('project list view all')){
+            $this->home_route = route('project.index.all');
+        }elseif(Auth::user()->can('project list view all no drafts')){
+            $this->home_route = route('project.index.all.no-drafts');
+        }else{
+            $this->home_route = route('dashboard');
         }
 
         
@@ -159,6 +163,8 @@ class ProjectShow extends Component
 
 
     }
+ 
+
  
     public function updated($fields){
         $this->validateOnly($fields,[

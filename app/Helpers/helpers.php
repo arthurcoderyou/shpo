@@ -1,21 +1,22 @@
 <?php 
 
+use App\Models\User;
+use App\Models\Review;
+use App\Models\Project;
+use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
-use App\Models\Project;
-use App\Models\ProjectReviewer;
 use App\Models\ProjectTimer;
-use App\Models\Review;
-use App\Models\Reviewer;
-use App\Models\User;
-use App\Notifications\ProjectReviewFollowupNotification;
-use App\Notifications\ProjectReviewFollowupNotificationDB;
+use App\Models\ProjectReviewer;
+use Illuminate\Support\Facades\Auth;
+use RealRashid\SweetAlert\Facades\Alert;
+use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
-use RealRashid\SweetAlert\Facades\Alert;
+use App\Notifications\ProjectReviewFollowupNotification;
+use App\Notifications\ProjectReviewFollowupNotificationDB;
 
 
  
@@ -83,7 +84,7 @@ if (!function_exists('submit_project')) {
 
         
         $project = Project::find($project_id);
-        dd($project);
+        // dd($project);
 
         $response_time_hours = 0;
 
@@ -406,3 +407,168 @@ if (!function_exists('getUser')) {
     }
 
 }
+ 
+// set the global admin authorization redirect for controllers 
+if (!function_exists('authorizeWithAdminOverrideForController')) {
+    function authorizeWithAdminOverrideForController(
+        string $requiredPermission,
+        string $redirectRoute = 'dashboard',
+        string $alertTitle = 'Error',
+        string $alertMessage = 'You do not have permission to access this section.',
+        string $withErrorTitle = 'error',
+        string $withErrorMessage = 'Unauthorized Access',
+    ) {
+        $user = Auth::user();
+
+        if (!$user || (!$user->hasPermissionTo('system access global admin') && !$user->hasPermissionTo($requiredPermission))) {
+            Alert::error($alertTitle, $alertMessage);
+
+            $redirect = url()->previous() !== url()->current()
+                ? redirect()->back()
+                : redirect()->route($redirectRoute);
+
+            return $redirect->withInput()->withErrors([
+                $withErrorTitle => $withErrorMessage,
+            ]);
+        }
+
+        return true;
+    }
+}
+
+// set the global admin authorization redirect for blade files  
+if (!function_exists('authorizeWithAdminOverrideForBlade')) {
+    function authorizeWithAdminOverrideForBlade(string $requiredPermission)
+    {
+        $user = Auth::user();
+
+        return $user && (
+            $user->can('system access global admin') || 
+            $user->can($requiredPermission)
+        );
+    }
+}
+
+
+// set the reviewer authorization redirect for blade files  
+if (!function_exists('authorizeWithReviewOverrideForBlade')) {
+    function authorizeWithReviewOverrideForBlade(string $requiredPermission)
+    {
+        $user = Auth::user();
+
+        return $user && (
+            $user->can('system access reviewer') || 
+            $user->can($requiredPermission)
+        );
+    }
+}
+
+
+
+// set the user authorization redirect for blade files  
+if (!function_exists('authorizeWithUserOverrideForBlade')) {
+    function authorizeWithUserOverrideForBlade(string $requiredPermission)
+    {
+        $user = Auth::user();
+
+        return $user && (
+            $user->can('system access user') || 
+            $user->can($requiredPermission)
+        );
+    }
+}
+
+// authorize based on modules
+if (!function_exists('authorizeWithModules')) {
+    function authorizeWithModules(array|string $modules): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Always allow global admin override
+        if ($user->can('system access global admin')) {
+            return true;
+        }
+
+        // Normalize input to array
+        $modules = is_array($modules) ? $modules : [$modules];
+
+        // Get permission names that belong to the specified modules
+        $permissions = Permission::whereIn('module', $modules)->pluck('name');
+
+        // Check if user has any of these permissions
+        foreach ($permissions as $permission) {
+            if ($user->can($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+
+// authorization function that needs 4 permissions to be true   , create, edit , delete, list view
+if (!function_exists('authorizeWithModulesByAllRequiredActions')) {
+    function authorizeWithModulesByAllRequiredActions(array|string $modules): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Always allow global admin override
+        if ($user->can('system access global admin')) {
+            return true;
+        }
+
+        $modules = is_array($modules) ? $modules : [$modules];
+
+        $requiredActions = [
+            'create',
+            'edit',
+            'delete',
+            'list view'
+        ];
+
+        foreach ($modules as $module) {
+            // Get all permission names related to the current module
+            $modulePermissions = Permission::where('module', $module)->pluck('name');
+
+            // Track which required actions the user has
+            $matchedActions = [
+                'create' => false,
+                'edit' => false,
+                'delete' => false,
+                'list view' => false,
+            ];
+
+            foreach ($modulePermissions as $permissionName) {
+                foreach ($requiredActions as $action) {
+                    // 'list view' requires exact match inside name, others can be partial
+                    if (
+                        $action === 'list view' && stripos($permissionName, 'list view') !== false ||
+                        $action !== 'list view' && stripos($permissionName, $action) !== false
+                    ) {
+                        if ($user->can($permissionName)) {
+                            $matchedActions[$action] = true;
+                        }
+                    }
+                }
+            }
+
+            // If the user does not have all required permissions for this module
+            if (in_array(false, $matchedActions, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+

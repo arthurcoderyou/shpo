@@ -18,12 +18,17 @@ class DocumentTypeCreated implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public DocumentType $document_type;
+
+    public $document_type_id;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct(DocumentType $document_type)
+    public function __construct(DocumentType $document_type,$authId)
     {
         $this->document_type = $document_type;
+        $this->document_type_id = $document_type->id;
+        $this->authId = $authId;
     }
 
     /**

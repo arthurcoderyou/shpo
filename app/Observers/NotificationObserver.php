@@ -2,6 +2,10 @@
 
 namespace App\Observers;
 
+use App\Events\NotificationsCreated;
+use App\Events\NotificationsDeleted;
+use App\Events\NotificationsUpdated;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Notifications\DatabaseNotification;
 
 class NotificationObserver
@@ -11,7 +15,15 @@ class NotificationObserver
      */
     public function created(DatabaseNotification $databaseNotification): void
     {
-        //
+        try {
+            // Dispatch your custom event or log it
+            event(new NotificationsCreated($databaseNotification,Auth::user()->id));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch NotificationsCreated event: ' . $e->getMessage(), [
+                'notification_id' => $databaseNotification->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
     /**
@@ -19,7 +31,15 @@ class NotificationObserver
      */
     public function updated(DatabaseNotification $databaseNotification): void
     {
-        //
+        try {
+            // Dispatch your custom event or log it
+            event(new NotificationsUpdated($databaseNotification,Auth::user()->id));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch NotificationsUpdated event: ' . $e->getMessage(), [
+                'notification_id' => $databaseNotification->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
     /**
@@ -29,9 +49,9 @@ class NotificationObserver
     {
        try {
             // Dispatch your custom event or log it
-            event(new \App\Events\NotificationsDeleted($databaseNotification));
+            event(new NotificationsDeleted($databaseNotification,Auth::user()->id));
         } catch (\Throwable $e) {
-            Log::error('Failed to dispatch NotificationDeleted event: ' . $e->getMessage(), [
+            Log::error('Failed to dispatch NotificationsDeleted event: ' . $e->getMessage(), [
                 'notification_id' => $databaseNotification->id,
                 'trace' => $e->getTraceAsString(),
             ]);

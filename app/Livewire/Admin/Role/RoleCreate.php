@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Role;
 
+use App\Events\RoleCreated;
 use App\Models\User;
 use Livewire\Component;
 use App\Models\ActivityLog;
@@ -13,6 +14,7 @@ class RoleCreate extends Component
 {
 
     public string $name = '';
+    public string $description = '';
 
 
     public function updated($fields){
@@ -21,6 +23,11 @@ class RoleCreate extends Component
                 'required',
                 'string',
                 'unique:roles,name',
+            ],
+
+            'description' => [
+                'nullable',
+                'string', 
             ],
 
         ]);
@@ -38,15 +45,20 @@ class RoleCreate extends Component
                 'string',
                 'unique:roles,name',
             ],
+            'description' => [
+                'nullable',
+                'string', 
+            ],
 
         ]);
 
         //save
-        Role::create([
+        $role = Role::create([
             'name' => $this->name,
+            'description' => $this->description,
         ]);
 
-
+        event(new RoleCreated($role, auth()->user()->id));
 
         ActivityLog::create([
             'log_action' => "Role \"".$this->name."\" created ",

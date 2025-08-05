@@ -18,12 +18,16 @@ class ReviewerCreated  implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public Reviewer $reviewer;
+    public $reviewer_id;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct(Reviewer $reviewer)
+    public function __construct($reviewer_id, $authId)
     {
-        $this->reviewer = $reviewer;
+        $this->reviewer = Reviewer::find($this);
+        $this->reviewer_id = $reviewer_id;
+        $this->authId = $authId;
     }
 
     /**
@@ -46,8 +50,9 @@ class ReviewerCreated  implements ShouldBroadcast, ShouldQueue
     public function broadcastWith(){
          
 
-        $reviewer = $this->reviewer;
+        $reviewer = Reviewer::find($this->reviewer_id); 
 
+        
         if(!empty($reviewer->document_type)){
             $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
         }else{

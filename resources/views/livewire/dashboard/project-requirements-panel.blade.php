@@ -3,6 +3,8 @@
     @if (  
       (!isset($errors['no_reviewers']) || $errors['no_reviewers'] == false)  
       &&  (!isset($errors['document_types_missing_reviewers']) || $errors['document_types_missing_reviewers'] == false) 
+      &&  (!isset($errors['no_initial_reviewers']) || $errors['no_initial_reviewers'] == false) 
+      &&  (!isset($errors['no_final_reviewers']) || $errors['no_final_reviewers'] == false) 
       &&  (!isset($errors['project_submission_times']) || $errors['project_submission_times'] == false )
       &&  (!isset($errors['no_document_types']) || $errors['no_document_types'] == false)
       )
@@ -42,7 +44,10 @@
     @endif
 
     @if(request()->routeIs('reviewer.index') && (!isset($errors['no_reviewers']) || $errors['no_reviewers'] == false)  
-      &&  (!isset($errors['document_types_missing_reviewers']) || $errors['document_types_missing_reviewers'] == false)  ) <!-- route to display the success message about the reviewers -->
+      &&  (!isset($errors['document_types_missing_reviewers']) || $errors['document_types_missing_reviewers'] == false)  
+      &&  (!isset($errors['no_initial_reviewers']) || $errors['no_initial_reviewers'] == false)
+      &&  (!isset($errors['no_final_reviewers']) || $errors['no_final_reviewers'] == false)
+      ) <!-- route to display the success message about the reviewers -->
         <div class="bg-green-50 border border-green-200 text-sm text-green-800 rounded-lg p-4 " role="alert" id="requirement-panel-success">
           <div class="flex">
             <div class="shrink-0">
@@ -95,9 +100,9 @@
               <div class="mt-2 text-sm text-red-700 ">
                 <ul class="list-disc space-y-1 ps-5">
 
-                  {{-- No Initial Reviewers --}}
+                  {{-- No Initial Reviewers  --}}
                   @if (isset($errors['no_initial_reviewers']) && $errors['no_initial_reviewers'] === true)
-                    @role('Admin|DSI God Admin')
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer']))
                       <li>
                         No <strong>initial</strong> reviewers have been assigned. Please
                         <a href="{{ route('reviewer.index') }}" class="underline">assign initial reviewers</a> to proceed.
@@ -108,10 +113,11 @@
                       </li>
                     @endrole
                   @endif
+                 
 
-                  {{-- No Final Reviewers --}}
+                  {{-- No Final Reviewers  --}}
                   @if (isset($errors['no_final_reviewers']) && $errors['no_final_reviewers'] === true)
-                    @role('Admin|DSI God Admin')
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer']))
                       <li>
                         No <strong>final</strong> reviewers have been assigned. Please
                         <a href="{{ route('reviewer.index') }}" class="underline">assign final reviewers</a> to proceed.
@@ -123,9 +129,25 @@
                     @endrole
                   @endif  
 
+                 
+
+                  @if ( $errors['no_administrators'] == true)
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['User'])) 
+                      <li>
+                        No project administrators have been setup. Please <a href="{{ route('user.index') }}" class="underline">add a administrator</a> before proceeding.
+                          
+                      </li> 
+                    @else
+                      <li>
+                        No project administrators have been setup. Please wait for the administrator to setup the administrators.
+                      </li>
+                    @endif
+                  @endif
+
+
 
                   @if (isset($errors['no_document_types']) && $errors['no_document_types'] == true)
-                    @role('Admin|DSI God Admin') 
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer'])) 
                       <li>
                         No project reviewers have been setup. Please <a href="{{ route('reviewer.index') }}" class="underline">setup reviewers</a> before proceeding.
                         
@@ -134,12 +156,12 @@
                       <li>
                         No project reviewers have been setup. Please wait for the administrator to setup the reviewers.
                       </li>
-                    @endrole
+                    @endif
                   @endif
 
 
                   @if (isset($errors['document_types_missing_reviewers']) && $errors['document_types_missing_reviewers'] === true)
-                    @role('Admin|DSI God Admin') 
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer']) ) 
                         <li>
                             Some document types have no project reviewers assigned.
                             Please <a href="{{ route('reviewer.index') }}" class="underline">set up reviewers</a> before proceeding.
@@ -174,7 +196,7 @@
               
 
                   @if (isset($errors['project_submission_times']) && $errors['project_submission_times'] == true)
-                    @role('Admin|DSI God Admin')
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Timer']))
                       <li>
                         Project submission times have not been set. Please <a href="{{ route('project_timer.index') }}" class="underline">specify the open and close times</a>.
                       </li>
@@ -187,7 +209,7 @@
 
 
                   @if (isset($errors['no_document_types']) && $errors['no_document_types'] == true)
-                    @role('Admin|DSI God Admin')
+                    @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Document Type']) )
                       <li>
                         No document types have been setup. Please <a href="{{ route('document_type.index') }}" class="underline">setup document types</a> before proceeding.
                       </li>

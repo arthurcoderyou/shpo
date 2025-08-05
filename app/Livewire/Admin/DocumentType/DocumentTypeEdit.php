@@ -60,8 +60,8 @@ class DocumentTypeEdit extends Component
 
 
 
-        // Alert::success('Success','Document type updated successfully');
-        // return redirect()->route('document_type.index');
+        Alert::success('Success','Document type updated successfully');
+        return redirect()->route('document_type.index');
     }
 
 

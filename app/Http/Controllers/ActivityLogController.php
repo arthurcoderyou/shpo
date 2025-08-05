@@ -11,17 +11,19 @@ class ActivityLogController extends Controller
 {
     // index
     public function index(){
-
-        $user = Auth::user();
-        // Check if the user has the role "DSI God Admin" OR the permission "activity log list view"
-        if (!$user || (!$user->hasRole('DSI God Admin') && !$user->hasPermissionTo('activity log list view'))) {
-            Alert::error('Error', 'You do not have permission to access this section.');
-
-            // If there is no previous URL, redirect to the dashboard
-            return redirect()->back()->withInput()->withErrors(['error' => 'Unauthorized Access'])
-                   ?: redirect()->route('dashboard');
-        }
  
+        
+
+        // Permission verification 
+              
+            // $auth = authorizeWithAdminOverrideForController('activity log list view');
+
+            // if ($auth !== true) {
+            //     return $auth; // This returns a redirect to dashboard
+            // }
+ 
+        // ./ Permission verification
+
 
 
         return view('activity_logs.index');

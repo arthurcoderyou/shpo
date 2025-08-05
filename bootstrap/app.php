@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RolePermissionWithAlertMiddleware;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\TwoFactorMiddleware;
 use App\Http\Middleware\LogUserDeviceMiddleware;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register custom middleware
         $middleware->alias([
             'role.permission' => RolePermissionMiddleware::class,
+            'role.permission.alert' => RolePermissionWithAlertMiddleware::class,
             '2fa' => TwoFactorMiddleware::class,
             'log_user_device' => LogUserDeviceMiddleware::class,
         ]);

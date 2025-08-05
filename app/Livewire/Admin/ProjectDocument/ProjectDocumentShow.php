@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,11 @@ class ProjectDocumentShow extends Component
     }
 
 
+    public function submit_project($project_id){
 
+        ProjectHelper::submit_project($project_id);
+
+    }
 
     public function getExistingFilesProperty()
     {
@@ -38,12 +43,13 @@ class ProjectDocumentShow extends Component
             return [];
         }
 
-        return $this->project_document->project_attachments
+       return $this->project_document->project_attachments
             ->sortByDesc('created_at')
             ->groupBy(function ($document) {
-                return $document->created_at->format('M d, Y h:i A');
+                return optional($document->last_submitted_at)->format('M d, Y h:i A') ?? 'Unsubmitted';
             })
             ->toArray();
+
     }
 
 

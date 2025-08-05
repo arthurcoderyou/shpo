@@ -6,7 +6,7 @@
     </x-slot>
 
     
-    @if(Auth::user()->hasRole('Admin') || Auth::user()->hasRole('DSI God Admin') || Auth::user()->can('review list view'))
+    @if(Auth::user()->can('system access global admin') || Auth::user()->hasRole('system access admin') || Auth::user()->can('review list view'))
         <livewire:admin.review.review-list  />
 
     @endif 

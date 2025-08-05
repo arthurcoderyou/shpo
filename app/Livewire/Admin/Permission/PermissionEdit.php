@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Permission;
 
+use App\Events\PermissionUpdated;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
@@ -29,15 +30,64 @@ class PermissionEdit extends Component
             'Dashboard',
             'User',
             'Permission',
+            
+            // global administrator is an override permission to everything
+
             'Role',
-            'Project',
+            'System Access', 
+            /**
+             * These permissions declare a user's high-level access, independent of roles:
+
+                Permission Name	Description
+                system access global admin	    Grants system-wide global admin access
+                system access admin	            Grants system-wide admin access
+                system access reviewer	        Grants system-wide reviewer access
+                system access user	            Grants standard system-wide user access
+             * 
+             * 
+             */
+
+
+            // only projects has override 
+
+
+            'Project Own',  
+            'Project Own Override',      // lets a role override projects that he does not own     
+            'Project All Display',      
+            'Project Override', // general override 
+
+            'Project Review',
+            'Project Review Override', // lets you review a project for a reviewer and override his review
+
+
+            'Project Review Attachment',    
+            'Project Review Attachment Override',    // lets you add atachment to review in a project for a reviewer and override his review
+
+
+            // part of the project model
+                // own nad 
+
+                'Project Discussion',
+                'Project Discussion Override',
+
+                'Project Reviewer',
+                'Project Reviewer Override',
+
+                'Project Document',
+                'Project Document Override',
+ 
+                'Project Attachment', 
+                'Project Attachment Override', 
+
+
             'Notifications',
             'Review',
             'Reviewer',
             'Timer',
             'Document Type',
             'Activity Logs',
-            'Profile'
+            'Profile',
+            'Setting',
         ];
 
     }
@@ -83,7 +133,7 @@ class PermissionEdit extends Component
         $permission->updated_at = now();
         $permission->save();
 
-
+        event(new PermissionUpdated($permission,auth()->user()->id));
 
         ActivityLog::create([
             'log_action' => "Permission \"".$this->name."\" updated ",

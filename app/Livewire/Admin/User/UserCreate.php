@@ -19,7 +19,12 @@ class UserCreate extends Component
     public string $password = '';
     public string $password_confirmation = '';
 
-    public $role;
+    // public $role;
+
+
+    // public $selectedRoles = [];
+
+
 
     public $password_hidden = 1;
  
@@ -42,7 +47,8 @@ class UserCreate extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required']
+            // 'role' => ['required'],
+            // 'selectedRoles' => 'required|array|min:1',
         ]);
 
     }
@@ -57,8 +63,12 @@ class UserCreate extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required']
+            // 'role' => ['required']
+            // 'selectedRoles' => 'required|array|min:1',
         ]);
+
+
+        // dd($this->selectedRoles);
 
         $password = Hash::make($this->password);
 
@@ -79,17 +89,19 @@ class UserCreate extends Component
         //     $user->assignRole($role);
         // }
 
-        if(!empty($this->role)){
-            //add role
-            $role = Role::find($this->role);
-            $user->assignRole($role);
-        }
+        // if(!empty($this->role)){
+        //     //add role
+        //     $role = Role::find($this->role);
+        //     $user->assignRole($role);
+        // }
 
-        ActivityLog::create([
-            'log_action' => 'User "'.$user->name.'" created',
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // $user->syncRoles($this->selectedRoles);
+
+        // $roles = Role::whereIn('id', $this->selectedRoles)->get();
+
+        // $user->syncRoles($roles);
+
+         
 
         Alert::success('Success','New User created successfully');
         return redirect()->route('user.index');
@@ -99,14 +111,19 @@ class UserCreate extends Component
 
     public function render()
     {
-        $roles = Role::select('roles.*');
+        //  $roles = Role::query();
 
-        if(!Auth::user()->hasRole('DSI God Admin')){
-            $roles = $roles->whereNot('name', 'DSI God Admin');
-                
-        } 
+        // if (!Auth::user()->can('system access global admin')) {
+        //     // DO not show roles that do not HAVE the 'system access global admin' permission
+        //     $roles = Role::whereHas('permissions', function ($query) {
+        //         $query->whereNot('name', 'system access global admin');
+        //     });
+        // }  
+ 
         
-        $roles  = $roles->orderBy('name','asc')->get();
-        return view('livewire.admin.user.user-create',compact('roles'));
+        // $roles  = $roles->orderBy('name','asc')->get();
+        return view('livewire.admin.user.user-create',
+            // compact('roles')
+        );
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Role;
 
 use Livewire\Component;
+use App\Events\RoleUpdated;
 use App\Models\ActivityLog;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +12,11 @@ use Spatie\Permission\Models\Permission;
 
 class AddPermissions extends Component
 {
-
+    protected $listeners = [ 
+        'roleCreated' => '$refresh',
+        'roleUpdated' => '$refresh',
+        'roleDeleted' => '$refresh',
+    ];
 
     public $selected_permissions = [];
     public $role_id;
@@ -60,7 +65,10 @@ class AddPermissions extends Component
         // Sync permissions (this will remove permissions that are not selected and add the new ones)
         $this->role->syncPermissions($sync_permissions);
 
+        $this->role->updated_at = now();
+        $this->role->save();
 
+        event(new RoleUpdated( $this->role, auth()->user()->id));
 
         ActivityLog::create([
             'log_action' => "Role \"".$this->role->name."\" has updated permisssions ",
@@ -81,15 +89,24 @@ class AddPermissions extends Component
     public function render()
     {
 
-        $module_permissions = Permission::all();
+        $module_permissions = Permission::orderBy('module', 'asc')->get();
 
-        if (!Auth::user()->hasRole('DSI God Admin')) {
+        if (!Auth::user()->can('system access global admin')) {
             $module_permissions = $module_permissions->reject(function ($permission) {
                 return $permission->module === 'Permission';
+            });
+
+            $module_permissions = $module_permissions->reject(function ($permission) {
+                return $permission->module === 'System Access';
+            });
+
+             $module_permissions = $module_permissions->reject(function ($permission) {
+                return $permission->module === 'Setting';
             });
         }
 
         $module_permissions = $module_permissions->groupBy('module');
+
 
         return view('livewire.admin.role.add-permissions',[
             'module_permissions' => $module_permissions

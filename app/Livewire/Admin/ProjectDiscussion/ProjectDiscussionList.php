@@ -151,7 +151,7 @@ class ProjectDiscussionList extends Component
 
         if (
             $discussion->created_by !== auth()->id() &&
-            !auth()->user()->hasRole(['Admin', 'DSI God Admin'])
+            !auth()->user()->hasAnyPermission(['system access admin', 'system access global admin'])
         ) {
             abort(403);
         }
@@ -202,7 +202,7 @@ class ProjectDiscussionList extends Component
 
         $query =    $query->where('project_id', $this->project->id)
             ->whereNull('parent_id')
-            ->when(!auth()->user()->hasRole(['DSI God Admin', 'Admin', 'Reviewer']), function ($query) {
+            ->when(!auth()->user()->can(['system access global admin', 'system access admin', 'system access reviewer']), function ($query) {
                 $query->where('is_private', false);
             })
             ->when($this->discussionVisibility === 'private', function ($query) {
