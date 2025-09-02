@@ -9,6 +9,10 @@
 
      <!-- only show project review list and dicussions when the project is not draft -->
     @if($project->status !== "draft") 
+
+
+        <livewire:admin.review.review-list :id="$project->id" /> 
+
         <div  id="discussion" class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
             <!-- Section Title -->
             <div class="  border-b pb-4">
@@ -19,6 +23,8 @@
                 @endif
             </div>
         </div>
+
+        <livewire:admin.project-discussion.project-discussion-list :project="$project" />
 
     @endif
 

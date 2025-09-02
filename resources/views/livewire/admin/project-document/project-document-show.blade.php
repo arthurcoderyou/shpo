@@ -36,13 +36,16 @@
 
                             @if(Auth::user()->hasRole('Reviewer') && $project->status !== "draft")
                                 <a href="{{ route('project.review',['project' => $project->id ]) }}"
+                                    wire:navigate
                                 class="inline-block text-sm text-white bg-sky-600 hover:bg-sky-700 font-medium px-4 py-2 rounded shadow transition">
                                     Click to Review
                                 </a>
                             @endif
 
                             <h2 class="text-xl font-bold text-gray-800">
-                                <a class="hover:text-sky-500" href="{{ route('project.show',['project' => $project->id]) }}">
+                                <a class="hover:text-sky-500" href="{{ route('project.show',['project' => $project->id]) }}"
+                                    wire:navigate
+                                    >
                                     <span class="text-gray-500">Project:</span> {{ $project->name }}
                                 </a>
                             </h2>
@@ -50,11 +53,13 @@
                             <!-- Action Buttons -->
                             <div class="flex flex-wrap gap-2">
                                 <a href="{{ route('project.show',['project' => $project->id]) }}"
+                                    wire:navigate
                                 class="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-700 transition">
                                     View Project
                                 </a>
 
                                 <a href="{{ route('project.edit',['project' => $project->id]) }}"
+                                    wire:navigate
                                 class="px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-700 transition">
                                     Edit Project
                                 </a>
@@ -224,7 +229,9 @@
                                                         </div>
                             
                                                         <div class="dz-flex dz-items-center dz-mr-3">
-                                                            <a href="{{ route('ftp.download', ['id' => $attachment['id']]) }}" class="px-3 py-2 text-xs font-medium text-center text-white bg-gray-700 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">
+                                                            <a href="{{ route('ftp.download', ['id' => $attachment['id']]) }}" 
+                                                                wire:navigate
+                                                                class="px-3 py-2 text-xs font-medium text-center text-white bg-gray-700 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">
                                                                
                                                                  {{-- download="{{ $attachment['attachment'] }}" class="inline"> --}}
                                                                 <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -322,7 +329,9 @@
                                 (Auth::user()->can('system access user') && $project->created_by == Auth::id() )
                             )
 
-                                <a href="{{ route('project.edit',['project' => $project->id]) }}" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+                                <a href="{{ route('project.edit',['project' => $project->id]) }}"
+                                    wire:navigate
+                                    class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
                                     Cancel
                                 </a>
 

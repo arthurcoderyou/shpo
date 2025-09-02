@@ -218,7 +218,7 @@
             <div class="px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 ">
                 <div>
                 <h2 class="text-xl font-semibold text-gray-800 ">
-                    Project Reviewers for <a href="{{ route('project.show',['project'=> $project->id]) }}" class="text-sky-500 font-bold hover:text-sky-800">"{{ $project->name }}" </a> 
+                    Project Reviewers for <a href="{{ route('project.show',['project'=> $project->id]) }}" wire:navigate class="text-sky-500 font-bold hover:text-sky-800">"{{ $project->name }}" </a> 
                 </h2>
                 @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
                  <p class="text-sm text-blue-600 mt-1 ">
@@ -228,14 +228,14 @@
                 </div>
 
                 <div>
-                <div class="inline-flex gap-x-2">
+                <div class="inline-flex gap-x-2 ">
 
                     
                     <input type="text" wire:model.live="search"
                         class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
                         placeholder="Search">
 
-                    <div class="inline-flex items-center gap-x-2">
+                    <div class="inline-flex items-center gap-x-2 ">
 
                         <select wire:model.live="reviewer_type" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">  
                             <option value="initial">Initial Reviewers</option>
@@ -247,9 +247,9 @@
                    
 
                     @if($reviewer_type == "document")
-                        <div class="inline-flex items-center gap-x-2">
+                        <div class="inline-flex items-center gap-x-2 ">
 
-                            <select wire:model.live="project_document_id" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 min-w-12">
+                            <select wire:model.live="project_document_id" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500  ">
                                 <option value="">Document Type</option>
                                 @if(!empty($project_documents))
                                     @foreach ($project_documents as $project_document)
@@ -289,6 +289,7 @@
                     @endif --}}
 
                     <a href="{{ route('project.reviewer.index',[ 'project' => $project->id] ) }}"
+                        wire:navigate
                         class="hs-tooltip hs-tooltip-toggle py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
                         <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160 352 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l111.5 0c0 0 0 0 0 0l.4 0c17.7 0 32-14.3 32-32l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1L16 432c0 17.7 14.3 32 32 32s32-14.3 32-32l0-35.1 17.6 17.5c0 0 0 0 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.8c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352l34.4 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L48.4 288c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>
                         <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-neutral-700" role="tooltip">
@@ -443,15 +444,16 @@
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
                                             <div class="grow">
-                                                @if(!empty($reviewer['user_id']))
-                                                    @php   
-                                                        $user =  getUser($reviewer['user_id']);
-                                                    @endphp 
+                                                @php   
+                                                    $user =  getUser($reviewer['user_id']);
+                                                @endphp 
+                                                @if($reviewer['user_id'] && !empty($user))
+                                                    
 
                                                     <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
                                                     <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
-                                                @else
-                                                    Open Review
+                                                @else 
+                                                    <span class="block text-sm text-gray-500 ">{{ __('Open Review') }}</span>
                                                 @endif
 
                                             </div>

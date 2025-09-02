@@ -1,22 +1,7 @@
-{{-- <x-mail::message>
-# Introduction
-
-The body of your message.
-
-<x-mail::button :url="''">
-Button Text
-</x-mail::button>
-
-Thanks,<br>
-{{ config('app.name') }}
-</x-mail::message> --}}
-
 @component('mail::message')
 # Project Review Request
 
-{{-- Hello {{ $reviewer->user->name }}, --}}
-
-You have been assigned as a reviewer for the project **{{ $project->name }}**.
+You have been assigned as a **{{ ucfirst($reviewer->reviewer_type) }} Reviewer** for the project **{{ $project->name }}**.
 
 ## Project Details:
 - **Title:** {{ $project->name }} 
@@ -49,7 +34,10 @@ You have been assigned as a reviewer for the project **{{ $project->name }}**.
     @default
         <span style="color: black;"><strong>{{ $project->status_text }}</strong></span>
 @endswitch
-- **Document:** {{ $reviewer->project_document->document_type->name ?? "" }} 
+
+@if($reviewer->reviewer_type === 'document')
+- **Document to Review:** {{ $reviewer->project_document->document_type->name ?? "N/A" }} 
+@endif
 
 - **Submitted by:** {{ $project->creator->name }}
 
@@ -61,7 +49,7 @@ You have been assigned as a reviewer for the project **{{ $project->name }}**.
 View Project
 @endcomponent
 
-Please review the project and provide your feedback.
+Please review the project and provide your feedback as the **{{ ucfirst($reviewer->reviewer_type) }} Reviewer**.
 
 Thanks,  
 {{ config('app.name') }}

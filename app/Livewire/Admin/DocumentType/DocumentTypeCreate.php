@@ -38,8 +38,8 @@ class DocumentTypeCreate extends Component
         $this->reset(['name']);
 
 
-        // Alert::success('Success','Document type created successfully');
-        // return redirect()->route('document_type.index');
+        Alert::success('Success','Document type created successfully');
+        return redirect()->route('document_type.index');
     }
 
 

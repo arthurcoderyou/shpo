@@ -77,9 +77,7 @@ class ProjectReviewerList extends Component
 
     public function mount($id){
 
-        $this->users = User::whereHas('roles', function ($query) {
-            $query->where('name', 'Reviewer');
-        })->pluck('id', 'name')->toArray();
+        
 
 
         $this->project = Project::findOrFail($id);
@@ -126,6 +124,11 @@ class ProjectReviewerList extends Component
 
 
 
+        // Refresh users list based on the same rules
+        $this->users = $this->eligibleUsersQuery() 
+            ->orderBy('name', 'asc')
+            ->pluck('id', 'name')->toArray();
+
 
     }
 
@@ -142,10 +145,56 @@ class ProjectReviewerList extends Component
         if ($this->reviewer_type == 'document') { 
             $this->project_document_id = $this->project->project_documents->first()->id ?? null;
         }
+
+
+        // Refresh users list based on the same rules
+        $this->users = $this->eligibleUsersQuery() 
+            ->orderBy('name', 'asc')
+            ->pluck('id', 'name')->toArray();
+
       
         $this->reviewers = $this->getReviewersProperty();
 
     }   
+
+
+    /**
+     * Build a query for eligible users based on reviewer_type.
+     * Rules:
+     *  - initial/final: must have BOTH 'system access admin' AND 'system access reviewer'
+     *  - document: must have 'system access reviewer'
+     *  - other/empty: returns no users (guardrail)
+     */
+    protected function eligibleUsersQuery()
+    {
+        $q = User::query();
+
+        switch ($this->reviewer_type) {
+            case 'initial':
+            case 'final':
+                // Chain permission() to enforce AND
+                $q->permission('system access admin')
+                ->permission('system access reviewer');
+                break;
+
+            case 'document':
+                $q->permission('system access reviewer')
+                    ->whereDoesntHave('permissions', function ($sub) {
+                        $sub->where('name', 'system access admin');
+                    })
+                    ->whereDoesntHave('roles.permissions', function ($sub) {
+                        $sub->where('name', 'system access admin');
+                    });
+                break;
+
+            default:
+                // Unknown type: return an empty set
+                $q->whereRaw('1=0');
+                break;
+        }
+
+        return $q;
+    }
 
 
     public function updatedProjectDocumentId(){
@@ -153,34 +202,7 @@ class ProjectReviewerList extends Component
     }
 
 
-    /**
-     * Computed (live) property for last order
-     */
-    // public function getLastOrderProperty()
-    // {
-    //     $count = ProjectReviewer::where('project_id',$this->project->id);
-        
-    //     // Filter by reviewer type
-    //     if (!empty($this->reviewer_type)) {
-
-
-    //         // dd($count);
-    //         // dd($this->reviewer_type);
-    //         $count = $count->where(function ($q) {
-    //             $q->where('reviewer_type', $this->reviewer_type);
-    //         });
-    //     }
-
-    //     if(!empty($this->project_document_id) && $this->reviewer_type == 'document'){
-    //         // dd($this->project_document_id);
-    //         $count = $count->where('project_document_id', $this->project_document_id);
-    //     }
-        
- 
-    //     return $count->count();
-    // }
-
-
+     
      /**
      * Computed (live) property for last order
      */
@@ -197,62 +219,7 @@ class ProjectReviewerList extends Component
             ->max('order');
     }
 
-    
-
-    /*
-    public function updateOrder($reviewer_id, $order, $direction, $project_document_id, $reviewer_type)
-    {
-        if ($direction == "move_up") {
-            $prev_reviewer = ProjectReviewer::where('project_id',$this->project->id)
-                ->where('reviewer_type', $reviewer_type)
-                ->when($reviewer_type === 'document', function ($query) use ($project_document_id) {
-                    return $query->where('project_document_id', $project_document_id);
-                }, function ($query) {
-                    return $query->whereNull('project_document_id');
-                })
-                ->where('order', '<', $order)
-                ->orderBy('order', 'DESC')
-                ->first();
-
-            if ($prev_reviewer) {
-                // Swap the orders
-                $current_reviewer = ProjectReviewer::find($reviewer_id);
-                $tempOrder = $current_reviewer->order;
-
-                $current_reviewer->order = $prev_reviewer->order;
-                $prev_reviewer->order = $tempOrder;
-
-                $current_reviewer->save();
-                $prev_reviewer->save();
-            }
-
-        } elseif ($direction == "move_down") {
-            $next_reviewer = ProjectReviewer::where('project_id',$this->project->id)
-                ->where('reviewer_type', $reviewer_type)
-                ->when($reviewer_type === 'document', function ($query) use ($project_document_id) {
-                    return $query->where('project_document_id', $project_document_id);
-                }, function ($query) {
-                    return $query->whereNull('project_document_id');
-                })
-                ->where('order', '>', $order)
-                ->orderBy('order', 'ASC')
-                ->first();
-
-            if ($next_reviewer) {
-                $current_reviewer = ProjectReviewer::find($reviewer_id);
-                $tempOrder = $current_reviewer->order;
-
-                $current_reviewer->order = $next_reviewer->order;
-                $next_reviewer->order = $tempOrder;
-
-                $current_reviewer->save();
-                $next_reviewer->save();
-            }
-        }
-
-        $this->resetOrder($project_document_id, $reviewer_type);
-    }
-    */
+   
 
     public function updateOrder($index, $order, $direction, $project_document_id, $reviewer_type)
     {
@@ -322,24 +289,7 @@ class ProjectReviewerList extends Component
 
     }
 
-    /*
-    public function resetOrder($project_document_id, $reviewer_type)
-    {
-        $reviewers = ProjectReviewer::where('project_id',$this->project->id)
-            ->where('reviewer_type', $reviewer_type)
-            ->when($reviewer_type === 'document', function ($query) use ($project_document_id) {
-                return $query->where('project_document_id', $project_document_id);
-            }, function ($query) {
-                return $query->whereNull('project_document_id');
-            })
-            ->orderBy('order', 'ASC')
-            ->get();
-    
-        foreach ($reviewers as $index => $reviewer) {
-            $reviewer->order = $index + 1;
-            $reviewer->save();
-        }
-    }*/
+     
 
     public function resetOrder()
     {
@@ -377,11 +327,7 @@ class ProjectReviewerList extends Component
     // Method to delete selected records
     public function deleteSelected()
     {
-
-
-
-
-
+ 
         ProjectReviewer::where('project_id',$this->project->id)->whereIn('id', $this->selected_records)->delete(); // Delete the selected records
 
 
@@ -410,63 +356,7 @@ class ProjectReviewerList extends Component
     }
 
  
-    /*
-    public function delete($id){
-        $reviewer = ProjectReviewer::find($id);
-        $project_document_id = $reviewer->project_document_id;
-
-        $reviewerCount = ProjectReviewer::where('project_id',$this->project->id)
-            ->where('reviewer_type', $reviewer->reviewer_type)
-            ->when($reviewer->reviewer_type === 'document', function ($query) use ($project_document_id) {
-                return $query->where('project_document_id', $project_document_id);
-            }, function ($query) {
-                return $query->whereNull('project_document_id');
-            })
-            ->orderBy('order', 'ASC')
-            ->count();
-
-        if ($reviewerCount <= 1) {
-            // $this->addError('user_id', 'At least one project reviewer must remain.');
-            // return;
-
-            Alert::error('Error','Project reviewer cannot be deleted. At least one project reviewer must remain.');
-            return redirect()->route('project.reviewer.index',[
-                'project' => $reviewer->project->id,
-                'project_document_id' => $reviewer->project_document_id,
-                'reviewer_type' => $reviewer->reviewer_type
-            ]);
-
-
-        }
-
-
-
-        $reviewer = ProjectReviewer::find($id);
-
-
-        $reviewer->delete();
-
-        $this->resetOrder($reviewer->project_document_id,$reviewer->reviewer_type );
-
-
-
-
-        ActivityLog::create([
-            'log_action' => "Project '".$this->project->name."' reviewer '".$reviewer->user->name."' on list deleted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-        Alert::success('Success','Project reviewer deleted successfully');
-        return redirect()->route('project.reviewer.index',[
-            'project' => $reviewer->project->id,
-            'project_document_id' => $reviewer->project_document_id,
-            'reviewer_type' => $reviewer->reviewer_type
-        ]);
-
-    }
-    */
-
+   
     public function delete($index)
     {
         // Remove the reviewer from the array using the index
@@ -962,8 +852,38 @@ class ProjectReviewerList extends Component
         
         $project = Project::where('id',$this->project->id)->first();
 
+        // reset all reviewers
+        $project->resetCurrentProjectDocumentReviewers();
+
+
+        // check if all the project reviewers on the project is approved, and if not, mark the project as in_review
+        if ($project) {
+            // Check if ALL reviewers are approved
+            $allApproved = $project->project_reviewers->every(function ($reviewer) {
+                return $reviewer->review_status === 'approved';
+            });
+
+            if (!$allApproved) {
+                // If at least one is not approved, mark as in_review
+                $project->status = 'in_review';
+                $project->save();
+            }
+        }
+
+
+
+
+
         // notify creator, project reviewers and project subscribers 
         ProjectHelper::notifyReviewersAndSubscribersOnProjectReviewerUpdate($project, $project_document_id, $reviewer_type);
+
+        // send a project review request to the current reviewer
+        $reviewer = $project->getCurrentReviewer();
+        $reviewer_user = User::find($reviewer->user_id);
+        ProjectHelper::sendForReviewersProjectReviewNotification($reviewer_user,$project, $reviewer);
+
+
+
 
         Alert::success('Success', 'Project reviewer list saved successfully');
         return redirect()->route('project.reviewer.index', [
@@ -1140,6 +1060,7 @@ class ProjectReviewerList extends Component
 
 
     }
+
 
     public function render()
     {

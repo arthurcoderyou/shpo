@@ -121,6 +121,7 @@
                         @if(request()->routeIs('review.index'))
                             <a
                                 href="{{ route('review.index') }}"
+                                wire:navigate
                                 class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-orange-500 text-white shadow-sm hover:bg-orange-900 hover:text-orange-600 hover:border-orange-500 focus:outline-orange-500 focus:text-orange-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
                                 <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#ffffff" d="M370.7 133.3C339.5 104 298.9 88 255.8 88c-77.5 .1-144.3 53.2-162.8 126.9-1.3 5.4-6.1 9.2-11.7 9.2H24.1c-7.5 0-13.2-6.8-11.8-14.2C33.9 94.9 134.8 8 256 8c66.4 0 126.8 26.1 171.3 68.7L463 41C478.1 25.9 504 36.6 504 57.9V192c0 13.3-10.7 24-24 24H345.9c-21.4 0-32.1-25.9-17-41l41.8-41.7zM32 296h134.1c21.4 0 32.1 25.9 17 41l-41.8 41.8c31.3 29.3 71.8 45.3 114.9 45.3 77.4-.1 144.3-53.1 162.8-126.8 1.3-5.4 6.1-9.2 11.7-9.2h57.3c7.5 0 13.2 6.8 11.8 14.2C478.1 417.1 377.2 504 256 504c-66.4 0-126.8-26.1-171.3-68.7L49 471C33.9 486.1 8 475.4 8 454.1V320c0-13.3 10.7-24 24-24z"/></svg>
                             </a> 
@@ -331,195 +332,188 @@
                                             <!-- About -->
                                             <div class="mt-2">
 
-                                                <p class="text-sm text-gray-600 ">
-                                                    Reviewer Notes: 
-                                                </p>
-                                                <p class="text-sm text-gray-600 ">
-                                                    {{ $review->project_review }}
-                                                </p>
+                                                {{-- Reviewer Notes --}}
+                                                <div class="space-y-2">
+                                                <p class="text-sm font-medium text-gray-800">Reviewer Notes</p>
+                                                <p class="text-sm text-gray-700">{{ $review->project_review }}</p>
+                                                </div>
                                             
-
-                                                <div>
-
-
+                                                @if(!empty($review) && $review->review_status == "rejected")
+                                                    {{-- Attachments --}}
                                                     @php
-
-                                                        if (!empty($review->attachments)) {
-                                                            $existingFiles = $review->attachments
-                                                                ->sortByDesc('created_at') // Ensure newest files appear first
-                                                                ->groupBy(function ($attachment) {
-                                                                    return $attachment->created_at->format('M d, Y h:i A'); // Group by date
-                                                                })
-                                                                ->map(function ($attachments) {
-                                                                    return $attachments->map(function ($attachment) {
-                                                                        return [
-                                                                            'id' => $attachment->id,
-                                                                            'name' => basename($attachment->attachment), // File name
-                                                                            'path' => asset('storage/uploads/review_attachments/' . $attachment->attachment), // Public URL
-                                                                        ];
-                                                                    })->toArray();
-                                                                })->toArray();
-                                                        }
-                                                        
-
-                                                        
+                                                    $groups = collect($review->attachments ?? [])
+                                                        ->sortByDesc('created_at')
+                                                        ->groupBy(fn($a) => $a->created_at->format('M d, Y h:i A'));
                                                     @endphp
 
-                                                    @if(isset($existingFiles) && count($existingFiles) > 0)
-                                                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                                                            Attachments
-                                                        </label>
+                                                    @if($groups->isNotEmpty())
+                                                    <div class="mt-4">
+                                                        <label class="inline-block text-sm font-medium text-gray-800">Attachments</label>
 
-                                                        @php($index = 1)
-                                                        @foreach($existingFiles as $date => $attachments)
-                                                            
+                                                        <div class="hs-accordion-group divide-y divide-gray-100 rounded-xl border border-gray-200 mt-2">
+                                                        @foreach($groups as $date => $attachments)
+                                                            @php
+                                                            $idx = $loop->iteration;
+                                                            $accordionId = "att-{$idx}";
+                                                            $panelId = "att-panel-{$idx}";
+                                                            @endphp
 
-                                                            <div class="hs-accordion-group">
+                                                            <div class="hs-accordion" id="{{ $accordionId }}">
+                                                            <button
+                                                                type="button"
+                                                                class="hs-accordion-toggle w-full px-4 py-3 flex items-center justify-between text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                                                aria-controls="{{ $panelId }}"
+                                                            >
+                                                                <span class="inline-flex items-center gap-x-2">
+                                                                {{-- plus/minus icon swap --}}
+                                                                <svg class="hs-accordion-active:hidden block size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5v14" />
+                                                                </svg>
+                                                                <svg class="hs-accordion-active:block hidden size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
+                                                                </svg>
+                                                                {{ $date }}
+                                                                </span>
+                                                            </button>
 
-                                                                @if( $index == 1)
-                                                                    <div class="hs-accordion {{ $loop->first ? 'active' : '' }}" id="attachment-{{ $date }}">
-                                                                        <button type="button" class="hs-accordion-toggle hs-accordion-active:text-blue-600 py-3 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 rounded-lg disabled:opacity-50 disabled:pointer-events-none " aria-expanded="true" aria-controls="hs-basic-collapse-one ">
-                                                                            <svg class="hs-accordion-active:hidden block size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                            <path d="M5 12h14"></path>
-                                                                            <path d="M12 5v14"></path>
+                                                            <div id="{{ $panelId }}" class="hs-accordion-content hidden overflow-hidden transition-[height] duration-300">
+                                                                <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                @foreach($attachments as $file)
+                                                                    @php
+                                                                    $fileId   = $file->id;
+                                                                    $fileName = basename($file->attachment);
+                                                                    $fileUrl  = asset('storage/uploads/review_attachments/' . $file->attachment);
+                                                                    @endphp
+
+                                                                    <div class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg p-2">
+                                                                    <div class="flex items-center gap-3 min-w-0">
+                                                                        @if(isImageMimeForReview($fileName))
+                                                                        <div class="w-14 h-14 flex-none overflow-hidden rounded-md bg-gray-50">
+                                                                            <img src="{{ $fileUrl }}" alt="{{ $fileName }}" class="w-full h-full object-cover">
+                                                                        </div>
+                                                                        @else
+                                                                        <div class="w-14 h-14 flex items-center justify-center bg-gray-100 rounded-md">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625A3.375 3.375 0 0016.125 8.25h-1.5A1.125 1.125 0 0113.5 7.125v-1.5A3.375 3.375 0 0010.125 2.25H5.625A1.125 1.125 0 004.5 3.375v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9" />
                                                                             </svg>
-                                                                            <svg class="hs-accordion-active:block hidden size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                            <path d="M5 12h14"></path>
-                                                                            </svg>
-                                                                            {{ $date }}
-                                                                        </button>
+                                                                        </div>
+                                                                        @endif
 
-
-                                                                        <div id="hs-basic-collapse-one" class="hs-accordion-content w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="attachment-{{ $date }}">
-                                                                        
-
-                                                                            <div class="dz-flex dz-flex-wrap dz-gap-x-10 dz-gap-y-2 dz-justify-start dz-w-full  ">
-                                                                                @foreach($attachments as $file)
-                                                                                    <div class="dz-flex dz-items-center dz-justify-between dz-gap-2 dz-border dz-rounded dz-border-gray-200 dz-w-full dz-h-auto dz-overflow-hidden ">
-                                                                                        <div class="dz-flex dz-items-center dz-gap-3">
-                                                                                            @if(isImageMimeForReview($file['name']))
-                                                                                                <div class="dz-flex-none dz-w-14 dz-h-14">
-                                                                                                    <img src="{{ $file['path'] }}" class="dz-object-fill dz-w-full dz-h-full" alt="{{ $file['name'] }}">
-                                                                                                </div>
-                                                                                            @else
-                                                                                                <div class="dz-flex dz-justify-center dz-items-center dz-w-14 dz-h-14 dz-bg-gray-100 ">
-                                                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="dz-w-8 dz-h-8 dz-text-gray-500">
-                                                                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                                                                                    </svg>
-                                                                                                </div>
-                                                                                            @endif
-                                                                                            <div class="dz-flex dz-flex-col dz-items-start dz-gap-1">
-                                                                                                <div class="dz-text-center dz-text-slate-900 dz-text-sm dz-font-medium ">{{ $file['name'] }}</div>
-                                                                                                </div>
-                                                                                        </div>
-                                                                                        <div class="dz-flex dz-items-center dz-mr-3">
-                                                                                            <a href="{{ $file['path'] }}" download="{{ $file['path'] }}"
-                                                                                            class="inline"
-                                                                                            >   
-                                                                                                
-
-                                                                                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>
-                                                                                            </a>
-                                                                                        </div>
-
-
-                                                                                        @if(Auth::user()->hasRole('Admin'))
-                                                                                            <div class="dz-flex dz-items-center dz-mr-3">
-                                                                                                <button type="button" 
-                                                    
-                                                                                                onclick="confirm('Are you sure, you want to remove this attachment?') || event.stopImmediatePropagation()"
-                                                                                                wire:click.prevent="removeUploadedAttachment({{ $file['id'] }})"
-                                                    
-                                                                                                
-                                                                                                >   
-                                                                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="dz-w-6 dz-h-6 dz-text-black ">
-                                                                                                        <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
-                                                                                                    </svg>
-                                                                                                    
-                                                                                                </button>
-                                                                                            </div>
-                                                                                        @endif
-
-
-
-                                                                                    </div>
-                                                                                @endforeach
-                                                                            </div>
-
-
-
+                                                                        <div class="flex flex-col gap-0.5 min-w-0">
+                                                                        <div class="truncate text-sm font-medium text-slate-900">{{ $fileName }}</div>
+                                                                        {{-- (optional) file size, type, etc. --}}
                                                                         </div>
                                                                     </div>
-                                                                @else
-                                                                    
-                                                                    <div class="hs-accordion" id="attachment-{{ $index }}">
-                                                                        <button type="button" class="hs-accordion-toggle hs-accordion-active:text-blue-600 py-3 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 rounded-lg disabled:opacity-50 disabled:pointer-events-none " aria-expanded="false" aria-controls="hs-basic-collapse-{{ $index }}">
-                                                                            <svg class="hs-accordion-active:hidden block size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                                <path d="M5 12h14"></path>
-                                                                                <path d="M12 5v14"></path>
+
+                                                                    <div class="flex items-center gap-3">
+                                                                        <a href="{{ $fileUrl }}" download="{{ $fileName }}" class="inline-flex p-2 rounded hover:bg-gray-100" title="Download">
+                                                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352z"/></svg>
+                                                                        </a>
+
+                                                                        @if(Auth::user()->hasRole('Admin'))
+                                                                        <button
+                                                                            type="button"
+                                                                            class="inline-flex p-2 rounded hover:bg-gray-100 text-black"
+                                                                            onclick="confirm('Are you sure you want to remove this attachment?') || event.stopImmediatePropagation()"
+                                                                            wire:click.prevent="removeUploadedAttachment({{ $fileId }})"
+                                                                            title="Remove"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
                                                                             </svg>
-                                                                            <svg class="hs-accordion-active:block hidden size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                                <path d="M5 12h14"></path>
-                                                                            </svg>
-                                                                            {{ $date }}
                                                                         </button>
-                                                                        <div id="hs-basic-collapse-{{ $index }}" class="hs-accordion-content hidden w-full overflow-hidden transition-[height] duration-300" role="region" aria-labelledby="attachment-{{ $index }}">
-                                                                            
-
-                                                                            <div class="dz-flex dz-flex-wrap dz-gap-x-10 dz-gap-y-2 dz-justify-start dz-w-full  ">
-                                                                                @foreach($attachments as $file)
-                                                                                    <div class="dz-flex dz-items-center dz-justify-between dz-gap-2 dz-border dz-rounded dz-border-gray-200 dz-w-full dz-h-auto dz-overflow-hidden ">
-                                                                                        <div class="dz-flex dz-items-center dz-gap-3">
-                                                                                            @if(isImageMimeForReview($file['name']))
-                                                                                                <div class="dz-flex-none dz-w-14 dz-h-14">
-                                                                                                    <img src="{{ $file['path'] }}" class="dz-object-fill dz-w-full dz-h-full" alt="{{ $file['name'] }}">
-                                                                                                </div>
-                                                                                            @else
-                                                                                                <div class="dz-flex dz-justify-center dz-items-center dz-w-14 dz-h-14 dz-bg-gray-100 ">
-                                                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="dz-w-8 dz-h-8 dz-text-gray-500">
-                                                                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                                                                                    </svg>
-                                                                                                </div>
-                                                                                            @endif
-                                                                                            <div class="dz-flex dz-flex-col dz-items-start dz-gap-1">
-                                                                                                <div class="dz-text-center dz-text-slate-900 dz-text-sm dz-font-medium">{{ $file['name'] }}</div>
-                                                                                                </div>
-                                                                                        </div>
-                                                                                        <div class="dz-flex dz-items-center dz-mr-3">
-                                                                                            <a href="{{ $file['path'] }}" download="{{ $file['path'] }}"
-                                                                                            class="inline"
-                                                                                            >   
-                                                                                                
-                                                
-                                                                                                <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>
-                                                                                            </a>
-                                                                                        </div>
-
-                                                                                        
-
-
-                                                                                    </div>
-                                                                                @endforeach
-                                                                            </div>
-
-
-
-                                                                        </div>
+                                                                        @endif
                                                                     </div>
-                                                                @endif
-
-                                                                
-                                                            
-                                                                
+                                                                    </div>
+                                                                @endforeach
+                                                                </div>
                                                             </div>
-
-                                                            @php($index++)
+                                                            </div>
                                                         @endforeach
-
+                                                        </div>
+                                                    </div>
+                                                    @else
+                                                    <p class="mt-3 text-sm text-gray-500">No attachments.</p>
                                                     @endif
 
 
-                                                </div>
+
+                                                    {{-- Required Updates --}}
+                                                    @php
+                                                    // Eager-load to avoid N+1 when rendering names
+                                                    $review->loadMissing([
+                                                        'required_document_updates.document_type',
+                                                        'required_attachment_updates.document_type',
+                                                    ]);
+
+                                                    $docTypeNames = $review->required_document_updates
+                                                        ?->pluck('document_type.name')
+                                                        ->filter()
+                                                        ->unique()
+                                                        ->values()
+                                                        ->all() ?? [];
+
+                                                    $attDocTypeNames = $review->required_attachment_updates
+                                                        ?->pluck('document_type.name')
+                                                        ->filter()
+                                                        ->unique()
+                                                        ->values()
+                                                        ->all() ?? [];
+                                                    @endphp
+
+                                                    <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                                        <div class="flex items-center gap-2 mb-2">
+                                                            <svg class="w-4 h-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M10 .5a1 1 0 0 1 .894.553l8 16A1 1 0 0 1 18 18.5H2a1 1 0 0 1-.894-1.447l8-16A1 1 0 0 1 10 .5zM9 7v5h2V7H9zm1 8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+                                                            </svg>
+                                                            <h3 class="text-sm font-semibold text-amber-900">Required updates before resubmission</h3>
+                                                        </div>
+
+                                                        <ul class="space-y-2 text-sm text-amber-900">
+                                                            @if($review->requires_project_update)
+                                                            <li class="flex gap-2">
+                                                                <span class="inline-flex mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                                <span><strong>Project details:</strong> Update and save changes to the project information.</span>
+                                                            </li>
+                                                            @endif
+
+                                                            @if($review->requires_document_update)
+                                                            <li class="flex gap-2">
+                                                                <span class="inline-flex mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                                <span>
+                                                                <strong>Project documents:</strong> Add at least one new document
+                                                                @if(!empty($docTypeNames))
+                                                                    for the following type(s): <em>{{ implode(', ', $docTypeNames) }}</em>.
+                                                                @else
+                                                                    (any document type is acceptable).
+                                                                @endif
+                                                                </span>
+                                                            </li>
+                                                            @endif
+
+                                                            @if($review->requires_attachment_update)
+                                                            <li class="flex gap-2">
+                                                                <span class="inline-flex mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                                <span>
+                                                                <strong>Attachments:</strong> Upload at least one new attachment to an existing project document
+                                                                @if(!empty($attDocTypeNames))
+                                                                    (required on document type(s): <em>{{ implode(', ', $attDocTypeNames) }}</em>).
+                                                                @else
+                                                                    (any document is acceptable).
+                                                                @endif
+                                                                </span>
+                                                            </li>
+                                                            @endif
+
+                                                            @if(!$review->requires_project_update && !$review->requires_document_update && !$review->requires_attachment_update)
+                                                            <li class="flex gap-2">
+                                                                <span class="inline-flex mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                                                <span>No specific updates required by the reviewer.</span>
+                                                            </li>
+                                                            @endif
+                                                        </ul>
+                                                    </div>
+                                                @endif
 
 
                                             

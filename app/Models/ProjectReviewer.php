@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Controllers\ProjectReviewerController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,9 +23,11 @@ class ProjectReviewer extends Model
         'reviewer_type',
         'project_document_id',
 
-    
+        'requires_project_update',
+        'requires_document_update',
+        'requires_attachment_update',
 
-
+     
         # ['pending','approved','rejected']
     ];
 
@@ -116,6 +119,34 @@ class ProjectReviewer extends Model
     }
 
 
+    
+    // /**
+    //  * Get the reviews of the project reviewer
+    //  *
+    //  * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+    //  */
+    // public function reviews() # : BelongsTo
+    // {
+    //     return $this->hasMany(Review::class, 'user_id', 'id');
+    // }
+
+
+    static public function getLastSubmitterReview(Project $project,ProjectReviewer $project_reviewer){
+
+        return Review::where(function (\Illuminate\Database\Eloquent\Builder $q) use ($project_reviewer) {
+            $q->where('project_reviewer_id', $project_reviewer->id)
+              ->orWhere('reviewer_id', $project_reviewer->user_id);
+        })
+        ->where('project_id', $project->id)
+        ->orderByDesc('id')
+        ->first();
+        
+        
+         
+
+    }
+
+
 
     public function getReviewStatus(){
 
@@ -136,6 +167,17 @@ class ProjectReviewer extends Model
 
     }
 
+
+
+    public static function getProjectReviewer($project_id, $user_id){
+
+        return ProjectReviewer::where('project_id',$project_id)
+            ->where('user_id',$user_id)
+            ->where('status',true)
+            ->whereNot('review_status','approved')
+            ->first();
+
+    }
 
 
 

@@ -7,8 +7,10 @@ use App\Models\Project;
 use App\Models\Reviewer;
 use App\Models\ActiveDays;
 use App\Models\ActivityLog;
+use Illuminate\Support\Arr;
 use App\Models\DocumentType;
 use App\Models\ProjectTimer;
+use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +42,7 @@ class ProjectHelper
  
  
  
-    public static function submit_project($project_id){
+    public static function submit_project($project_id, $override_on_que_submission = false){
  
 
         $errors = checkProjectRequirements();
@@ -64,42 +66,7 @@ class ProjectHelper
                 }
             }
         }
- 
-        
-
-        // $projectTimer = ProjectTimer::first();
-        // $isProjectSubmissionAllowed = true;
-
-        // if ($projectTimer->project_submission_restrict_by_time) {
-        //     $currentTime = now();
-
-        //     // Ensure open/close times are Carbon instances
-        //     $openTime = Carbon::parse($projectTimer->project_submission_open_time);
-        //     $closeTime = Carbon::parse($projectTimer->project_submission_close_time);
-
-                
-
-        //     if ($currentTime->lt($openTime) || $currentTime->gt($closeTime)) {
-        //         $isProjectSubmissionAllowed = false;
-        //     } 
-        // }
-
- 
-        // if (!$isProjectSubmissionAllowed) {
-        //     // $openTime = ::first()->project_submission_open_time;
-        //     // $closeTime = ProjectTimer::first()->project_submission_close_time;
-
-        //     $openTime = Carbon::parse(ProjectTimer::first()->project_submission_open_time);
-        //     $closeTime = Carbon::parse(ProjectTimer::first()->project_submission_close_time);
-
-
-        //     $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . $openTime->format('h:i A') . ' and ' . $closeTime->format('h:i A');
-
-        //     // dd(isProjectSubmissionAllowed());
-        // }
-
-
-
+  
 
         $projectTimer = ProjectTimer::first();
         $isProjectSubmissionAllowed = true;
@@ -230,7 +197,320 @@ class ProjectHelper
         // dd("Projects had been submitted");
         // dd($project->project_documents);
 
+        $submission_type = "";
+
+
         
+        // if override admin que submit is true
+        if($override_on_que_submission){
+
+
+            $submission_type = "submission";
+
+
+            // override submit the project 
+            $project->status = "submitted";
+            $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+            
+            $project->updated_at = now();
+            $project->last_submitted_at = now();
+            $project->last_submitted_by = Auth::user()->id;
+            $project->save();
+
+
+            ProjectHelper::updateDocumentsAndAttachments($project);
+
+        }else{
+
+
+           
+
+            // SUBMISSION OF NEW PROJECTS 
+            // if the project is a draft, create the default values
+            if($project->status == "draft"){
+
+                $submission_type = "submission";
+
+
+
+                // check if project submission restriction is on
+                // que the project for submission if the project is on queue
+                if (!$isProjectSubmissionAllowed && $queuedForNextDay) {
+                    // Find the next available active day
+                    $daysOfWeek = [
+                        'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+                    ];
+
+                    $nextAvailableDay = null;
+                    for ($i = 1; $i <= 7; $i++) {
+                        $nextDay = now()->addDays($i)->format('l');
+                        $isNextActive = ActiveDays::where('day', $nextDay)
+                            ->where('is_active', true)
+                            ->exists();
+                        if ($isNextActive) {
+                            $nextAvailableDay = $nextDay;
+                            break;
+                        }
+                    }
+
+                    $formattedOpen = Carbon::parse($projectTimer->project_submission_open_time)->format('h:i A');
+                    $formattedClose = Carbon::parse($projectTimer->project_submission_close_time)->format('h:i A');
+
+                    $message = "Project submission is currently restricted. Your project has been queued and will be submitted automatically on $nextAvailableDay between $formattedOpen and $formattedClose.";
+
+                    // update project info
+                    $project->status = "on_que";
+                    $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                    
+                    $project->updated_at = now();
+                    $project->last_submitted_at = now();
+                    $project->last_submitted_by = Auth::user()->id;
+                    $project->save();
+
+                    ProjectHelper::updateDocumentsAndAttachments($project);
+
+
+                    Alert::info('Project Notice',$message);
+
+                    return ProjectHelper::returnHomeRouteBasedOnProject($project);
+
+
+                }else{
+                // else, submit normally
+                    $project->status = "submitted";
+                    $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                    
+                    $project->updated_at = now();
+                    $project->last_submitted_at = now();
+                    $project->last_submitted_by = Auth::user()->id;
+                    $project->save();
+
+
+                    ProjectHelper::updateDocumentsAndAttachments($project);
+
+                }
+
+    
+                
+                // ProjectHelper::setProjectReviewers($project,$submission_type);
+
+                // $reviewer = $project->getNextReviewer();
+
+                // ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+            // RESUBMISSION OF PROJECTS
+            }else{ // if not, get the current reviewer
+
+
+                // condition for resubmission
+                $errorMessage = ProjectHelper::getResubmissionErrorMessage($project);
+
+                if ($errorMessage) {
+                    Alert::error('Error', $errorMessage);
+
+                    return redirect()->route('project.index');
+                }
+
+
+
+                // dd("Resubmission is good");
+
+
+                // update the current project reviewer 
+                // for resubmission, make the current reviewer review_status into pending;
+
+                $current_reviewer = $project->getCurrentReviewer();
+                $current_reviewer->review_status = "pending";
+                $current_reviewer->save();
+
+
+
+                $submission_type = "re-submission";
+                
+                $project->status = "submitted";
+                $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                
+                $project->updated_at = now();
+                $project->last_submitted_at = now();
+                $project->last_submitted_by = Auth::user()->id;
+                $project->save();
+
+                ProjectHelper::updateDocumentsAndAttachments($project);
+    
+
+            }
+
+        
+        
+        }
+
+
+        
+
+
+
+ 
+        ProjectHelper::setProjectReviewers($project,$submission_type);
+
+
+        $reviewer = $project->getCurrentReviewer(); // get the current reviewer
+
+
+        ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+            
+        // if($submission_type = "submission")
+        try {
+            event(new \App\Events\ProjectSubmitted($project, $submission_type,$project->created_by));
+        } catch (\Throwable $e) {
+            // Log the error without interrupting the flow
+            Log::error('Failed to dispatch ProjectSubmitted event: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+            
+        
+
+        Alert::success('Success','Project submitted successfully');
+
+        if($project->created_by == auth()->user()->id){
+            return redirect()->route('project.index');
+            
+        }else{
+            // return redirect()->route('project.index');
+            return ProjectHelper::returnHomeRouteBasedOnProject($project);
+        } 
+            
+            
+        
+
+    }
+
+
+
+    // STILL IN DEVELOPMENT 
+    // this is connected to the project submission of project reviewers
+    public static function submit_project_update($project_id){
+ 
+
+        $errors = checkProjectRequirements();
+        $errorMessages = [];
+
+        foreach ($errors as $key => $error) {
+            if ($error) {
+                switch ($key) {
+                    case 'response_duration':
+                        $errorMessages[] = 'Response duration settings are not yet configured.';
+                        break;
+                    case 'project_submission_times':
+                        $errorMessages[] = 'Project submission times are not set.';
+                        break;
+                    case 'no_reviewers':
+                        $errorMessages[] = 'No reviewers have been set.';
+                        break;
+                    case 'no_document_types':
+                        $errorMessages[] = 'Document types have not been added.';
+                        break;
+                }
+            }
+        }
+ 
+        
+
+        // $projectTimer = ProjectTimer::first();
+        // $isProjectSubmissionAllowed = true;
+
+        // if ($projectTimer->project_submission_restrict_by_time) {
+        //     $currentTime = now();
+
+        //     // Ensure open/close times are Carbon instances
+        //     $openTime = Carbon::parse($projectTimer->project_submission_open_time);
+        //     $closeTime = Carbon::parse($projectTimer->project_submission_close_time);
+
+                
+
+        //     if ($currentTime->lt($openTime) || $currentTime->gt($closeTime)) {
+        //         $isProjectSubmissionAllowed = false;
+        //     } 
+        // }
+
+ 
+        // if (!$isProjectSubmissionAllowed) {
+        //     // $openTime = ::first()->project_submission_open_time;
+        //     // $closeTime = ProjectTimer::first()->project_submission_close_time;
+
+        //     $openTime = Carbon::parse(ProjectTimer::first()->project_submission_open_time);
+        //     $closeTime = Carbon::parse(ProjectTimer::first()->project_submission_close_time);
+
+
+        //     $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . $openTime->format('h:i A') . ' and ' . $closeTime->format('h:i A');
+
+        //     // dd(isProjectSubmissionAllowed());
+        // }
+
+
+
+
+        $projectTimer = ProjectTimer::first();
+        $isProjectSubmissionAllowed = true;
+        $queuedForNextDay = false;
+        $errorMessages = [];
+
+        if ($projectTimer && $projectTimer->project_submission_restrict_by_time) {
+            $currentTime = now();
+            $currentDay = $currentTime->format('l'); // e.g. "Monday"
+
+            // Ensure times are Carbon instances
+            $openTime = Carbon::parse($projectTimer->project_submission_open_time);
+            $closeTime = Carbon::parse($projectTimer->project_submission_close_time);
+
+            // Check if today is active
+            $isDayActive = ActiveDays::where('day', $currentDay)
+                            ->where('is_active', true)
+                            ->exists();
+
+            // Check if within time
+            $isWithinTime = $currentTime->between($openTime, $closeTime);
+
+            // Set flag
+            if (!($isDayActive && $isWithinTime)) {
+                $isProjectSubmissionAllowed = false;
+                $queuedForNextDay = true;
+            }
+        }
+
+        
+
+        $project = Project::find($project_id);
+        
+
+
+        if (!empty($errorMessages)) {
+            $message = 'The project cannot be submitted because: ';
+            $message .= implode(', ', $errorMessages);
+            $message .= '. Please wait for the admin to configure these settings.';
+            Alert::error('Error', $message);
+
+
+            return redirect()->route('reviewer.index');
+
+
+            
+        }
+
+
+
+        // check if there are existing project reviewers 
+        if(Reviewer::count() == 0){
+            Alert::error('Error','Project reviewers are not added yet to the system');
+ 
+            return redirect()->route('reviewer.index');
+ 
+             
+
+        }
+  
         $submission_type = "";
 
 
@@ -386,6 +666,11 @@ class ProjectHelper
         
 
     }
+
+    // ./ STILL IN DEVELOPMENT 
+
+
+
 
  
 
@@ -572,51 +857,317 @@ class ProjectHelper
 
 
 
+    // public static function getResubmissionErrorMessage(Project $project): ?string
+    // {
+    //     $result = self::canResubmit($project);
+
+    //     if ($result['status']) {
+    //         return null; // No error
+    //     }
+
+    //     return match ($result['reason']) {
+    //         'project_updated' => 'Please make sure your updated changes are saved before resubmitting.',
+    //         'new_document' => 'Add a new document before resubmitting.',
+    //         'new_attachment' => 'Upload new attachments to existing documents before resubmitting.',
+    //         'no_update' => 'You must update the project or upload new documents/attachments before resubmitting.',
+    //         'never_submitted' => 'This project has never been submitted. Please proceed to submit.',
+    //         default => 'Resubmission is not allowed at this time.',
+    //     };
+    // }
+
+
+
+    // public static function canResubmit(Project $project): array
+    // {
+    //     $lastSubmitted = Carbon::parse($project->last_submitted_at);
+    //     $current_reviewer = $project->getCurrentReviewer();
+
+    //     $last_review = ProjectReviewer::getLastSubmitterReview($project, $current_reviewer); 
+
+    //     // dd($last_review);
+
+
+    //     if (!$lastSubmitted) {
+    //         return ['status' => true, 'reason' => 'never_submitted'];
+    //     }
+
+    //     if ( $project->updated_at->gt($lastSubmitted->gt($lastSubmitted->addMinutes(2))) ) {
+    //         return ['status' => true, 'reason' => 'project_updated'];
+    //     }
+
+    //     if ($project->project_documents()->where('created_at', '>', $lastSubmitted)->exists()) {
+    //         return ['status' => true, 'reason' => 'new_document'];
+    //     }
+
+    //     if (
+    //         $project->project_documents()->whereHas('project_attachments', function ($query) use ($lastSubmitted) {
+    //             $query->where('created_at', '>', $lastSubmitted);
+    //         })->exists()
+    //     ) {
+    //         return ['status' => true, 'reason' => 'new_attachment'];
+    //     }
+
+    //     // If none of the above
+    //     return ['status' => false, 'reason' => 'no_update'];
+    // }
+
+
     public static function getResubmissionErrorMessage(Project $project): ?string
     {
         $result = self::canResubmit($project);
 
-        if ($result['status']) {
-            return null; // No error
+        if (!empty($result['status'])) {
+            return null; // ok to resubmit
         }
 
-        return match ($result['reason']) {
-            'project_updated' => 'Please make sure your updated changes are saved before resubmitting.',
-            'new_document' => 'Add a new document before resubmitting.',
-            'new_attachment' => 'Upload new attachments to existing documents before resubmitting.',
-            'no_update' => 'You must update the project or upload new documents/attachments before resubmitting.',
-            'never_submitted' => 'This project has never been submitted. Please proceed to submit.',
-            default => 'Resubmission is not allowed at this time.',
-        };
-    }
+        $reason = $result['reason'] ?? 'default';
 
+        switch ($reason) {
+            case 'never_submitted':
+                return 'This project has never been submitted. Please proceed to submit.';
+
+            case 'project_required':
+                return 'Please update the project details and save your changes before resubmitting.';
+
+            case 'docs_required':
+                $required_names = $result['required_document_type_names'] ?? [];
+                $missing_names = $result['missing_document_type_names'] ?? [];
+
+                if (!empty($required_names)) {
+                    $message = 'Please add at least one new document for the following type(s): ' . implode(', ', $required_names) . '.';
+
+                    if(!empty($missing_names)){
+                        $message = 'Missing document(s): ' . implode(', ', $missing_names) . '.';
+
+                    }
+
+                    return $message;
+                }
+                 
+                return 'Please add at least one new required document before resubmitting.';
+
+            case 'attachments_required':
+                $required_documents = $result['required_project_document_names'] ?? [];
+                $missing_documents = $result['missing_project_document_names'] ?? [];
+
+                $message = "";
+                if (!empty($required_documents)) {
+                    $message = 'Please add at least one new attachment for the following project document(s): ' . implode(', ', $required_documents) . '.';
+ 
+
+                    if(!empty($missing_documents)){
+                        $message = 'Not updated document(s): ' . implode(', ', $missing_documents) . '.';
+                    }
+
+                    return $message;
+                }
+                return 'Please upload at least one new attachment to the project documents before resubmitting.';
+
+            case 'no_update':
+                return 'You must update the project or upload new documents/attachments before resubmitting.';
+
+            default:
+                return 'Resubmission is not allowed at this time.';
+        }
+    }
 
 
     public static function canResubmit(Project $project): array
     {
+        // If project has never been submitted
+        if (empty($project->last_submitted_at)) {
+            return ['status' => false, 'reason' => 'never_submitted'];
+        }
+
         $lastSubmitted = Carbon::parse($project->last_submitted_at);
+        $currentReviewer = $project->getCurrentReviewer(); // ProjectReviewer instance
+        $lastReview = $currentReviewer
+            ? ProjectReviewer::getLastSubmitterReview($project, $currentReviewer)
+            : null;
 
-        if (!$lastSubmitted) {
-            return ['status' => true, 'reason' => 'never_submitted'];
+        // If no prior review found, fall back to generic checks since user is trying to resubmit
+        // "Updated project" means updated after last submission (with a 2-minute grace window)
+        $grace = $lastSubmitted->copy()->addMinutes(2);
+        $projectUpdated = $project->updated_at?->gt($grace) ?? false;
+
+        $newDocExists = $project->project_documents()
+            ->where('created_at', '>', $lastSubmitted)
+            ->exists();
+
+        $newAttachmentExists = $project->project_documents()
+            ->whereHas('project_attachments', function ($q) use ($lastSubmitted) {
+                $q->where('created_at', '>', $lastSubmitted);
+            })
+            ->exists();
+
+        // If there was a review that explicitly required things, enforce those
+        if ($lastReview) {
+            $reviewCutoff = $lastReview->created_at ?? $lastSubmitted; // use review time as the requirement baseline
+
+            // 1) Requires project update?
+            if ($lastReview->requires_project_update) {
+                $projectUpdatedSinceReview = $project->updated_at?->gt($reviewCutoff) ?? false;
+                if (!$projectUpdatedSinceReview) {
+                    return ['status' => false, 'reason' => 'project_required'];
+                }
+            }
+
+            // 2) Requires document update?
+            if ($lastReview->requires_document_update) {
+                // Gather required document type IDs from the review
+                $requiredTypeIds = $lastReview->required_document_updates()
+                    ->pluck('document_type_id')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                    // dd( $requiredTypeIds  );
+
+                // If specific types were specified, enforce adding at least one new doc of those types
+                if ($requiredTypeIds->isNotEmpty()) {
+                     
+
+                    // Collect which required types actually have a new doc since the cutoff
+                    $addedTypeIds = $project->project_documents()
+                        ->where('created_at', '>', $reviewCutoff)
+                        ->whereIn('document_type_id', $requiredTypeIds)
+                        ->pluck('document_type_id')
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    // Figure out what's still missing
+                    $missingTypeIds = $requiredTypeIds->diff($addedTypeIds);
+
+                    if ($missingTypeIds->isNotEmpty()) {
+                        return [
+                            'status' => false,
+                            'reason' => 'docs_required', // all specified types must be present
+                            'required_document_type_names' => DocumentType::whereIn('id', $requiredTypeIds)->pluck('name')->all(),
+                            'missing_document_type_names'  => DocumentType::whereIn('id', $missingTypeIds)->pluck('name')->all(),
+                        ];
+                    }
+
+                    // All required types satisfied; continue...
+
+
+                } else {
+                    // No types specified; require at least one new document of any type
+                    $hasNewDocSinceReview = $project->project_documents()
+                        ->where('created_at', '>', $reviewCutoff)
+                        ->exists();
+
+                    if (!$hasNewDocSinceReview) {
+                        return ['status' => false, 'reason' => 'docs_required'];
+                    }
+                }
+            }
+
+            // 3) Requires attachment update?
+            if ($lastReview->requires_attachment_update) {
+
+
+                // Gather required project documents for attachment update from the review
+                $requiredProjectDocumentIds = $lastReview->required_attachment_updates()
+                    ->pluck('project_document_id')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+ 
+
+                // if specific project documents are specified, enforce adding updated project attachments that is required to be updated for each project document
+                if($requiredProjectDocumentIds->isNotEmpty()){
+
+
+                    // $hasNewRequiredDocAttachUpdate = $project->attachments()
+                    //     ->where('created_at', '>', $reviewCutoff)
+                    //     ->whereIn('project_document_id', $requiredProjectDocumentIds)
+                    //     ->exists();
+ 
+
+                    // if (!$hasNewRequiredDocAttachUpdate) {
+                    //     $names = DocumentType::whereIn('id', $requiredProjectDocumentTypeIds)->pluck('name')->all();
+                    //     return [
+                    //         'status' => false,
+                    //         'reason' => 'attachments_required',
+                    //         'required_document_type_names' => $names,
+                    //     ];
+                    // }
+
+
+                    // Collect which required project document actually have a new attachment since the cutoff
+                    $updatedProjectDocumentIds = $project->attachments()
+                        ->where('created_at', '>', $reviewCutoff)
+                        ->whereIn('project_document_id', $requiredProjectDocumentIds)
+                        ->pluck('project_document_id')
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    // Figure out what's still missing
+                    $missingProjectDocumentIds = $requiredProjectDocumentIds->diff($updatedProjectDocumentIds);
+
+                    if ($missingProjectDocumentIds->isNotEmpty()) {
+                        $required_document_updates_names = [];
+                        $missing_document_updates_names = [];
+
+                        foreach($requiredProjectDocumentIds as $key => $required_document_id){
+                            $project_document = ProjectDocument::find($required_document_id);
+                            if(!empty($project_document->document_type->name)){
+                                $required_document_updates_names[] = $project_document->document_type->name;
+                            }
+                             
+                        }
+
+                        foreach($missingProjectDocumentIds as $key => $missing_document_id){
+                            $project_document = ProjectDocument::find($missing_document_id);
+                            if(!empty($project_document->document_type->name)){
+                                $missing_document_updates_names[] = $project_document->document_type->name;
+                            }
+                             
+                        }
+
+
+                        return [
+                            'status' => false,
+                            'reason' => 'attachments_required', // all specified types must be present
+                            'required_project_document_names' => $required_document_updates_names,
+                            'missing_project_document_names'  => $missing_document_updates_names,
+                        ];
+                    }
+
+                    // All required project document attachments satisfied; continue...
+
+
+
+
+                }else{
+
+                    $hasNewAttachmentSinceReview = $project->project_documents()
+                        ->whereHas('project_attachments', function ($q) use ($reviewCutoff) {
+                            $q->where('created_at', '>', $reviewCutoff);
+                        })
+                        ->exists();
+
+                    if (!$hasNewAttachmentSinceReview) {
+                        return ['status' => false, 'reason' => 'attachments_required'];
+                    }
+                }
+
+ 
+                
+            }
+
+            // If all explicit requirements from the last review are satisfied → allow resubmit
+            return ['status' => true, 'reason' => 'ok'];
         }
 
-        if ( $project->updated_at->gt($lastSubmitted->gt($lastSubmitted->addMinutes(2))) ) {
-            return ['status' => true, 'reason' => 'project_updated'];
+        // If no explicit review requirements, allow resubmit when *something* changed since last submission
+        if ($projectUpdated || $newDocExists || $newAttachmentExists) {
+            return ['status' => true, 'reason' => 'ok'];
         }
 
-        if ($project->project_documents()->where('created_at', '>', $lastSubmitted)->exists()) {
-            return ['status' => true, 'reason' => 'new_document'];
-        }
-
-        if (
-            $project->project_documents()->whereHas('project_attachments', function ($query) use ($lastSubmitted) {
-                $query->where('created_at', '>', $lastSubmitted);
-            })->exists()
-        ) {
-            return ['status' => true, 'reason' => 'new_attachment'];
-        }
-
-        // If none of the above
         return ['status' => false, 'reason' => 'no_update'];
     }
 
@@ -859,10 +1410,10 @@ class ProjectHelper
 
 
 
-                $name = !empty(Auth::user()) ? Auth::user()->name :  $project_creator->name;
-                
-                // Message for the subscribers
-                $message = "The project '" . $project->name . "' has been submitted by '" . $name. "'";
+            $name = !empty(Auth::user()) ? Auth::user()->name :  $project_creator->name;
+            
+            // Message for the subscribers
+            $message = "The project '" . $project->name . "' has been submitted by '" . $name. "'";
 
             
 
@@ -1036,6 +1587,12 @@ class ProjectHelper
 
 
  
+                }else{
+                    // if there is no user in project reviewer record, meaning this is an open review 
+
+
+
+
                 }
 
  
@@ -1279,7 +1836,7 @@ class ProjectHelper
         if($project->created_by == Auth::user()->id && Auth::user()->can('project list view')){
 
             return redirect()->route('project.index');
-        }elseif(Auth::user()->can('project list view all')){
+        }elseif(Auth::user()->can('project list view all') || Auth::user()->can('system access global admin')){
             return redirect()->route('project.index.all');
         }elseif(Auth::user()->can('project list view all no drafts')){
             return redirect()->route('project.index.all.no-drafts');
@@ -1304,6 +1861,130 @@ class ProjectHelper
         return redirect()->route('project.review',['project' => $project_id]);
 
     }
+
+
+
+
+
+    // reviewer admin list updated to notify creator, project reviewers and project subscribers 
+    public static function notifyReviewersAndSubscribersOnAdminReviewerUpdate($project, $user)
+    {
+
+        // project is the project update
+        // user is the user that will recieve the email
+
+ 
+  
+        $user = User::where('id',$user->id)->first();
+
+        if ($user) {
+
+
+            try {
+                // Send email   notification to reviewer about the project reviewer update 
+                Notification::send($user, new ProjectReviewerUpdatedNotification($project, $user));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to send ProjectReviewerUpdatedNotification notification: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+            try {
+                // Send DB notification to reviewer about the project reviewer update 
+                Notification::send($user, new ProjectReviewerUpdatedNotificationDB($project, $user));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to send ProjectReviewerUpdatedNotificationDB notification: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+            
+            $current_reviewer = $project->getCurrentReviewer();
+
+            // if the user is the current reviewer user_id, send a review notification   
+            if ($current_reviewer->user_id ==  $user->id) {
+
+                try {
+                        // Send email   notification to reviewer
+                    Notification::send($user, new ProjectReviewNotification($project, $current_reviewer));
+                } catch (\Throwable $e) {
+                    // Log the error without interrupting the flow
+                    Log::error('Failed to send ProjectReviewNotification notification: ' . $e->getMessage(), [
+                        'project_id' => $project->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+
+                try {
+                        // Send   DB notification to reviewer
+                    Notification::send($user, new ProjectReviewNotificationDB($project, $current_reviewer));
+                } catch (\Throwable $e) {
+                    // Log the error without interrupting the flow
+                    Log::error('Failed to send ProjectReviewNotificationDB notification: ' . $e->getMessage(), [
+                        'project_id' => $project->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+
+                 
+                
+            }
+                
+
+
+
+        } 
+
+  
+            
+        // // Message for the subscribers
+        $message = "The project '" . $project->name . "' has updated project reviewers ";
+
+        if (!empty($project->project_subscribers)) {
+            foreach ($project->project_subscribers as $subscriber) {
+                $subUser = User::where('id',$subscriber->user_id)->first();
+
+                if ($subUser) {
+
+
+                    try {
+                        // Send   email notification to reviewer
+                        Notification::send($subUser, new ProjectSubscribersNotification(
+                            $subUser,
+                            $project,
+                            'project_reviewers_updated',
+                            $message
+                        ));
+                    } catch (\Throwable $e) {
+                        // Log the error without interrupting the flow
+                        Log::error('Failed to send ProjectSubscribersNotification notification: ' . $e->getMessage(), [
+                            'project_id' => $project->id,
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                    }
+
+                    
+
+
+                }
+            }
+        }
+
+
+
+
+
+    }
+
+
+
+
+
+    // send for updating 
 
 
 }

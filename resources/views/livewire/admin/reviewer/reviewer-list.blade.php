@@ -164,10 +164,10 @@
                 <h2 class="text-xl font-semibold text-gray-800 ">
                     Reviewers
                 </h2>
-                <p class="text-sm text-blue-600 mt-1">
+                <p class="text-sm text-blue-600 mt-1 max-w-4xl">
                     <strong>Note:</strong> Please make sure to <span class="font-semibold">save your changes</span> before selecting another document type or leaving the page. Unsaved changes will be lost, and updates will only be applied once saved. Saved reviewers will be visible to all users. 
                 </p>
-                <p class="text-sm text-yellow-600 mt-1">
+                <p class="text-sm text-yellow-600 mt-1 max-w-4xl">
                     <strong>OPEN REVIEW:</strong> An open review is a review type where all admins are notified and receive a review notification. The first admin to open the review will automatically become the assigned reviewer.  
                 </p>
 
@@ -180,7 +180,7 @@
                     <input type="text" wire:model.live="search"
                         class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
                         placeholder="Search">
-
+                    --}}
                     <div class="inline-flex items-center gap-x-2">
 
                         <select wire:model.live="reviewer_type" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">  
@@ -190,10 +190,10 @@
                             
                         </select>
                     </div>
-                    --}}
+                     
 
                     @if($reviewer_type == "document")
-                        <div class="inline-flex items-center gap-x-2">
+                        <div class="inline-flex items-center gap-x-2 text-nowrap">
 
                             <select wire:model.live="document_type_id" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
                                 <option value="">Document Type</option>
@@ -224,18 +224,26 @@
                         </select>
                     </div>
 
-                    @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
-                        <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
-                            onclick="confirm('Are you sure, you want to apply this to all records? If you do this, all not approved projects will apply this list and order of reviewers. They will be notified on the changes of reviewers list and order. Are you still sure to proceed? ') || event.stopImmediatePropagation()"
-                            wire:click.prevent="apply_to_all" 
-                            class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-sky-500 text-white shadow-sm hover:bg-sky-50 hover:text-sky-600 hover:border-sky-500 focus:outline-sky-500 focus:text-sky-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
-                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M352 256c0 22.2-1.2 43.6-3.3 64l-185.3 0c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64l185.3 0c2.2 20.4 3.3 41.8 3.3 64zm28.8-64l123.1 0c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64l-123.1 0c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64zm112.6-32l-116.7 0c-10-63.9-29.8-117.4-55.3-151.6c78.3 20.7 142 77.5 171.9 151.6zm-149.1 0l-176.6 0c6.1-36.4 15.5-68.6 27-94.7c10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5c11.6 26 20.9 58.2 27 94.7zm-209 0L18.6 160C48.6 85.9 112.2 29.1 190.6 8.4C165.1 42.6 145.3 96.1 135.3 160zM8.1 192l123.1 0c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64L8.1 320C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64zM194.7 446.6c-11.6-26-20.9-58.2-27-94.6l176.6 0c-6.1 36.4-15.5 68.6-27 94.6c-10.5 23.6-22.2 40.7-33.5 51.5C272.6 508.8 263.3 512 256 512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6C112.2 482.9 48.6 426.1 18.6 352l116.7 0zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6c25.5-34.2 45.2-87.7 55.3-151.6l116.7 0z"/></svg>
-                            
-                            APPLY TO ALL 
-                        </button>
-                    @endif --}}
+                     --}}
+                    @if( (!isset($issues['no_reviewers']) || $issues['no_reviewers'] == false)  
+                    &&  (!isset($issues['document_types_missing_reviewers']) || $issues['document_types_missing_reviewers'] == false)  
+                    &&  (!isset($issues['no_initial_reviewers']) || $issues['no_initial_reviewers'] == false)
+                    &&  (!isset($issues['no_final_reviewers']) || $issues['no_final_reviewers'] == false)
+                    )
+                        @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
+                            <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
+                                onclick="confirm('Are you sure, you want to apply this to all records? If you do this, all not approved projects will apply this list and order of reviewers. They will be notified on the changes of reviewers list and order. Are you still sure to proceed? ') || event.stopImmediatePropagation()"
+                                wire:click.prevent="apply_to_all" 
+                                class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-sky-500 text-white shadow-sm hover:bg-sky-50 hover:text-sky-600 hover:border-sky-500 focus:outline-sky-500 focus:text-sky-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
+                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M352 256c0 22.2-1.2 43.6-3.3 64l-185.3 0c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64l185.3 0c2.2 20.4 3.3 41.8 3.3 64zm28.8-64l123.1 0c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64l-123.1 0c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64zm112.6-32l-116.7 0c-10-63.9-29.8-117.4-55.3-151.6c78.3 20.7 142 77.5 171.9 151.6zm-149.1 0l-176.6 0c6.1-36.4 15.5-68.6 27-94.7c10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5c11.6 26 20.9 58.2 27 94.7zm-209 0L18.6 160C48.6 85.9 112.2 29.1 190.6 8.4C165.1 42.6 145.3 96.1 135.3 160zM8.1 192l123.1 0c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64L8.1 320C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64zM194.7 446.6c-11.6-26-20.9-58.2-27-94.6l176.6 0c-6.1 36.4-15.5 68.6-27 94.6c-10.5 23.6-22.2 40.7-33.5 51.5C272.6 508.8 263.3 512 256 512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6C112.2 482.9 48.6 426.1 18.6 352l116.7 0zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6c25.5-34.2 45.2-87.7 55.3-151.6l116.7 0z"/></svg>
+                                
+                                APPLY TO ALL 
+                            </button>
+                        @endif
+                    @endif
 
                     <a href="{{ route('reviewer.index') }}"
+                        wire:navigate
                         class="hs-tooltip hs-tooltip-toggle py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
                         <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160 352 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l111.5 0c0 0 0 0 0 0l.4 0c17.7 0 32-14.3 32-32l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1L16 432c0 17.7 14.3 32 32 32s32-14.3 32-32l0-35.1 17.6 17.5c0 0 0 0 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.8c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352l34.4 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L48.4 288c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>
                         <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-neutral-700" role="tooltip">
@@ -517,6 +525,51 @@
                 </div> 
             </div>
         </div>
+
+
+        
+        {{-- wire:target="apply_to_all"   --}}
+        <div wire:loading  wire:target="apply_to_all"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Applying Reviewer List to project records...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+
+        
+        
+
+         {{-- wire:target="reviewer_type"   --}}
+        <div wire:loading  wire:target="reviewer_type"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Updating reviewer list records...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
 
         {{-- wire:target="save"   --}}
         <div wire:loading  wire:target="save"

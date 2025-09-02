@@ -1,57 +1,60 @@
 @component('mail::message')
-# Open Project Review Notification
+# Open Project Review — {{ ucfirst($project_reviewer->reviewer_type ?? 'document') }} Review
 
-A new project has been submitted for **Open Review**. You are receiving this notification because you are part of the review team.
+A new project has been submitted for **Open Review**. You’re receiving this because you’re part of the
+@php
+    $team = match($project_reviewer->reviewer_type ?? 'document') {
+        'initial' => 'Initial Review Team',
+        'final' => 'Final Review Team',
+        default => 'Document Review Team',
+    };
+@endphp
+**{{ $team }}**.
 
-The first reviewer to access the project will be automatically assigned as the active reviewer.
+@php
+    // Map status to label & color (inline styles for broad email client support)
+    $status = $project->status ?? 'submitted';
+    $statusMap = [
+        'submitted' => ['label' => 'Submitted', 'color' => '#1e90ff'],
+        'in_review' => ['label' => 'In Review', 'color' => '#ff8c00'],
+        'approved'  => ['label' => 'Approved 🎉', 'color' => '#228B22'],
+        'rejected'  => ['label' => 'Rejected', 'color' => '#dc2626'],
+        'completed' => ['label' => 'Completed', 'color' => '#6b21a8'],
+        'cancelled' => ['label' => 'Cancelled', 'color' => '#6b7280'],
+    ];
+    $statusMeta = $statusMap[$status] ?? ['label' => ($project->status_text ?? ucfirst($status)), 'color' => '#111827'];
+@endphp
 
-## Project Details:
-- **Title:** {{ $project->name }} 
-- **Status:**  
-@switch($project->status)
-    @case('submitted')
-        <span style="color: blue;"><strong>Submitted</strong></span>
-        @break
+## Project Details
+- **Title:** {{ $project->name }}
+- **Status:** <span style="display:inline-block;padding:.1rem .5rem;border-radius:.375rem;font-weight:700;background:#f8f9fa;color: {{ $statusMeta['color'] }};">{{ $statusMeta['label'] }}</span>
 
-    @case('in_review')
-        <span style="color: orange;"><strong>In Review</strong></span>
-        @break
-
-    @case('approved')
-        <span style="color: green;"><strong>Approved</strong> 🎉</span>
-        @break
-
-    @case('rejected')
-        <span style="color: red;"><strong>Rejected</strong></span>
-        @break
-
-    @case('completed')
-        <span style="color: purple;"><strong>Completed</strong></span>
-        @break
-
-    @case('cancelled')
-        <span style="color: gray;"><strong>Cancelled</strong></span>
-        @break
-
-    @default
-        <span style="color: black;"><strong>{{ $project->status_text }}</strong></span>
-@endswitch 
 @switch($project_reviewer->reviewer_type)
-    @case("document")
-        - **Document:** {{ $project_reviewer->project_document->document_type->name ?? 'N/A' }}
+    @case('document')
+- **Document:** {{ $project_reviewer->project_document?->document_type?->name ?? 'N/A' }}
         @break
-    @case("initial")
-        - **Initial Review**  
+    @case('initial')
+- **Review Type:** Initial Review
         @break
-    @case("final")
-        - **Final Review** 
+    @case('final')
+- **Review Type:** Final Review
         @break
-    @default    
-        - **Review** 
-@endswitch 
+    @default
+- **Review Type:** Document Review
+@endswitch
 
+@php
+    $assignedName = $project_reviewer->user->name ?? null;
+@endphp
 
-- **Submitted by:** {{ $project->creator->name }}
+@if(empty($assignedName))
+> ✅ **Open Review Slot:** No reviewer is currently assigned.  
+> The **first reviewer to open the project** will automatically become the **active reviewer**.
+@else
+- **Assigned To:** {{ $assignedName }}
+@endif
+
+- **Submitted by:** {{ $project->creator->name ?? 'Unknown' }}
 
 @component('mail::panel')
 {{ $project->description }}
@@ -61,7 +64,7 @@ The first reviewer to access the project will be automatically assigned as the a
 Open Project for Review
 @endcomponent
 
-> ⚠️ This project requires review. The first admin to access it will be assigned as the reviewer.
+> ⚠️ **Heads-up:** This is an open review. If you’re first to access the project, you will be assigned as the active reviewer.
 
 Thanks,  
 {{ config('app.name') }}

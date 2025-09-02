@@ -1,39 +1,25 @@
-{{-- <x-mail::message>
-# Introduction
-
-The body of your message.
-
-<x-mail::button :url="''">
-Button Text
-</x-mail::button>
-
-Thanks,<br>
-{{ config('app.name') }}
-</x-mail::message> --}}
-
-
 @component('mail::message')
-# Project Reviewed 
+# Project Review Completed  
 
-Hello {{ $project->creator->name }},
+Hello {{ $project->creator->name }},  
 
-Your project **{{ $project->name }}** has been reviewed.
+Your project **{{ $project->name }}** has been successfully reviewed. Please see the details of the review below.  
 
-## Review Details:
-- **Project:** {{ $project->name }}
-- **Review Status:** {{ ucfirst($review->review_status) }}
-- **Reviewed On:** {{ $review->created_at->format('F j, Y \a\t g:i A') }}
- 
+## Review Summary
+- **Project Title:** {{ $project->name }}  
+- **Review Status:** {{ ucfirst($review->review_status) }}  
+- **Reviewed On:** {{ $review->created_at->format('F j, Y \a\t g:i A') }}  
 
 @component('mail::panel')
 {{ $review->project_review }}
-@endcomponent
+@endcomponent  
 
 @component('mail::button', ['url' => $url])
-View Reviewed Project
-@endcomponent
+View Review Details
+@endcomponent  
+
+We appreciate your continued effort in ensuring the quality and progress of this project.  
 
 Thank you,  
 {{ config('app.name') }}
 @endcomponent
-

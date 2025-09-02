@@ -18,12 +18,15 @@ class ReviewerUpdated  implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public Reviewer $reviewer;
+    public $reviewer_id;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct(Reviewer $reviewer)
+    public function __construct($reviewer_id, $authId)
     {
-        $this->reviewer = $reviewer;
+        $this->reviewer = Reviewer::find($reviewer_id);
+        $this->authId = $authId;
     }
 
     /**
@@ -48,16 +51,18 @@ class ReviewerUpdated  implements ShouldBroadcast, ShouldQueue
 
         $reviewer = $this->reviewer;
 
-        if(!empty($reviewer->document_type)){
-            $message =  "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the document type '".$reviewer->document_type->name."'"; 
-        }else{
-            if($reviewer->reviewer_type == "initial"){
-                $message = "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the initial reviewers";
-            }elseif($reviewer->reviewer_type == "final"){
-                $message = "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the final reviewers";
-            }
+        // if(!empty($reviewer->document_type)){
+        //     $message =  "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the document type '".$reviewer->document_type->name."'"; 
+        // }else{
+        //     if($reviewer->reviewer_type == "initial"){
+        //         $message = "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the initial reviewers";
+        //     }elseif($reviewer->reviewer_type == "final"){
+        //         $message = "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the final reviewers";
+        //     }
  
-        }
+        // }
+
+        $message =  "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the document type '".$reviewer->document_type->name."'"; 
 
         return [
             'message' => $message,

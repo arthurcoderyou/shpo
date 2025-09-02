@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\ReviewerCreated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
@@ -37,43 +38,42 @@ class Reviewer extends Model
        parent::boot();
        
        static::created(function ($reviewer) {
-        //    event(new  \App\Events\ReviewerCreated($reviewer));
-            // try {
-            //     event(new \App\Events\ReviewerCreated($reviewer));
-            // } catch (\Throwable $e) {
-            //     // Log the error without interrupting the flow
-            //     Log::error('Failed to dispatch ReviewerCreated event: ' . $e->getMessage(), [
-            //         'reviewer_id' => $reviewer->id,
-            //         'trace' => $e->getTraceAsString(),
-            //     ]);
-            // }
+        //    event(new  ReviewerCreated($reviewer,auth()->user()->id));
+            try {
+                event(new  ReviewerCreated($reviewer->id,auth()->user()->id));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ReviewerCreated event: ' . $e->getMessage(), [
+                    'reviewer_id' => $reviewer->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
        });
 
        static::updated(function ($reviewer) {
         //    event(new  \App\Events\ReviewerUpdated($reviewer));
 
-            // try {
-            //     event(new \App\Events\ReviewerUpdated($reviewer));
-            // } catch (\Throwable $e) {
-            //     // Log the error without interrupting the flow
-            //     Log::error('Failed to dispatch ReviewerUpdated event: ' . $e->getMessage(), [
-            //         'reviewer_id' => $reviewer->id,
-            //         'trace' => $e->getTraceAsString(),
-            //     ]);
-            // }
+            try {
+                event(new \App\Events\ReviewerUpdated($reviewer->id,auth()->user()->id));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch ReviewerUpdated event: ' . $e->getMessage(), [
+                    'reviewer_id' => $reviewer->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
 
 
        });
 
-       static::deleted(function ($reviewer) {
+       static::deleted(function ( ) {
             //    event(new  \App\Events\ReviewerDeleted($reviewer));
 
         //    try {
-        //         event(new \App\Events\ReviewerDeleted($reviewer));
+        //         event(new \App\Events\ReviewerDeleted(auth()->user()->id));
         //     } catch (\Throwable $e) {
         //         // Log the error without interrupting the flow
-        //         Log::error('Failed to dispatch ReviewerDeleted event: ' . $e->getMessage(), [
-        //             'reviewer_id' => $reviewer->id,
+        //         Log::error('Failed to dispatch ReviewerDeleted event: ' . $e->getMessage(), [ 
         //             'trace' => $e->getTraceAsString(),
         //         ]);
         //     }

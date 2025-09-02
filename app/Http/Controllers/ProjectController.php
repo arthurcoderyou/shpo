@@ -87,7 +87,7 @@ class ProjectController extends Controller
 
             $user = Auth::user();
             // Check if the user has the role "system access global admin" OR the permission "project list view"
-            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view'))) {
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project list view all'))) {
                 Alert::error('Error', 'You do not have permission to access this section.');
 
                 // If there is no previous URL, redirect to the dashboard

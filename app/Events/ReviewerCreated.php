@@ -25,7 +25,7 @@ class ReviewerCreated  implements ShouldBroadcast, ShouldQueue
      */
     public function __construct($reviewer_id, $authId)
     {
-        $this->reviewer = Reviewer::find($this);
+        $this->reviewer = Reviewer::find($reviewer_id);
         $this->reviewer_id = $reviewer_id;
         $this->authId = $authId;
     }
@@ -54,12 +54,42 @@ class ReviewerCreated  implements ShouldBroadcast, ShouldQueue
 
         
         if(!empty($reviewer->document_type)){
-            $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
+
+
+            if(!empty($reviewer->user_id)){
+
+                $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
+            }else{
+                // open review
+                $message =  "New Reviewer 'Open Review' added to the document type '".$reviewer->document_type->name."'";
+
+            }
+
+                
         }else{
             if($reviewer->reviewer_type == "initial"){
-                $message = "New Reviewer '".$reviewer->user->name."' added to the initial reviewers'";
+                if(!empty($reviewer->user_id)){
+
+                    $message = "New Reviewer '".$reviewer->user->name."' added to the initial reviewers";
+                }else{
+                    // open review
+                    $message =  "New Reviewer 'Open Review' added to the initial reviewers";
+
+                }
+
+                
             }elseif($reviewer->reviewer_type == "final"){
-                $message = "New Reviewer '".$reviewer->user->name."' added to the final reviewers '";
+
+                if(!empty($reviewer->user_id)){
+
+                    $message = "New Reviewer '".$reviewer->user->name."' added to the final reviewers ";
+                }else{
+                    // open review
+                    $message = "New Reviewer 'Open Review' added to the final reviewers ";
+
+                }
+
+                
             }
  
         }

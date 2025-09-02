@@ -31,7 +31,7 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.pending_project_update.my-projects') }}">
+      href="{{ route('project.pending_project_update.my-projects') }}" wire:navigate>
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
@@ -61,7 +61,9 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.index.my-projects') }}">
+      href="{{ route('project.index.my-projects') }}"
+      wire:navigate
+      >
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
@@ -90,7 +92,9 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.in_review.my-projects') }}">
+      href="{{ route('project.in_review.my-projects') }}"
+      wire:navigate
+      >
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
@@ -118,7 +122,9 @@
       </div>
 
       <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-      href="{{ route('project.index.my-projects',['project_status' => 'approved']) }}">
+      href="{{ route('project.index.my-projects',['project_status' => 'approved']) }}"
+      wire:navigate
+      >
         View 
         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>

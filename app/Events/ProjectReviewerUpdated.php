@@ -18,7 +18,7 @@ class ProjectReviewerUpdated implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public ProjectReviewer $project_reviewer;
-    public string $message;
+    public string $message = '';
 
     public $projectReviewerId;
     public $authId;
@@ -28,30 +28,24 @@ class ProjectReviewerUpdated implements ShouldBroadcast, ShouldQueue
      */
     public function __construct(ProjectReviewer $project_reviewer, $authId)
     {
+        // Make sure relations used below are loaded for queued broadcasting
+        $project_reviewer->loadMissing(['user', 'project', 'project_document.document_type']);
+
         $this->project_reviewer = $project_reviewer;
 
-        $project_reviewer = $this->project_reviewer;
-
-        // if(!empty($project_reviewer->document_type)){
-        //     $this->message =  "Reviewer '".$project_reviewer->user->name."' added to the document type '".$project_reviewer->project_document->document_type->name."'";
-        // }else{
-        //     if($project_reviewer->reviewer_type == "initial"){
-        //         $this->message = "New Reviewer '".$project_reviewer->user->name."' added to the initial reviewers'";
-        //     }elseif($project_reviewer->reviewer_type == "final"){
-        //         $this->message = "New Reviewer '".$project_reviewer->user->name."' added to the final reviewers '";
-        //     }
- 
-        // }
-
-        if(!empty($project_reviewer->project_document)){
-            $this->message =  "Project Reviewer '".$project_reviewer->user->name."' order updated to ".$project_reviewer->order." on the document type '".$project_reviewer->project_document->document_type->name."' for project '".$project_reviewer->project->name."'"; 
-        }else{
-            if($project_reviewer->reviewer_type == "initial"){
-                $this->message  = "Project Reviewer '".$project_reviewer->user->name."' order updated to ".$project_reviewer->order." on the initial reviewers for project '".$project_reviewer->project->name."'";
-            }elseif($project_reviewer->reviewer_type == "final"){
-                $this->message  = "Project Reviewer '".$project_reviewer->user->name."' order updated to ".$project_reviewer->order." on the final reviewers for project '".$project_reviewer->project->name."'";
+        // Build message (cover all branches)
+        if (!empty($project_reviewer->project_document)) {
+            $docType = optional($project_reviewer->project_document->document_type)->name ?? 'document';
+            $this->message = "Project Reviewer '{$project_reviewer->user->name}' order updated to {$project_reviewer->order} on the document type '{$docType}' for project '{$project_reviewer->project->name}'";
+        } else {
+            if ($project_reviewer->reviewer_type === 'initial') {
+                $this->message = "Project Reviewer '{$project_reviewer->user->name}' order updated to {$project_reviewer->order} on the initial reviewers for project '{$project_reviewer->project->name}'";
+            } elseif ($project_reviewer->reviewer_type === 'final') {
+                $this->message = "Project Reviewer '{$project_reviewer->user->name}' order updated to {$project_reviewer->order} on the final reviewers for project '{$project_reviewer->project->name}'";
+            } else {
+                // Fallback to guarantee initialization
+                $this->message = "Project Reviewer '{$project_reviewer->user->name}' order updated to {$project_reviewer->order} for project '{$project_reviewer->project->name}'";
             }
- 
         }
 
 

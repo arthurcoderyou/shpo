@@ -22,7 +22,7 @@
     </div>
 
     <!-- Footer Link -->
-    <a href="{{ $route }}" 
+    <a href="{{ $route }}" wire:navigate
         class="py-4 px-5 flex justify-between items-center text-sm font-medium text-gray-700 border-t border-gray-200 hover:bg-gray-100 active:bg-gray-200 focus:outline-none rounded-b-2xl transition-colors duration-200">
         View
         <svg class="size-4 ml-2 text-gray-500 group-hover:text-gray-700 transition" xmlns="http://www.w3.org/2000/svg"

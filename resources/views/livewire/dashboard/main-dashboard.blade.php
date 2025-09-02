@@ -319,7 +319,421 @@
     <!-- End Grid --> 
 
 
+    <!-- User Report -->
+    <div class="relative overflow-hidden">
+        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
+            <div class="text-center ">
 
+                <h1 class="text-4xl sm:text-6xl font-bold text-gray-800 ">
+                    <span class="text-sky-500">Users</span> Report
+                </h1>
+
+                <div class="mt-7 sm:mt-12 mx-auto max-w-full relative">
+                    <div class="grid grid-cols-12 gap-6">
+
+
+                        <div class="col-span-12  md:col-span-6">
+                            <canvas wire:ignore id="data_user_count_table_report" class="w-auto h-auto "></canvas>
+                        </div>
+ 
+                        <div class="col-span-12 md:col-span-6">
+                            <canvas wire:ignore id="data_user_registered_count_table_report" class="w-auto h-auto "></canvas>
+                        </div>
+                        
+
+                    </div>
+
+                </div>
+ 
+            </div>
+        </div>
+
+        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
+          <div class="text-center ">
+
+              <h1 class="text-4xl sm:text-6xl font-bold text-gray-800 ">
+                  <span class="text-sky-500">Projects</span> Report
+              </h1>
+
+              <div class="mt-7 sm:mt-12 mx-auto max-w-full relative">
+                  <div class="grid grid-cols-12 gap-6">
+
+                    <div class="col-span-12 md:col-span-6">
+                        <canvas wire:ignore id="data_project_count_per_status_table_report" class="w-auto h-auto "></canvas>
+                    </div> 
+
+                    <div class="col-span-12 md:col-span-6">
+                        <canvas wire:ignore id="data_project_count_per_month_table_report" class="w-auto h-auto "></canvas>
+                    </div>
+                  
+                    <div class="col-span-12  md:col-span-4">
+                        <canvas wire:ignore id="data_project_average_approval_time_table_report" class="w-auto h-auto "></canvas>
+                    </div>
+
+
+                    <div class="col-span-12  md:col-span-4">
+                        <canvas wire:ignore id="data_project_average_response_time_table_report" class="w-auto h-auto "></canvas>
+                    </div>
+
+                    <div class="col-span-12  md:col-span-4">
+                        <canvas wire:ignore id="data_project_average_review_time_table_report" class="w-auto h-auto "></canvas>
+                    </div>
+                    
+                    
+                      
+
+                  </div>
+
+              </div>
+
+          </div>
+      </div>
+
+
+
+    </div>
+    <!-- ./User Report -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- User Report  -->
+    <script>
+
+      /* Total User per Role Report  */
+        const ctx_data_user_count_table_report = document.getElementById('data_user_count_table_report');
+
+        const data_user_count_table = @json($data_user_count_table );
+        const user_count_table_labels = data_user_count_table.map(item => item.label);
+        const user_count_table_values = data_user_count_table.map(item => item.value);
+
+            // console.log(data);
+
+        new Chart(ctx_data_user_count_table_report, {
+            type: 'bar',
+            data: {
+            labels: user_count_table_labels,
+            datasets: [{
+                label: '# of Total Users',
+                data: user_count_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+            scales: {
+                y: {
+                  beginAtZero: true,
+                  suggestedMin: 0,   // Ensure small values are visible
+                 // Adjust based on your range
+                  ticks: {
+                      stepSize: 5.0005, // Set a step size suitable for small values
+                      callback: function(value) {
+                          return value.toFixed(5); // Display full decimal precision
+                      }
+                  }
+                }
+            }
+            }
+        });
+      /* ./ Total User per Role Report  */
+
+
+
+      /* Total Registered User Report  */
+        const ctx_data_user_registered_count_table_report = document.getElementById('data_user_registered_count_table_report');
+
+        const data_user_registered_count_table = @json($data_user_registered_count_table );
+        const user_registered_count_table_labels = data_user_registered_count_table.map(item => item.label);
+        const user_registered_count_table_values = data_user_registered_count_table.map(item => item.value);
+
+            // console.log(data);
+
+        new Chart(ctx_data_user_registered_count_table_report, {
+            type: 'bar',
+            data: {
+            labels: user_registered_count_table_labels,
+            datasets: [{
+                label: '# of Total Registered Users',
+                data: user_registered_count_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+            scales: {
+                y: {
+                  beginAtZero: true,
+                  suggestedMin: 0,   // Ensure small values are visible
+                 // Adjust based on your range
+                  ticks: {
+                      stepSize: 5.0005, // Set a step size suitable for small values
+                      callback: function(value) {
+                          return value.toFixed(5); // Display full decimal precision
+                      }
+                  }
+                }
+            }
+            }
+        });
+      /* ./ Total Registered User Report  */
+
+
+    </script>
+    <!-- ./ User Report  -->
+
+
+     <!-- Project Report  -->
+     <script>
+
+      /* Total Project per Status  */
+        const ctx_data_project_count_per_status_table_report = document.getElementById('data_project_count_per_status_table_report');
+
+        const data_project_count_per_status_table = @json($data_project_count_per_status_table );
+        const project_count_per_status_table_labels = data_project_count_per_status_table.map(item => item.label);
+        const project_count_per_status_table_values = data_project_count_per_status_table.map(item => item.value);
+
+            // console.log(data);
+
+        new Chart(ctx_data_project_count_per_status_table_report, {
+            type: 'bar',
+            data: {
+            labels: project_count_per_status_table_labels,
+            datasets: [{
+                label: '# of Total Projects',
+                data: project_count_per_status_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+            scales: {
+                y: {
+                  beginAtZero: true,
+                  suggestedMin: 0,   // Ensure small values are visible
+                 // Adjust based on your range
+                  ticks: {
+                      stepSize: 5.0005, // Set a step size suitable for small values
+                      callback: function(value) {
+                          return value.toFixed(5); // Display full decimal precision
+                      }
+                  }
+                }
+            }
+            }
+        });
+      /* ./ Total Project per Status  */
+
+
+      /* Total Project per month */
+        const ctx_data_project_count_per_month_table_report = document.getElementById('data_project_count_per_month_table_report');
+
+        const data_project_count_per_month_table = @json($data_project_count_per_month_table );
+        const project_count_per_month_table_labels = data_project_count_per_month_table.map(item => item.label);
+        const project_count_per_month_table_values = data_project_count_per_month_table.map(item => item.value);
+
+            // console.log(data);
+
+        new Chart(ctx_data_project_count_per_month_table_report, {
+            type: 'bar',
+            data: {
+            labels: project_count_per_month_table_labels,
+            datasets: [{
+                label: '# of Total Projects per Month',
+                data: project_count_per_month_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+            scales: {
+                y: {
+                  beginAtZero: false,
+                  suggestedMin: 0,   // Ensure small values are visible
+                  // max: Math.max(...project_count_per_month_table_values) // Adjust based on your range
+                  ticks: {
+                      stepSize: 5.0005, // Set a step size suitable for small values
+                      callback: function(value) {
+                          return value.toFixed(5); // Display full decimal precision
+                      }
+                  }
+                }
+            }
+            }
+        });
+      /* ./ Total Project per month */
+ 
+      /* Average Project Approval Time  */
+        const ctx_data_project_average_approval_time_table_report = document.getElementById('data_project_average_approval_time_table_report');
+
+        const data_project_average_approval_time_table = @json($data_project_average_approval_time_table );
+        const project_average_approval_time_table_labels = data_project_average_approval_time_table.map(item => item.label);
+        const project_average_approval_time_table_values = data_project_average_approval_time_table.map(item => item.value);
+
+            // console.log(data);
+
+        new Chart(ctx_data_project_average_approval_time_table_report, {
+            type: 'line',
+            data: {
+            labels: project_average_approval_time_table_labels,
+            datasets: [{
+                label: 'Average Project Approval time in Hours',
+                data: project_average_approval_time_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+
+
+              animations: {
+                tension: {
+                  duration: 1000,
+                  easing: 'linear',
+                  from: 1,
+                  to: 0,
+                  loop: false
+                }
+              },
+
+              scales: {
+                  y: {
+                    beginAtZero: true, 
+                    suggestedMin: 0,   // Ensure small values are visible
+                   // Adjust based on your range
+                    ticks: {
+                        stepSize: 5.0005, // Set a step size suitable for small values
+                        callback: function(value) {
+                            return value.toFixed(5); // Display full decimal precision
+                        }
+                    }
+
+
+
+                  }
+              }
+            }
+        });
+      /* ./ Average Project Approval Time  */
+
+
+      /* Average Project Response Time  */
+        const ctx_data_project_average_response_time_table_report = document.getElementById('data_project_average_response_time_table_report');
+
+        const data_project_average_response_time_table = @json($data_project_average_response_time_table );
+        const project_average_response_time_table_labels = data_project_average_response_time_table.map(item => item.label);
+        const project_average_response_time_table_values = data_project_average_response_time_table.map(item => item.value);
+
+            // console.log(data);
+
+        new Chart(ctx_data_project_average_response_time_table_report, {
+            type: 'line',
+            data: {
+            labels: project_average_response_time_table_labels,
+            datasets: [{
+                label: 'Average Project Response time in Hours',
+                data: project_average_response_time_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+
+
+              animations: {
+                tension: {
+                  duration: 1000,
+                  easing: 'linear',
+                  from: 1,
+                  to: 0,
+                  loop: false
+                }
+              },
+
+              scales: {
+                  y: {
+                    beginAtZero: true, 
+                    suggestedMin: 0,   // Ensure small values are visible
+                   // Adjust based on your range
+                    ticks: {
+                        stepSize: 5.0005, // Set a step size suitable for small values
+                        callback: function(value) {
+                            return value.toFixed(5); // Display full decimal precision
+                        }
+                    }
+
+
+
+                  }
+              }
+            }
+        });
+      /* ./ Average Project Response Time  */
+
+      /* Average Project Review Time  */
+        const ctx_data_project_average_review_time_table_report = document.getElementById('data_project_average_review_time_table_report');
+
+        const data_project_average_review_time_table = @json($data_project_average_review_time_table );
+        const project_average_review_time_table_labels = data_project_average_review_time_table.map(item => item.label);
+        const project_average_review_time_table_values = data_project_average_review_time_table.map(item => item.value); 
+
+            // console.log(data);
+
+        new Chart(ctx_data_project_average_review_time_table_report, {
+            type: 'line',
+            data: {
+            labels: project_average_review_time_table_labels,
+            datasets: [{
+                label: 'Average Project Review time in Hours',
+                data: project_average_review_time_table_values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9', // Set bar color to orange
+                borderColor: 'blue',    // Optional: Set border color to orange
+            }]
+            },
+            options: {
+
+              responsive: true,
+              maintainAspectRatio: false,
+              animations: {
+                tension: {
+                  duration: 1000,
+                  easing: 'linear',
+                  from: 1,
+                  to: 0,
+                  loop: false
+                }
+              },
+
+              scales: {
+                  y: {
+                    beginAtZero: true, 
+                    suggestedMin: 0,   // Ensure small values are visible
+                     
+                    ticks: {
+                      // autoSkip: false, // Ensure all values are shown
+
+                        stepSize: 5.0005, // Set a step size suitable for small values
+                        callback: function(value) {
+                            return value.toFixed(5); // Display full decimal precision
+                        }
+                    }
+
+
+
+                  }
+              }
+            }
+        });
+      /* ./ Average Project Review Time  */
+ 
+    </script>
+    <!-- ./ Project Report  -->
 
 
 

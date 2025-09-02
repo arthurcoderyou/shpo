@@ -186,10 +186,12 @@ class ProjectList extends Component
     { 
 
         $this->project_status_options = [
+            "submitted" => "Submitted",
             "in_review" => "In Review",
             "pending" => "Pending",
             "approved" => "Approved",
             "rejected" => "Rejected",
+            
 
         ];
 
@@ -624,6 +626,13 @@ class ProjectList extends Component
         ProjectHelper::submit_project($project_id);
 
     }
+
+    public function force_submit_project($project_id){
+
+        ProjectHelper::submit_project($project_id, true); // override on que submission will submit projects that are on que and start the review process
+
+    }
+
 
     public function open_review_project($project_id){
 

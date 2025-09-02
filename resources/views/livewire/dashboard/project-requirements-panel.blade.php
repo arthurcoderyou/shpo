@@ -105,7 +105,9 @@
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer']))
                       <li>
                         No <strong>initial</strong> reviewers have been assigned. Please
-                        <a href="{{ route('reviewer.index') }}" class="underline">assign initial reviewers</a> to proceed.
+                        <a href="{{ route('reviewer.index') }}"
+                        wire:navigate
+                        class="underline">assign initial reviewers</a> to proceed.
                       </li>
                     @else
                       <li>
@@ -120,7 +122,9 @@
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer']))
                       <li>
                         No <strong>final</strong> reviewers have been assigned. Please
-                        <a href="{{ route('reviewer.index') }}" class="underline">assign final reviewers</a> to proceed.
+                        <a href="{{ route('reviewer.index') }}" 
+                        wire:navigate
+                        class="underline">assign final reviewers</a> to proceed.
                       </li>
                     @else
                       <li>
@@ -134,7 +138,7 @@
                   @if ( $errors['no_administrators'] == true)
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['User'])) 
                       <li>
-                        No project administrators have been setup. Please <a href="{{ route('user.index') }}" class="underline">add a administrator</a> before proceeding.
+                        No project administrators have been setup. Please <a href="{{ route('user.index') }}" wire:navigate class="underline">add a administrator</a> before proceeding.
                           
                       </li> 
                     @else
@@ -149,7 +153,7 @@
                   @if (isset($errors['no_document_types']) && $errors['no_document_types'] == true)
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer'])) 
                       <li>
-                        No project reviewers have been setup. Please <a href="{{ route('reviewer.index') }}" class="underline">setup reviewers</a> before proceeding.
+                        No project reviewers have been setup. Please <a href="{{ route('reviewer.index') }}" wire:navigate class="underline">setup reviewers</a> before proceeding.
                         
                       </li> 
                     @else
@@ -164,7 +168,7 @@
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Reviewer']) ) 
                         <li>
                             Some document types have no project reviewers assigned.
-                            Please <a href="{{ route('reviewer.index') }}" class="underline">set up reviewers</a> before proceeding.
+                            Please <a href="{{ route('reviewer.index') }}" wire:navigate class="underline">set up reviewers</a> before proceeding.
                 
                             @if (!empty($documentTypesWithoutReviewers))
                                 <br>
@@ -198,7 +202,7 @@
                   @if (isset($errors['project_submission_times']) && $errors['project_submission_times'] == true)
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Timer']))
                       <li>
-                        Project submission times have not been set. Please <a href="{{ route('project_timer.index') }}" class="underline">specify the open and close times</a>.
+                        Project submission times have not been set. Please <a href="{{ route('project_timer.index') }}" wire:navigate class="underline">specify the open and close times</a>.
                       </li>
                     @else
                       <li>
@@ -211,7 +215,7 @@
                   @if (isset($errors['no_document_types']) && $errors['no_document_types'] == true)
                     @if(auth()->user()->can('system access global admin') || authorizeWithModulesByAllRequiredActions(['Document Type']) )
                       <li>
-                        No document types have been setup. Please <a href="{{ route('document_type.index') }}" class="underline">setup document types</a> before proceeding.
+                        No document types have been setup. Please <a href="{{ route('document_type.index') }}" wire:navigate class="underline">setup document types</a> before proceeding.
                       </li>
                     @else
                       <li>

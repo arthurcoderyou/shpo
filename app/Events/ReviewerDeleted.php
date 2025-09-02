@@ -17,13 +17,14 @@ class ReviewerDeleted  implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public Reviewer $reviewer;
+    // public Reviewer $reviewer;
+    public $authId;
     /**
      * Create a new event instance.
      */
-    public function __construct(Reviewer $reviewer)
+    public function __construct($authId)
     {
-        $this->reviewer = $reviewer;
+        $this->authId = $authId;
     }
 
     /**

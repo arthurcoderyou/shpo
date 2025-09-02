@@ -2,6 +2,8 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
+use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Events\ReviewerCreated;
 use Illuminate\Queue\InteractsWithQueue;
@@ -27,19 +29,49 @@ class ReviewerCreatedListener  implements ShouldQueue
         $auth_user = User::find($event->authId);
 
         if(!empty($reviewer->document_type)){
-            $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
+
+
+            if(!empty($reviewer->user_id)){
+
+                $message =  "New Reviewer '".$reviewer->user->name."' added to the document type '".$reviewer->document_type->name."'";
+            }else{
+                // open review
+                $message =  "New Reviewer 'Open Review' added to the document type '".$reviewer->document_type->name."'";
+
+            }
+
+                
         }else{
             if($reviewer->reviewer_type == "initial"){
-                $message = "New Reviewer '".$reviewer->user->name."' added to the initial reviewers'";
+                if(!empty($reviewer->user_id)){
+
+                    $message = "New Reviewer '".$reviewer->user->name."' added to the initial reviewers";
+                }else{
+                    // open review
+                    $message =  "New Reviewer 'Open Review' added to the initial reviewers";
+
+                }
+
+                
             }elseif($reviewer->reviewer_type == "final"){
-                $message = "New Reviewer '".$reviewer->user->name."' added to the final reviewers '";
+
+                if(!empty($reviewer->user_id)){
+
+                    $message = "New Reviewer '".$reviewer->user->name."' added to the final reviewers ";
+                }else{
+                    // open review
+                    $message = "New Reviewer 'Open Review' added to the final reviewers ";
+
+                }
+
+                
             }
  
         }
 
 
         ActivityLog::create([
-            'created_by' => $reviewer->created_by,
+            'created_by' => $event->authId,
             'log_username' => $auth_user->name,
             'log_action' => $message,
         ]);

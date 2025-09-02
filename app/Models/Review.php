@@ -16,7 +16,8 @@ class Review extends Model
         'project_review',
         'project_id',
         'project_document_id',
-        'reviewer_id',
+        'reviewer_id', // user id of hte user that made the review
+        'project_reviewer_id', // project reviewer 
         'review_status',
         
         # ['pending','approved','rejected']
@@ -24,19 +25,18 @@ class Review extends Model
         # re_submitted for resubmission
 
         'project_status', 
-         # 'draft','submitted','in_review','approved','rejected','completed','cancelled',
-         'next_reviewer_name',
+        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',
+        'next_reviewer_name',
 
         'admin_review', // means that this is a review from the admin
         'created_by',
         'updated_by',
         'created_at',
         'updated_at',
-
+ 
         'response_time_hours',
         'review_time_hours',
-
-
+ 
         'requires_project_update',
         'requires_document_update',
         'requires_attachment_update',
@@ -167,6 +167,29 @@ class Review extends Model
     {
         return $this->belongsTo(Project::class, 'project_id', 'id');
     }
+
+
+    /**
+     * Get all of the attachments for the review
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function required_attachment_updates() // : HasMany
+    {
+        return $this->hasMany(ReviewRequireAttachmentUpdates::class, 'review_id');
+    }
+
+    /**
+     * Get all of the comments for the Review
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function required_document_updates() // : HasMany
+    {
+        return $this->hasMany(ReviewRequireDocumentUpdates::class, 'review_id');
+    }
+
+
 
 
     static public function countUnseenEmails($project_id){

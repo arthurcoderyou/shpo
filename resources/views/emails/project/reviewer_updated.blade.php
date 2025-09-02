@@ -1,47 +1,89 @@
-{{-- <x-mail::message>
-# Introduction
-
-The body of your message.
-
-<x-mail::button :url="''">
-Button Text
-</x-mail::button>
-
-Thanks,<br>
-{{ config('app.name') }}
-</x-mail::message> --}}
-
 @component('mail::message')
 # Project Reviewer List Updated
 
 Hello {{ $user->name }},
 
-The reviewer list for the project **{{ $project->name }}** has been updated. Below is the new list of assigned reviewers:
+The reviewer list for the project **{{ $project->name }}** has been updated. Below is the new list of assigned reviewers by type.
 
-## **Updated Reviewer List and Order:**
-@foreach ($project->project_documents as $project_document)
+@php
+    // Helper to print a reviewer line (handles missing user as "Open Review")
+    $printReviewer = function ($pr) {
+        $order = $pr->order ?? '-';
+        $name  = optional($pr->user)->name ?? 'Open Review';
+        $status = ucfirst($pr->review_status ?? 'pending');
+        return "**{$order}.** {$name} || Review Status: {$status}";
+    };
 
-{{ $project_document->document_type->name }}
+    // Project-level reviewers (Initial & Final) — sorted by order
+    $projectReviewers = collect($project->project_reviewers ?? []);
+    $initialReviewers = $projectReviewers->where('reviewer_type', 'initial')->sortBy('order');
+    $finalReviewers   = $projectReviewers->where('reviewer_type', 'final')->sortBy('order');
+@endphp
 
-@foreach ($project_document->project_reviewers as $project_reviewer)
-- **{{ $project_reviewer->order }}.** {{ $project_reviewer->user->name }} || Review Status: {{ ucfirst($project_reviewer->review_status) }}
-@endforeach
+{{-- INITIAL REVIEWERS --}}
+## **Initial Reviewers**
+@forelse ($initialReviewers as $pr)
+- {!! $printReviewer($pr) !!}
+@empty
+- _No initial reviewers assigned._
+@endforelse
 
 
-@endforeach
+{{-- DOCUMENT REVIEWERS (grouped per document type) --}}
+## **Document Reviewers (by Document Type)**
+@php
+    $projectDocuments = collect($project->project_documents ?? []);
+@endphp
+
+@forelse ($projectDocuments as $project_document)
+### {{ optional($project_document->document_type)->name ?? 'Untitled Document Type' }}
+
+@php
+    $docReviewers = collect($project_document->project_reviewers ?? [])
+        ->where('reviewer_type', 'document')
+        ->sortBy('order');
+@endphp
+
+@forelse ($docReviewers as $pr)
+- {!! $printReviewer($pr) !!}
+@empty
+- _No document reviewers assigned for this document type._
+@endforelse
+
+@empty
+- _No project documents found._
+@endforelse
+
+
+{{-- FINAL REVIEWERS --}}
+## **Final Reviewers**
+@forelse ($finalReviewers as $pr)
+- {!! $printReviewer($pr) !!}
+@empty
+- _No final reviewers assigned._
+@endforelse
 
 
 @php
-    $current_reviewer = $project->getCurrentReviewer();
-@endphp 
+    $current_reviewer = $project->getCurrentReviewer(); // expects a ProjectReviewer or null
+@endphp
 
-@if(!empty($current_reviewer))
-## **Current Reviewer:**
-- **{{ $current_reviewer->order }}.** {{ $current_reviewer->user->name }} : {{ $current_reviewer->project_document->document_type->name ?? null }}
+@if (!empty($current_reviewer))
+@php
+    $currentType = ucfirst($current_reviewer->reviewer_type ?? 'document');
+    $currentDoc  = optional(optional($current_reviewer->project_document)->document_type)->name;
+    $currentName = optional($current_reviewer->user)->name ?? 'Open Review';
+@endphp
+
+## **Current Reviewer**
+- **{{ $current_reviewer->order ?? '-' }}.** {{ $currentName }}
+  @if($currentType) — **Type:** {{ $currentType }} @endif
+  @if($currentDoc) — **Document:** {{ $currentDoc }} @endif
+  — **Status:** {{ ucfirst($current_reviewer->review_status ?? 'pending') }}
 @endif
 
 
-## **Project Details:**
+## **Project Details**
 - **Name:** {{ $project->name }}
 - **Description:** {{ $project->description }}
 - **Status:** {{ ucfirst($project->status) }}

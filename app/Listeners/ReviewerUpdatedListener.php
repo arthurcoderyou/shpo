@@ -2,6 +2,8 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
+use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Events\ReviewerUpdated;
 use Illuminate\Queue\InteractsWithQueue;
@@ -22,8 +24,10 @@ class ReviewerUpdatedListener  implements ShouldQueue
      */
     public function handle(ReviewerUpdated $event): void
     {
-       
-        $reviewer = $event->reviewer;
+        
+        $reviewer = Reviewer::find($event->reviewer_id) ;
+
+        $auth_user = User::find($event->authId);
 
         if(!empty($reviewer->document_type)){
             $message =  "Reviewer '".$reviewer->user->name."' order updated to ".$reviewer->order." on the document type '".$reviewer->document_type->name."'";
@@ -38,8 +42,8 @@ class ReviewerUpdatedListener  implements ShouldQueue
 
 
         ActivityLog::create([
-            'created_by' => $reviewer->created_by,
-            'log_username' => auth()->user()->name,
+            'created_by' => $event->authId,
+            'log_username' => $auth_user->name,
             'log_action' => $message,
         ]);
     }

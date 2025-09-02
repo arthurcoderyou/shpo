@@ -53,6 +53,14 @@ class Project extends Model
 
         'last_submitted_at',
         'last_submitted_by',
+        'last_reviewed_at',
+        'last_reviewed_by',
+
+
+        'allotted_review_time_hours',
+
+
+
     ];
 
     // Automatically generate the project number
@@ -232,6 +240,7 @@ class Project extends Model
     }
 
 
+    
 
     public function getProjectReviewersSortByOrder()
     {
@@ -348,6 +357,30 @@ class Project extends Model
         $userId = $reviewer_id ?? auth()->id();
 
         foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+                // dd($document->project_reviewers );
+
+           $review = $document->project_reviewers()
+                ->where('user_id', $userId)
+                ->where('status', true)
+                ->first();
+
+            if ($review) {
+                return $review;
+            }
+        }
+
+        return null;
+    }
+
+
+    public function getUserReview($reviewer_id = null)
+    {
+
+        // dd($this->project_documents()->orderBy('id')->get());
+
+        $userId = $reviewer_id ?? auth()->id();
+
+        foreach ($this->project_documents as $document) {
                 // dd($document->project_reviewers );
 
            $review = $document->project_reviewers()
@@ -537,8 +570,8 @@ class Project extends Model
         //     }
         // }
 
-
-        
+        // Deactivate all reviewers across all types
+        $this->project_reviewers()->update(['status' => false]);
 
         // Activate the first eligible reviewer by reviewer_type priority and then order
         foreach ($reviewerTypePriority as $type) {

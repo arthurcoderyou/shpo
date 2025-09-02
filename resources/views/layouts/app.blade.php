@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -821,7 +821,7 @@
         <!-- Inside the <head> -->
         @livewireStyles
     </head>
-    <body  class="font-sans antialiased bg-white " 
+    <body  class="font-sans antialiased bg-white overflow-y-auto scroll-smooth" 
      @if(isset($project)) data-project-id="{{ $project->id }}" @endif 
         >
  

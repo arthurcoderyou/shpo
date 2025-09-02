@@ -140,7 +140,7 @@ new class extends Component
     }
 }; ?>
 
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100 overflow-auto">
 
     @if($show_device_trust_section == true)
         <div class="bg-gray-100 text-sm text-gray-700 pb-1 ">
@@ -288,7 +288,10 @@ new class extends Component
     <header class="flex flex-wrap  lg:justify-start lg:flex-nowrap z-50 w-full bg-white border-b border-gray-200 ">
         <nav class="relative max-w-[85rem] w-full mx-auto lg:flex lg:items-center lg:justify-between lg:gap-3 py-2 px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center gap-x-1">
-            <a class="flex-none font-semibold text-xl text-black focus:outline-none focus:opacity-80 " href="{{ route('dashboard') }}" aria-label="Brand">
+            <a class="flex-none font-semibold text-xl text-black focus:outline-none focus:opacity-80 " 
+            href="{{ route('dashboard') }}" 
+            wire:navigate
+            aria-label="Brand">
                 <input type="image" src="{{ asset('images/logo-ghrd.png') }}" class="max-w-52 sm:max-w-72" alt="">
             </a>
 
@@ -318,6 +321,7 @@ new class extends Component
 
                         <a class="p-2 flex items-center text-sm  rounded-lg  {{ request()->routeIs('dashboard') ? $active : $inactive }} "
                             href="{{ route('dashboard') }}"
+                            wire:navigate
                             aria-current="dashboard">
                             <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
                             Dashboard
@@ -326,8 +330,11 @@ new class extends Component
                         <!-- only show for users that has role and permissions for project  -->
                         @if(Auth::user()->roles->isNotEmpty()  )
 
-                            @if(authorizeWithModules(['Project Own', 'Project Own Override']))
-                            <!-- Projects -->
+
+
+
+                            @if(authorizeWithModules([  'Project Own Override']))
+                            <!-- All Projects -->
                             <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
                                 <button id="hs-header-base-dropdown" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
                                 {{ 
@@ -358,22 +365,21 @@ new class extends Component
                                 <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 " role="menu" aria-orientation="vertical" aria-labelledby="hs-header-base-dropdown">
                                     <div class="py-1 md:px-1 space-y-0.5">
 
-                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('project create'))
-                                            <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project.create') 
-
-                                            ? $active : $inactive }}" 
-                                            href="{{ route('project.create') }}">
-                                                <span class="py-0.5 px-1.5">
-                                                    Submit a Project
-                                                </span>
-
-                                                
-                                            </a>
-                                        @endif
+                                        
 
 
                                         {{-- ALL  --}}
-
+                                            <hr>
+                                            <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                   
+                                                > 
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Project Management &nbsp;&nbsp;
+                                                </span>
+                                               
+                                                   
+                                            </span>
+                                            <hr>
 
                                             @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view all'))
                                                 <a class="p-2 md:px-3 flex items-center text-sm {{ 
@@ -383,7 +389,9 @@ new class extends Component
                                                     ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
 
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.index.all') }}">
+                                                href="{{ route('project.index.all') }}"
+                                                wire:navigate
+                                                >
 
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
                                                         All Projects &nbsp;&nbsp;
@@ -404,7 +412,9 @@ new class extends Component
                                                     request()->routeIs('project.index.update-pending.all')     
 
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.index.update-pending.all') }}">
+                                                href="{{ route('project.index.update-pending.all') }}"
+                                                wire:navigate
+                                                >
 
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
                                                         All Projects Update Pending &nbsp;&nbsp;
@@ -425,7 +435,9 @@ new class extends Component
                                                     request()->routeIs('project.index.review-pending.all')     
 
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.index.review-pending.all') }}">
+                                                href="{{ route('project.index.review-pending.all') }}"
+                                                wire:navigate
+                                                >
 
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
                                                         All Projects Review Pending &nbsp;&nbsp;
@@ -450,7 +462,9 @@ new class extends Component
                                                     ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
 
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.index.all.no-drafts') }}">
+                                                href="{{ route('project.index.all.no-drafts') }}"
+                                                wire:navigate
+                                                >
  
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
                                                         All Projects No Drafts  &nbsp;&nbsp;
@@ -471,7 +485,9 @@ new class extends Component
                                                     request()->routeIs('project.index.open-review') 
 
                                                 ? $active : $inactive }}" 
-                                                href="{{ route('project.index.open-review') }}">
+                                                href="{{ route('project.index.open-review') }}"
+                                                wire:navigate
+                                                >
  
                                                     <span class="inline-flex items-center py-0.5 px-1.5">
                                                         Open Review Projects  &nbsp;&nbsp;
@@ -487,46 +503,7 @@ new class extends Component
                                             @endif
 
 
-                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending all linked'))
-                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                    request()->routeIs('project.index.update-pending.all-linked')     
-
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.index.update-pending.all-linked') }}">
-
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-                                                        Linked Projects Update Pending &nbsp;&nbsp;
-                                                    </span>
-                                                    @php 
-                                                        $projects_count = 0;
-                                                        $projects_count = Project::countProjects('project.index.update-pending.all-linked'); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
-                                                        >{{ $projects_count }}</span>
-                                                </a>
-                                            @endif
-
-
-                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending all linked'))
-                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                    request()->routeIs('project.index.review-pending.all-linked')     
-
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.index.review-pending.all-linked') }}">
-
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-                                                        Linked Projects Review Pending &nbsp;&nbsp;
-                                                    </span>
-                                                    @php 
-                                                        $projects_count = 0;
-                                                        $projects_count = Project::countProjects('project.index.review-pending.all-linked'); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
-                                                        >{{ $projects_count }}</span>
-                                                </a>
-                                            @endif
+                                            
 
 
                                             {{-- @if(Auth::user()->can('system access global admin') || Auth::user()->can('project update all list view'))
@@ -581,72 +558,7 @@ new class extends Component
 
 
 
-                                        {{-- OWNED --}}
-                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view'))
-                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
-                                                    request()->routeIs('project.index') ||  
-                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
-                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
-                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
-
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.index') }}">
-
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-                                                        Your Projects &nbsp;&nbsp;
-                                                    </span>
-                                                    @php 
-                                                        $projects_count = 0;
-                                                        $projects_count = Project::countProjects('project.index'); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
-                                                        >{{ $projects_count }}</span>
-                                                </a>
-                                            @endif  
-
-                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending'))
-                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
-                                                request()->routeIs('project.index.update-pending')  
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.index.update-pending') }}">
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-
-                                                    Your Projects Update Pending    &nbsp; 
-                                                    </span>
-                                                    @php 
-                                                        $projects_for_review = 0;
-                                                        $projects_for_review = Project::countProjects('project.index.update-pending'); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
-                                                    >{{ $projects_for_review }}</span>
-                                                </a>
-                                            @endif
-
-                                            
-
-
-                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending'))
-                                                <a class="p-2 md:px-3  flex items-center justify-center text-sm {{ request()->routeIs('project.index.review-pending')  || request()->routeIs('project.review')   
-                                                ? $active : $inactive }}" 
-                                                href="{{ route('project.index.review-pending') }}">
-                                                    <span class="inline-flex items-center py-0.5 px-1.5">
-                                                        Your Projects In Review    &nbsp;&nbsp; 
-                                                    </span> 
-                                                    
-                                                    @php 
-                                                        $projects_for_review = 0;
-                                                        $projects_for_review = Project::countProjects('project.index.review-pending'); 
-                                                    @endphp
-                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
-                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
-                                                    >{{ $projects_for_review }}</span>
-                                                </a>
-                                            @endif 
-
-
-                                        {{-- ./ OWNED --}}
+                                        
 
                                         
 
@@ -655,7 +567,9 @@ new class extends Component
                                             <a class="p-2 md:px-3  flex items-center text-sm {{ 
                                             request()->routeIs('review.index')  
                                             ? $active : $inactive }}" 
-                                            href="{{ route('review.index') }}">
+                                            href="{{ route('review.index') }}"
+                                            wire:navigate
+                                            >
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
                                                     Project Reviews    &nbsp;&nbsp;
                                                 </span>
@@ -669,11 +583,26 @@ new class extends Component
                                             </a>
                                         @endif
 
+
+                                        <hr>
+                                        <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                
+                                            > 
+                                            <span class="inline-flex items-center py-0.5 px-1.5">
+                                                Project Settings &nbsp;&nbsp;
+                                            </span>
+                                            
+                                                
+                                        </span>
+                                        <hr>
+
  
 
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('reviewer list view'))
                                             <a class="p-2 md:px-3 flex   items-center text-sm {{ request()->routeIs('reviewer.index')  ? $active : $inactive }}" 
-                                            href="{{ route('reviewer.index') }}">
+                                            href="{{ route('reviewer.index') }}"
+                                            wire:navigate
+                                            >
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
                                                     Project Reviewer 
                                                 </span>
@@ -692,7 +621,9 @@ new class extends Component
 
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('timer list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project_timer.index')  ? $active : $inactive }}" 
-                                            href="{{ route('project_timer.index') }}">
+                                            href="{{ route('project_timer.index') }}"
+                                            wire:navigate
+                                            >
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
                                                     Time Settings
                                                 </span>
@@ -708,7 +639,9 @@ new class extends Component
 
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type list view'))
                                             <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('document_type.index')  ? $active : $inactive }}" 
-                                            href="{{ route('document_type.index') }}">
+                                            href="{{ route('document_type.index') }}"
+                                            wire:navigate
+                                            >
                                                 <span class="inline-flex items-center py-0.5 px-1.5">
                                                     Document Types  
                                                 </span>
@@ -726,6 +659,213 @@ new class extends Component
                                     </div>
                                 </div>
                             </div>
+
+                            @endif
+                            @if(authorizeWithModules(['Project Own']))
+
+                            
+
+
+                            <!-- Your Projects -->
+                            <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
+                                <button id="hs-header-base-dropdown-my-projects" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
+                                {{ 
+                                    // request()->routeIs('project.index.my-projects')  ||
+                                    // request()->routeIs('project.in_review.my-projects')  ||
+                                    // request()->routeIs('project.pending_project_update.my-projects') ||
+                                    request()->routeIs('project.index') || request()->routeIs('project.in_review') ||
+                                    request()->routeIs('reviewer.index') || request()->routeIs('project.edit') || 
+                                    request()->routeIs('project.create') || request()->routeIs('project.show') || 
+                                    request()->routeIs('project.in_review')  || 
+                                    request()->routeIs('project.pending_project_update') || 
+                                    request()->routeIs('review.index')  
+
+                                ? $active : $inactive }}
+                                " 
+                                
+                                
+                                aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
+                                    <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 2.5-2.5L3 5"/><path d="m3 19 2.5-2.5L3 14"/><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/></svg>
+                                    Your Projects
+                                    <svg class="hs-dropdown-open:-rotate-180 md:hs-dropdown-open:rotate-0 duration-300 shrink-0 size-4 ms-auto md:ms-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+
+                                <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 " role="menu" aria-orientation="vertical" aria-labelledby="hs-header-base-dropdown-my-projects">
+                                    <div class="py-1 md:px-1 space-y-0.5">
+
+
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('project create'))
+                                            <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('project.create') 
+
+                                            ? $active : $inactive }}" 
+                                            href="{{ route('project.create') }}"
+                                            wire:navigate
+                                            >
+                                                <span class="py-0.5 px-1.5">
+                                                    Submit a Project
+                                                </span>
+
+                                                
+                                            </a>
+                                        @endif
+                                        
+
+                                        {{-- OWNED --}}
+                                            <hr>
+                                            <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                   
+                                                > 
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Your Projects &nbsp;&nbsp;
+                                                </span>
+                                               
+                                                   
+                                            </span>
+                                             <hr>
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index') ||  
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.edit')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.show')  ) || 
+                                                    ( !empty($current_route_project) && $current_route_project->created_by == Auth::user()->id &&  request()->routeIs('project.reviewer.index')  )  
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index') }}"
+                                                wire:navigate
+                                                >
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Your Projects &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif  
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending'))
+                                                <a class="p-2 md:px-3  flex items-center text-sm {{ 
+                                                request()->routeIs('project.index.update-pending')  
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.update-pending') }}"
+                                                wire:navigate
+                                                >
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+
+                                                    Your Projects Update Pending    &nbsp; 
+                                                    </span>
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjects('project.index.update-pending'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif
+
+                                            
+                                            
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending'))
+                                                <a class="p-2 md:px-3  flex items-center justify-center text-sm {{ request()->routeIs('project.index.review-pending')  || request()->routeIs('project.review')   
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.review-pending') }}"
+                                                wire:navigate
+                                                >
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Your Projects In Review    &nbsp;&nbsp; 
+                                                    </span> 
+                                                    
+                                                    @php 
+                                                        $projects_for_review = 0;
+                                                        $projects_for_review = Project::countProjects('project.index.review-pending'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                    title="{{ $projects_for_review ? $projects_for_review.' projects to review' : 'No projects to review' }}"
+                                                    >{{ $projects_for_review }}</span>
+                                                </a>
+                                            @endif 
+
+
+                                            <hr>
+                                            <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                   
+                                                > 
+                                                <span class="inline-flex items-center py-0.5 px-1.5">
+                                                    Projects To Review &nbsp;&nbsp;
+                                                </span>
+                                               
+                                                   
+                                            </span>
+                                             <hr>
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending all linked'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.update-pending.all-linked')     
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.update-pending.all-linked') }}"
+                                                wire:navigate
+                                                >
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Linked Projects Update Pending &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.update-pending.all-linked'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view review pending all linked'))
+                                                <a class="p-2 md:px-3 flex items-center text-sm {{ 
+                                                    request()->routeIs('project.index.review-pending.all-linked')     
+
+                                                ? $active : $inactive }}" 
+                                                href="{{ route('project.index.review-pending.all-linked') }}"
+                                                wire:navigate
+                                                >
+
+                                                    <span class="inline-flex items-center py-0.5 px-1.5">
+                                                        Linked Projects Review Pending &nbsp;&nbsp;
+                                                    </span>
+                                                    @php 
+                                                        $projects_count = 0;
+                                                        $projects_count = Project::countProjects('project.index.review-pending.all-linked'); 
+                                                    @endphp
+                                                    <span class="inline-flex items-center py-0.5 px-1.5 rounded-full border border-black text-xs bg-white text-black font-bold"
+                                                        title="{{ $projects_count ? $projects_count.' projects' : 'No projects created' }}"
+                                                        >{{ $projects_count }}</span>
+                                                </a>
+                                            @endif
+
+
+
+
+
+                                        {{-- ./ OWNED --}}
+
+
+
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
                             <!-- End Projects -->
                             @endif
 
@@ -754,7 +894,7 @@ new class extends Component
                                     @endif
                                     " aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
                                     <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 2.5-2.5L3 5"/><path d="m3 19 2.5-2.5L3 14"/><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/></svg>
-                                    User Manager
+                                    Users
                                     <svg class="hs-dropdown-open:-rotate-180 md:hs-dropdown-open:rotate-0 duration-300 shrink-0 size-4 ms-auto md:ms-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                 </button>
                                 {{-- @endif --}}
@@ -763,7 +903,9 @@ new class extends Component
 
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('user list view'))
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('user.index') || request()->routeIs('user.edit') || request()->routeIs('user.create') ? $active : $inactive }}"
-                                        href="{{ route('user.index') }}">
+                                        href="{{ route('user.index') }}"
+                                        wire:navigate
+                                        >
                                             Users
                                         </a>
                                         @endif
@@ -771,14 +913,18 @@ new class extends Component
                                         
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('role list view'))
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('role.index') || request()->routeIs('role.edit') || request()->routeIs('role.create') || request()->routeIs('role.add_permissions') ? $active : $inactive }}" 
-                                        href="{{ route('role.index') }}">
+                                        href="{{ route('role.index') }}"
+                                        wire:navigate
+                                        >
                                             Roles
                                         </a>
                                         @endif
 
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('permission list view'))
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('permission.index') || request()->routeIs('permission.edit') || request()->routeIs('permission.create') ? $active : $inactive }}"
-                                        href="{{ route('permission.index') }}">
+                                        href="{{ route('permission.index') }}"
+                                        wire:navigate
+                                        >
                                             Permissions
                                         </a>
                                         @endif
@@ -792,27 +938,32 @@ new class extends Component
                             <!-- End Dropdown -->
                             @endif
                             
-                            @if(authorizeWithModules(['Activity Logs']))  
+                            {{-- @if(authorizeWithModules(['Activity Logs']))  
                             <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('activity_logs.index') ? $active : $inactive }} "
-                                href="{{ route('activity_logs.index') }}" >
+                                href="{{ route('activity_logs.index') }}"
+                                wire:navigate
+                                >
                                 <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 Activity Logs
                             </a>
-                            @endif
+                            @endif --}}
 
-                           @if(authorizeWithModules(['Setting']))
+                           @if(authorizeWithModules(['Setting']) || authorizeWithModules(['Activity Logs']) || authorizeWithModules(['Profile']))
 
                             <!-- Dropdown -->
                             <div class="hs-dropdown [--strategy:static] md:[--strategy:fixed] [--adaptive:none] [--is-collapse:true] md:[--is-collapse:false] ">
 
                                 @if(
-                                    Auth::user()->can('system access global admin') 
+                                    Auth::user()->can('system access global admin') ||  authorizeWithModules(['Activity Logs']) || authorizeWithModules(['Profile'])
                                 
                                     )
                                 <button id="user_manager" type="button" class="hs-dropdown-toggle w-full p-2 flex items-center text-sm  rounded-lg focus:outline-none
                                     @if(
                                         request()->routeIs('setting.index')  || request()->routeIs('setting.edit') || request()->routeIs('setting.create') ||
-                                         request()->routeIs('setting.manager') || request()->routeIs('setting.manager.edit')
+                                        request()->routeIs('setting.manager') || request()->routeIs('setting.manager.edit') || 
+                                        request()->routeIs('activity_logs.index') || 
+                                        request()->routeIs('profile')
+                                        
                                         )
                                         {{ $active }}
                                     @else
@@ -827,9 +978,39 @@ new class extends Component
                                 <div class="hs-dropdown-menu transition-[opacity,margin] duration-[0.1ms] md:duration-[150ms] hs-dropdown-open:opacity-100 opacity-0 relative w-full md:w-52 hidden z-10 top-full ps-7 md:ps-0 md:bg-white md:rounded-lg md:shadow-md before:absolute before:-top-4 before:start-0 before:w-full before:h-5 md:after:hidden after:absolute after:top-1 after:start-[18px] after:w-0.5 after:h-[calc(100%-0.25rem)] after:bg-gray-100 " role="menu" aria-orientation="vertical" aria-labelledby="user_manager">
                                     <div class="py-1 md:px-1 space-y-0.5">
 
+                                        <span class="px-2 py-0 md:px-3 block items-center text-xs text-gray-500 "
+                                         
+                                        >
+                                            Currently Logged in as 
+                                        </span>
+ 
+                                        <span class="p-2 md:px-3 block items-center text-sm  "
+                                         
+                                        >
+                                            {{ Auth::user()->name }}
+                                        </span>
+
+                                        
+                                        <hr>
+
+
                                         @if( Auth::user()->can('system access global admin') )
+                                        <hr>
+                                        <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                
+                                            > 
+                                            <span class="inline-flex items-center py-0.5 px-1.5">
+                                                Settings Management &nbsp;&nbsp;
+                                            </span>
+                                            
+                                                
+                                        </span>
+                                        <hr>
+
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('setting.manager') || request()->routeIs('setting.manager.edit') ? $active : $inactive }}"
-                                        href="{{ route('setting.manager') }}">
+                                        href="{{ route('setting.manager') }}"
+                                        wire:navigate
+                                        >
                                             Settings Manager
                                         </a>
                                         @endif
@@ -837,8 +1018,54 @@ new class extends Component
                                         
                                         @if(Auth::user()->can('system access global admin') )
                                         <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('setting.index') || request()->routeIs('setting.edit') || request()->routeIs('setting.create')  ? $active : $inactive }}" 
-                                        href="{{ route('setting.index') }}">
+                                        href="{{ route('setting.index') }}"
+                                        wire:navigate
+                                        >
                                             Setting Keys
+                                        </a>
+                                        @endif
+
+                                        
+                                        @if(authorizeWithModules(['Profile']) || Auth::user()->can('profile update information'))
+                                        <hr>
+                                        <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                
+                                            > 
+                                            <span class="inline-flex items-center py-0.5 px-1.5">
+                                                Profile Management &nbsp;&nbsp;
+                                            </span>
+                                            
+                                                
+                                        </span>
+                                        <hr>
+
+                                        <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('profile') ? $active : $inactive }}"
+                                        href="{{ route('profile') }}"
+                                        wire:navigate
+                                        >
+                                            Update your Account
+                                        </a>
+                                        @endif
+
+
+                                        @if(  authorizeWithModules(['Activity Logs']) )
+                                        <hr>
+                                        <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
+                                                
+                                            > 
+                                            <span class="inline-flex items-center py-0.5 px-1.5">
+                                                Log Management &nbsp;&nbsp;
+                                            </span>
+                                            
+                                                
+                                        </span>
+                                        <hr>
+
+                                        <a class="p-2 md:px-3 flex items-center text-sm {{ request()->routeIs('activity_logs.index') ? $active : $inactive }}"
+                                        href="{{ route('activity_logs.index') }}"
+                                        wire:navigate
+                                        >
+                                            Activity Logs
                                         </a>
                                         @endif
  
@@ -898,22 +1125,24 @@ new class extends Component
                 
                 </div>
 
-                <div class="my-2 md:my-0 md:mx-2">
+                {{-- <div class="my-2 md:my-0 md:mx-2">
                     <div class="w-full h-px md:w-px md:h-4 bg-gray-100 md:bg-gray-300 "></div>
                 </div>
 
                 <!-- Button Group -->
                 <div class=" flex flex-wrap items-center gap-x-1.5">
                     @if(authorizeWithModules(['Profile']) || Auth::user()->can('profile update information'))
-                    <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('profile') ? $active : $inactive }} " href="{{ route('profile') }}" >
+                    <a  class="p-2 flex items-center text-sm   rounded-lg {{ request()->routeIs('profile') ? $active : $inactive }} " href="{{ route('profile') }}" 
+                        wire:navigate
+                        >
                         <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        {{-- Profile --}}
+                        <!-- Profile -->
                         {{ Auth::user()->name }}
                     </a>
                     @endif
 
                 </div>
-                <!-- End Button Group -->
+                <!-- End Button Group --> --}}
 
 
                 

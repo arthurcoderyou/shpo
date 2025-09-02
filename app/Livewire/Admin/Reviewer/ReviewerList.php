@@ -11,6 +11,7 @@ use App\Models\ActivityLog;
 use App\Models\DocumentType;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectReviewer;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
@@ -22,6 +23,8 @@ use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
+use App\Notifications\ProjectOpenReviewNotification;
+use App\Notifications\ProjectOpenReviewNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotification;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
 
@@ -51,6 +54,8 @@ class ReviewerList extends Component
 
     public $documentTypesWithoutReviewers;
     public $allDocumentTypesHaveReviewers;
+    public $hasInitialReviewers;
+    public $hasFinalReviewers;
 
 
 
@@ -74,9 +79,9 @@ class ReviewerList extends Component
 
     public function mount(){
 
-        $this->users = User::permission('system access reviewer')
-            ->pluck('id', 'name')
-            ->toArray();
+        // $this->users = User::permission('system access reviewer')
+        //     ->pluck('id', 'name')
+        //     ->toArray();
  
 
         // DocumentTypes that don't have any reviewers
@@ -85,9 +90,12 @@ class ReviewerList extends Component
         // Check if all document types have at least one reviewer
         $this->allDocumentTypesHaveReviewers = empty($this->documentTypesWithoutReviewers);
 
-        $this->errors = [
-            'document_types_missing_reviewers' => !$this->allDocumentTypesHaveReviewers,
-        ];
+        // Check if there are reviewers by type
+        $this->hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
+        $this->hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
+
+
+        
 
         // Get the last order number
         // $this->lastOrder = Reviewer::max('order') ?? 0;
@@ -121,10 +129,15 @@ class ReviewerList extends Component
             $this->reviewers = $this->getReviewersProperty();
 
 
-
-
-
+             
         // dd($this->lastOrder);
+
+
+        // Refresh users list based on the same rules
+        $this->users = $this->eligibleUsersQuery() 
+            ->orderBy('name', 'asc')
+            ->pluck('id', 'name')->toArray();
+
 
     }
 
@@ -138,13 +151,62 @@ class ReviewerList extends Component
             $this->document_type_id = DocumentType::first()->id ?? null;
         }
 
+
+        // Refresh users list based on the same rules
+        $this->users = $this->eligibleUsersQuery() 
+            ->orderBy('name', 'asc')
+            ->pluck('id', 'name')->toArray();
+
         $this->reviewers = $this->getReviewersProperty();
       
     }   
 
+    /**
+     * Build a query for eligible users based on reviewer_type.
+     * Rules:
+     *  - initial/final: must have BOTH 'system access admin' AND 'system access reviewer'
+     *  - document: must have 'system access reviewer'
+     *  - other/empty: returns no users (guardrail)
+     */
+    protected function eligibleUsersQuery()
+    {
+        $q = User::query();
+
+        switch ($this->reviewer_type) {
+            case 'initial':
+            case 'final':
+                // Chain permission() to enforce AND
+                $q->permission('system access admin')
+                ->permission('system access reviewer');
+                break;
+
+            case 'document':
+                $q->permission('system access reviewer')
+                    ->whereDoesntHave('permissions', function ($sub) {
+                        $sub->where('name', 'system access admin');
+                    })
+                    ->whereDoesntHave('roles.permissions', function ($sub) {
+                        $sub->where('name', 'system access admin');
+                    });
+                break;
+
+            default:
+                // Unknown type: return an empty set
+                $q->whereRaw('1=0');
+                break;
+        }
+
+        return $q;
+    }
+
+
+
     public function updatedDocumentTypeId(){
        $this->reviewers = $this->getReviewersProperty();
     }
+
+
+     
 
 
 
@@ -380,231 +442,287 @@ class ReviewerList extends Component
  
    
 
-    public function apply_to_all(){
+    public function apply_to_all()
+    {
+        $reviewer_types = ['initial', 'document', 'final'];
+
+        // dd($reviewer_types);
 
 
-        // Get all reviewers from the reviewers table
-        $reviewers = Reviewer::orderBy('order')->get();
+        // Get all projects where status is not 'approved', 'rejected', or 'draft'
+        $projects = Project::whereNotIn('status', ['approved', 'rejected', 'draft','on_que'])->get();
 
-        // Get all projects where status is not 'approved'
-        $projects = Project::where('status', '!=', 'approved')->get();
+        // dd($projects);
 
+        // fetch all projects 
         foreach ($projects as $project) {
-            // Get existing project reviewers for this project
-            $existingReviewers = $project->project_reviewers()->pluck('user_id', 'id')->toArray();
+            // dd($project);
 
 
-            
-            // dd($existingReviewers);
-            
+            // all new reviewers
+            $allNewReviewerIds = [];
 
 
-            // Store reviewer IDs from reviewers table
-            $newReviewerIds = $reviewers->pluck('user_id')->toArray();
+            // all reviewers to remove
+            $allToRemoveIds = [];
 
-            // **1. Remove project reviewers that are not in the reviewers table**
-            $toRemove = array_diff($existingReviewers, $newReviewerIds);
-            if (!empty($toRemove)) {
-                ProjectReviewer::where('project_id', $project->id)
-                    ->whereIn('user_id', $toRemove)
-                    ->delete();
+
+            foreach ($reviewer_types as $type) {
+                // Get all reviewers of the current type
+                $reviewers = Reviewer::where('reviewer_type', $type)->orderBy('order')->get();
+
+                // dd($reviewers);
+
+
+
+                // Get existing reviewers for this project and type
+                $existingReviewers = ProjectReviewer::where('project_id', $project->id)
+                    ->where('reviewer_type', $type)
+                    ->pluck('user_id', 'id')
+                    ->toArray();
+
+                // dd($existingReviewers);
+
+
+                $newReviewerIds = $reviewers->pluck('user_id')->toArray();
+
+                // 1. Remove project reviewers not in the master reviewer list
+                $toRemove = array_diff($existingReviewers, $newReviewerIds);
+                if (!empty($toRemove)) {
+
+                    // Track unique "to remove" user_ids
+                    foreach ($toRemove as $userId) {
+                        if (!in_array($userId, $allToRemoveIds, true)) {
+                            $allToRemoveIds[] = $userId;
+                        }
+                    }
+
+
+                    ProjectReviewer::where('project_id', $project->id)
+                        ->where('reviewer_type', $type)
+                        ->whereIn('user_id', $toRemove)
+                        ->delete();
+                }
+
+                // 2. Update order for existing reviewers
+                foreach ($reviewers as $reviewer) {
+                    ProjectReviewer::where('project_id', $project->id)
+                        ->where('reviewer_type', $type)
+                        ->where('user_id', $reviewer->user_id)
+                        ->update(['order' => $reviewer->order]);
+                }
+
+                // 3. Add new reviewers not already in project reviewers
+                foreach ($reviewers as $reviewer) {
+                    if (!in_array($reviewer->user_id, $existingReviewers)) {
+                        ProjectReviewer::create([
+                            'project_id' => $project->id,
+                            'user_id' => $reviewer->user_id,
+                            'order' => $reviewer->order,
+                            'reviewer_type' => $type,
+                            'status' => false,
+                            'review_status' => 'pending',
+                            'created_by' => auth()->id(),
+                            'updated_by' => auth()->id(),
+                        ]);
+                    }
+
+                    // Track unique "new" user_ids
+                    if (!in_array($reviewer->user_id, $allNewReviewerIds, true)) {
+                        $allNewReviewerIds[] = $reviewer->user_id;
+                    }
+
+                }
+
+                
+
+                 
             }
 
-            // **2. Update order for existing reviewers in project reviewers**
-            foreach ($reviewers as $reviewer) {
-                ProjectReviewer::where('project_id', $project->id)
-                    ->where('user_id', $reviewer->user_id)
-                    ->update(['order' => $reviewer->order]);
-            }
 
-            // **3. Add new reviewers that are not already in project_reviewers**
-            foreach ($reviewers as $reviewer) {
-                if (!in_array($reviewer->user_id, $existingReviewers)) {
-                    ProjectReviewer::create([
-                        'project_id' => $project->id,
-                        'user_id' => $reviewer->user_id,
-                        'order' => $reviewer->order,
-                        'status' => false, // Assuming new reviewers are inactive by default
-                        'review_status' => 'pending', // Set default review status
-                        'created_by' => auth()->id(),
-                        'updated_by' => auth()->id(),
-                    ]);
+  
+            // 4. Reset all statuses for this project reviewers
+            ProjectReviewer::where('project_id', $project->id)
+                // ->where('reviewer_type', $type)
+                ->update(['status' => false]);
+
+            // 5. Activate the first reviewer (not approved)
+            $project->resetCurrentProjectDocumentReviewers();
+
+
+
+            // Uses in_array(..., true) for strict checks; finishes with array_unique as a final safety net.
+            $allNewReviewerIds = array_values(array_unique($allNewReviewerIds));
+            $allToRemoveIds    = array_values(array_unique($allToRemoveIds));
+
+
+            // 6. Notify removed reviewers
+            foreach ($allToRemoveIds as $user_id) {
+                $user = User::find($user_id);
+                if ($user && $project->status !== "draft") {
+                    // Notification::send($user, new ProjectReviewerUpdatedNotification($project, $user));
+                    // Notification::send($user, new ProjectReviewerUpdatedNotificationDB($project, $user));
+
+                    // $current_reviewer = $project->getCurrentReviewer();
+                    // if ($current_reviewer && $user->id === $current_reviewer->user->id) {
+                    //     Notification::send($user, new ProjectReviewNotification($project, $current_reviewer));
+                    //     Notification::send($user, new ProjectReviewNotificationDB($project, $current_reviewer));
+                    // }
+
+                    ProjectHelper::notifyReviewersAndSubscribersOnAdminReviewerUpdate($project, $user);
+
+
                 }
             }
 
+            // 7. Notify added reviewers
+            foreach ($allNewReviewerIds as $user_id) {
+                $user = User::find($user_id);
+                if ($user && $project->status !== "draft") {
+                    // Notification::send($user, new ProjectReviewerUpdatedNotification($project, $user));
+                    // Notification::send($user, new ProjectReviewerUpdatedNotificationDB($project, $user));
 
-            // **4. Reset all project_reviewers' status to false**
-            ProjectReviewer::where('project_id', $project->id)->update(['status' => false]);
-
-            // **5. Find the first project_reviewer that is NOT approved and set it to active**
-            $nextReviewer = ProjectReviewer::where('project_id', $project->id)
-                ->where('review_status', '!=', 'approved')
-                ->orderBy('order', 'asc')
-                ->first();
-
-            if ($nextReviewer) {
-                $nextReviewer->update(['status' => true]);
-            }
-
- 
-            // dd($existingReviewers);
-
-            // notify the existing reviewers that are not on the reviewers list 
-            foreach($toRemove as $key => $toRemove_user_id){
-
-                $user = User::where('id',$toRemove_user_id)->first();
-                $project = Project::where('id',$project->id)->first();
-
-                /**Do not include drafts */
-                if($project->status != "draft"){
-                    // dd($project);
+                    // $current_reviewer = $project->getCurrentReviewer();
+                    // if ($current_reviewer && $user->id === $current_reviewer->user->id) {
+                    //     Notification::send($user, new ProjectReviewNotification($project, $current_reviewer));
+                    //     Notification::send($user, new ProjectReviewNotificationDB($project, $current_reviewer));
+                    // }
 
 
-
-                    $title = "";
-                    $title = $project->title ?? "";
-    
-                    // dd($user);
-                    if ($user) {
-                        //this is to notify the user that the reviewer list had been updated 
-                        Notification::send($user, new ProjectReviewerUpdatedNotification($project,$user));
-
-                        //this is to add to reviewer notifications
-                        Notification::send($user, new ProjectReviewerUpdatedNotificationDB($project,$user));
-
-
- 
-             
-                    }
-
-                    // if user is also the current reviewer, send a review request nofication to that user 
-                    $current_reviewer = $project->getCurrentReviewer();
-                    if($user->id == $current_reviewer->user->id){
-
-                        Notification::send($user, new ProjectReviewNotification($project, $current_reviewer));
-
-                        //send notification to the database
-                        Notification::send($user, new ProjectReviewNotificationDB($project, $current_reviewer));
-                    }
+                    ProjectHelper::notifyReviewersAndSubscribersOnAdminReviewerUpdate($project, $user);
 
  
                 }
-
-            }    
-
-
-
-
-            //  and the project creator for the update on the project
-            foreach($newReviewerIds as $key => $user_id){
-
-                // dd($user_id);
-
-                $user = User::where('id',$user_id)->first();
-                $project = Project::where('id',$project->id)->first();
-
-                /**Do not include drafts */
-                if($project->status != "draft"){
-                    // dd($project);
-
-
-
-                    $title = "";
-                    $title = $project->title ?? "";
-    
-                    // dd($user);
-                    if ($user) {
-                        //this is to notify the user that the reviewer list had been updated 
-                        Notification::send($user, new ProjectReviewerUpdatedNotification($project,$user));
-
-                        //this is to add to reviewer notifications
-                        Notification::send($user, new ProjectReviewerUpdatedNotificationDB($project,$user));
-
- 
-             
-                    }
-
-                    // if user is also the current reviewer, send a review request nofication to that user 
-                    $current_reviewer = $project->getCurrentReviewer();
-                    if($user->id == $current_reviewer->user->id){
-
-                        Notification::send($user, new ProjectReviewNotification($project, $current_reviewer));
-
-                        //send notification to the database
-                        Notification::send($user, new ProjectReviewNotificationDB($project, $current_reviewer));
-                    }
-
- 
-                }
-               
-
             }
-            
-            
 
-            // update the creator of the project
-
-            $creator = User::where('id',$project->created_by)->first();
-
-
-            // dd($user);
+            // 8. Notify project creator
+            $creator = User::find($project->created_by);
             if ($creator) {
-                //this is to notify the creator of the project that his project had been reviewed
-                Notification::send($creator, new ProjectReviewerUpdatedNotification($project,$creator));
-     
-                //send notification to the database
-                Notification::send($creator, new ProjectReviewerUpdatedNotificationDB($project,$creator));
-                // ProjectReviewerUpdatedNotificationDB
+                // Notification::send($creator, new ProjectReviewerUpdatedNotification($project, $creator));
+                // Notification::send($creator, new ProjectReviewerUpdatedNotificationDB($project, $creator));
+                ProjectHelper::notifyReviewersAndSubscribersOnAdminReviewerUpdate($project, $creator);
             }
 
+            // 9. Notify admin
+            $admin = Auth::user();
+            // Notification::send($admin, new ProjectReviewerUpdatedNotification($project, $admin));
+            // Notification::send($admin, new ProjectReviewerUpdatedNotificationDB($project, $admin));
+
+            ProjectHelper::notifyReviewersAndSubscribersOnAdminReviewerUpdate($project, $admin);
 
 
-            $admin = User::where('id',Auth::user()->id)->first();
+            $current_reviewer = $project->getCurrentReviewer();
 
-            if ($admin) {
-                //this is to notify the creator of the project that his project had been reviewed
-                Notification::send($admin, new ProjectReviewerUpdatedNotification($project,$admin));
-     
-                //send notification to the database
-                Notification::send($admin, new ProjectReviewerUpdatedNotificationDB($project,$admin));
-                // ProjectReviewerUpdatedNotificationDB
-            }
+            // check project for open review
+                // if there is a reviewer record but hte reviewer user is not added, it means it is open review
+                // if the current reviewer is an open review, update all administrators that are there is an open review 
+                if(!empty($current_reviewer) && empty($current_reviewer->user_id)){ 
+                // if the current reviewer does not have a user assigned to it , meaning this is an open review 
+                    // notify admininstrators about the open review
 
 
 
+                    // Determine users based on reviewer type
+                    $reviewerType = $current_reviewer->reviewer_type; // assuming $reviewer is available
+
+                    if (in_array($reviewerType, ['initial', 'final'])) {
+                        $users = \Spatie\Permission\Models\Permission::whereIn('name', [
+                            'system access admin',
+                            'system access global admin',
+                        ])
+                        ->with('roles.users')
+                        ->get()
+                        ->flatMap(function ($permission) {
+                            return $permission->roles->flatMap(function ($role) {
+                                return $role->users;
+                            });
+                        })->unique('id')->values();
+                    } elseif ($reviewerType === 'document') {
+                        $users = \Spatie\Permission\Models\Permission::whereIn('name', [
+                            'system access reviewer',
+                            'system access admin',
+                            'system access global admin',
+                        ])
+                        ->with('roles.users')
+                        ->get()
+                        ->flatMap(function ($permission) {
+                            return $permission->roles->flatMap(function ($role) {
+                                return $role->users;
+                            });
+                        })->unique('id')->values();
+                    } else {
+                        $users = collect(); // fallback to empty if reviewer_type is unknown
+                    }
 
 
-            // add a review to the user
-            //add to the review model
-            $review = new Review();
-            $review->project_review = "The project reviewers list had been updated";
-            $review->admin_review = true;
-            $review->project_id = $project->id;
-            $review->reviewer_id = Auth::user()->id;
-            $review->review_status = "Approved";
-            $review->created_by = Auth::user()->id;
-            $review->updated_by = Auth::user()->id;
-            $review->created_at = now();
-            $review->updated_at = now();
-            $review->save();
 
 
+                    
+                    foreach ($users as $user) {
+                        try {
+                            Notification::send($user, new ProjectOpenReviewNotification($project,$current_reviewer));
+                        } catch (\Throwable $e) {
+                            Log::error('Failed to send ProjectOpenReviewNotification notification: ' . $e->getMessage(), [
+                                'project_id' => $project->id,
+                                'user_id' => $user->id,
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                        }
+
+                        try {
+                            Notification::send($user, new ProjectOpenReviewNotificationDB($project,$current_reviewer));
+                        } catch (\Throwable $e) {
+                            Log::error('Failed to send ProjectOpenReviewNotificationDB notification: ' . $e->getMessage(), [
+                                'project_id' => $project->id,
+                                'user_id' => $user->id,
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                        }
+                    }
+
+
+
+
+
+
+                }
+
+            // ./ check project for open review
+
+            
+
+            // 10. Add review record
+            Review::create([
+                'project_review' => "The $type project reviewers list has been updated",
+                'admin_review' => true,
+                'project_id' => $project->id,
+                'reviewer_id' => $admin->id,
+                'review_status' => 'Approved',
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+ 
+
+            // 11. Log activity
             ActivityLog::create([
-                'log_action' => "Project \"".$project->name."\" reviewer list updated ",
-                'log_username' => Auth::user()->name,
-                'created_by' => Auth::user()->id,
+                'log_action' => "Project \"{$project->name}\" $type reviewer list updated",
+                'log_username' => $admin->name,
+                'created_by' => $admin->id,
             ]);
 
 
-
-
-
+            
         }
 
-        Alert::success('Success','Reviewer applied to all successfully');
-        return redirect()->route('reviewer.index');
+        
 
+        Alert::success('Success', 'Reviewers applied to all projects successfully');
+        return redirect()->route('reviewer.index');
     }
+
 
 
     /*
@@ -1302,11 +1420,19 @@ class ReviewerList extends Component
 
 
         // $reviewers = $reviewers->paginate($this->record_count);
-            // dd($this->reviewers);
+            // dd($this->reviewers);    
+
+        $issues = [
+            'no_reviewers' => Reviewer::count() === 0,
+            'document_types_missing_reviewers' => !$this->allDocumentTypesHaveReviewers,
+            'no_initial_reviewers' => !$this->hasInitialReviewers,
+            'no_final_reviewers' => !$this->hasFinalReviewers,
+        ];
 
         return view('livewire.admin.reviewer.reviewer-list',[
             'reviewers' => $this->reviewers ,
             'lastOrder' => $this->lastOrder,
+            'issues' => $issues
         ]);
     }
 

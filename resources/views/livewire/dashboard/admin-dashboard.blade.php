@@ -33,7 +33,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('user.index',['selected_role' => 'no_role','role_request' => 'user']) }}">
+        href="{{ route('user.index',['selected_role' => 'no_role','role_request' => 'user']) }}"
+        wire:navigate
+        >
           View
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -61,7 +63,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('user.index',['selected_role' => 'no_role','role_request' => 'reviewer']) }}">
+        href="{{ route('user.index',['selected_role' => 'no_role','role_request' => 'reviewer']) }}"
+        wire:navigate
+        >
           View
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -137,7 +141,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('project.in_review') }}">
+        href="{{ route('project.in_review') }}"
+        wire:navigate
+        >
           View 
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -166,7 +172,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('project.pending_project_update') }}">
+        href="{{ route('project.pending_project_update') }}"
+        wire:navigate
+        >
           View 
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -195,7 +203,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('review.index') }}">
+        href="{{ route('review.index') }}"
+        wire:navigate
+        >
           View 
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -225,7 +235,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('project.index') }}">
+        href="{{ route('project.index') }}"
+        wire:navigate
+        >
           View 
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -254,7 +266,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('project.index',['project_status' => 'in_review']) }}">
+        href="{{ route('project.index',['project_status' => 'in_review']) }}"
+        wire:navigate
+        >
           View 
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
@@ -282,7 +296,9 @@
         </div>
 
         <a class="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 rounded-b-xl " 
-        href="{{ route('project.index',['project_status' => 'approved']) }}">
+        href="{{ route('project.index',['project_status' => 'approved']) }}"
+        wire:navigate
+        >
           View 
           <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </a>
