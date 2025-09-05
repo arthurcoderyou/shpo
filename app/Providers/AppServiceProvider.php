@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
 use App\Console\Commands\CheckProjectSubmissions;
 
