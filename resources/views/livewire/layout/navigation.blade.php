@@ -710,7 +710,12 @@ new class extends Component
                                         @endif
                                         
 
-                                        {{-- OWNED --}}
+                                        {{-- OWNED --}}    
+                                            @if(Auth::user()->can('system access global admin') || 
+                                                Auth::user()->can('project list view') || 
+                                                Auth::user()->can('project list view update pending') || 
+                                                Auth::user()->can('project list view review pending')
+                                                )                                                                                                                                                    
                                             <hr>
                                             <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
                                                    
@@ -721,7 +726,8 @@ new class extends Component
                                                
                                                    
                                             </span>
-                                             <hr>
+                                            <hr>
+                                            @endif
 
                                             @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view'))
                                                 <a class="p-2 md:px-3 flex items-center text-sm {{ 
@@ -792,7 +798,7 @@ new class extends Component
                                                 </a>
                                             @endif 
 
-
+                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending all linked'))
                                             <hr>
                                             <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
                                                    
@@ -803,10 +809,14 @@ new class extends Component
                                                
                                                    
                                             </span>
-                                             <hr>
+                                            <hr>
+                                            @endif
 
 
-                                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('project list view update pending all linked'))
+                                            @if(Auth::user()->can('system access global admin') || 
+                                                Auth::user()->can('project list view update pending all linked') || 
+                                                Auth::user()->can('project list view review pending all linked')
+                                                )
                                                 <a class="p-2 md:px-3 flex items-center text-sm {{ 
                                                     request()->routeIs('project.index.update-pending.all-linked')     
 

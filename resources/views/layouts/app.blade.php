@@ -33,8 +33,8 @@
         {{-- <link rel="stylesheet" href="{{ asset('vendor/livewire-dropzone/livewire-dropzone.css') }}">  --}}
 
         <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
-        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-        <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.js" defer></script>
+        <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js" defer></script>
 
 
         {{-- <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -44,7 +44,7 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
         <!-- Include Flatpickr JS -->
-        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
  
         <script>
             window.userId = @json(auth()->id());
@@ -74,7 +74,7 @@
 
         {{-- Open Layer --}}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
-        <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js" defer></script>
         {{-- ./Open layer --}}
 
         <!-- Scripts -->
@@ -1025,9 +1025,64 @@
 
         <!-- Before the closing </body> tag -->
         @livewireScripts
- 
-   
+        
 
+        <!-- Full Page Loader -->
+        <div id="full-page-loader" aria-live="polite" role="status">
+            <div style="
+                background:#111827;color:#fff;padding:20px 24px;border-radius:14px;
+                box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;gap:12px;align-items:center;min-width:280px;text-align:center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" aria-hidden="true"
+                    style="animation:spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"></circle>
+                <path fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8z" opacity=".75"></path>
+                </svg>
+                <div style="font-size:14px;font-weight:600;">Loading Website…</div>
+            </div>
+        </div>
+        <!-- ./ Full Page Loader -->
+
+        <!-- Script for Full Page Loader -->
+        <script>
+            (function() {
+                const root = document.documentElement;
+                const loader = document.getElementById('full-page-loader');
+                // Make sure the page starts in "loading" state
+                root.classList.add('loading');
+
+                function showLoader() {
+                if (!loader) return;
+                    loader.removeAttribute('data-hidden');
+                    root.classList.add('loading');
+                }
+                function hideLoader() {
+                    if (!loader) return;
+                    loader.setAttribute('data-hidden', 'true');
+                    // allow transition to complete before re-enabling scroll
+                    setTimeout(() => root.classList.remove('loading'), 300);
+                }
+
+                // 1) Hide after everything (images, CSS, JS) is loaded
+                window.addEventListener('load', function() {
+                    // If you need to wait for *your* init scripts, call hideLoader() after they finish instead.
+                    hideLoader();
+                });
+
+                // 2) Show immediately when user reloads or navigates away (gives instant feedback)
+                window.addEventListener('beforeunload', function() {
+                    showLoader();
+                });
+
+                // 3) If you use Livewire navigate or Turbo-like partial nav, handle those too (optional)
+                document.addEventListener('livewire:navigating', showLoader);
+                document.addEventListener('livewire:navigated', hideLoader);
+
+                // Expose manual control for your custom init
+                window.__pageLoader = { show: showLoader, hide: hideLoader };
+            })();
+        </script>
+        <!-- ./ Script for Full Page Loader -->    
 
     </body>
 </html>

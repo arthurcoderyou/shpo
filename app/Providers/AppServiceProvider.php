@@ -28,5 +28,10 @@ class AppServiceProvider extends ServiceProvider
             // app(Schedule::class)->command(CheckProjectSubmissions::class)->everyMinute();
         });
 
+
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
     }
 }

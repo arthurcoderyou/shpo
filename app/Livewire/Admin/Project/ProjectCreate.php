@@ -55,6 +55,7 @@ class ProjectCreate extends Component
     public $reviewer_response_duration_type = "day";  
  
 
+
     public $latitude;
     public $longitude;
     public $location;
