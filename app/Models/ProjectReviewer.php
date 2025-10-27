@@ -19,10 +19,13 @@ class ProjectReviewer extends Model
         'user_id',
         'created_by',
         'updated_by',
-        'review_status',
+        'review_status', // 'pending','approved','rejected','changes_requested'
         'reviewer_type',
         'project_document_id',
 
+        'slot_type',
+        'slot_role',
+        
         'requires_project_update',
         'requires_document_update',
         'requires_attachment_update',
@@ -118,8 +121,18 @@ class ProjectReviewer extends Model
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-
+    /**
+     * Get all of the reviews for the ProjectReviewer
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function reviews() 
+    {
+        return $this->hasMany(Review::class, 'project_reviewer_id');
+    }
     
+
+
     // /**
     //  * Get the reviews of the project reviewer
     //  *
@@ -131,23 +144,29 @@ class ProjectReviewer extends Model
     // }
 
 
-    static public function getLastSubmitterReview(Project $project,ProjectReviewer $project_reviewer){
+    static public function getLastSubmitterReview(ProjectDocument $project_document,ProjectReviewer $project_reviewer){
 
         return Review::where(function (\Illuminate\Database\Eloquent\Builder $q) use ($project_reviewer) {
             $q->where('project_reviewer_id', $project_reviewer->id)
               ->orWhere('reviewer_id', $project_reviewer->user_id);
         })
-        ->where('project_id', $project->id)
+        ->where('project_document_id', $project_document->id)
         ->orderByDesc('id')
         ->first();
-        
-        
          
-
     }
 
+    static public function getLastSubmitterDocumentReview(ProjectDocument $project_document,ProjectReviewer $project_reviewer){
 
-
+        return Review::where(function (\Illuminate\Database\Eloquent\Builder $q) use ($project_reviewer) {
+            $q->where('project_reviewer_id', $project_reviewer->id)
+              ->orWhere('reviewer_id', $project_reviewer->user_id);
+        })
+        ->where('project_document_id', $project_document->id)
+        ->orderByDesc('id')
+        ->first(); 
+    }
+ 
     public function getReviewStatus(){
 
 

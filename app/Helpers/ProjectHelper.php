@@ -353,10 +353,35 @@ class ProjectHelper
         ProjectHelper::setProjectReviewers($project,$submission_type);
 
 
-        $reviewer = $project->getCurrentReviewer(); // get the current reviewer
+        // $reviewer = $project->getCurrentReviewer(); // get the current reviewer
 
 
-        ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+        // ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+        foreach($project->project_documents as $project_document){
+
+            $reviewer =     Project::getCurrentReviewerByProjectDocument($project_document->id);
+
+            // ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+            // notify creator, project reviewers and project subscribers 
+            ProjectHelper::notifyRevs_Subs_on_RevUpd($project, $project_document->id, 'document');
+
+            if($reviewer->slot_type == "person"){// if the current reviewer is a person
+                $reviewer_user = User::find($reviewer->user_id); 
+                ProjectHelper::sendForReviewersProjectReviewNotification($reviewer_user,$project, $reviewer);
+
+            }else if($reviewer->slot_type == "open"){
+
+                ProjectHelper::sendForReviewersOpenProjectReviewNotification($project, $reviewer);
+                
+
+            }
+             
+
+        }
+
+
 
             
         // if($submission_type = "submission")
@@ -704,26 +729,26 @@ class ProjectHelper
 
         if($submission_type == "submission"){ // first time submission
 
-            // set the initial reviewers 
-                // Fetch all initial reviewers in order 
-                $initial_reviewers = Reviewer::orderBy('order')
-                    ->where('reviewer_type', 'initial')
-                    ->get(); 
+            // // set the initial reviewers 
+            //     // Fetch all initial reviewers in order 
+            //     $initial_reviewers = Reviewer::orderBy('order')
+            //         ->where('reviewer_type', 'initial')
+            //         ->get(); 
                         
-                // set the inital reviewers for the project
-                foreach( $initial_reviewers as $initial_reviewer){
-                    ProjectReviewer::create([
-                        'order' => $initial_reviewer->order,
-                        'review_status' => 'pending',
-                        'project_id' => $project->id,
-                        'user_id' => $initial_reviewer->user_id  ?? null,
-                        'created_by' => $project->created_by ?? auth()->id(),
-                        'updated_by' => $project->created_by ?? auth()->id(),
-                        'reviewer_type' => 'initial',  
-                    ]);
+            //     // set the inital reviewers for the project
+            //     foreach( $initial_reviewers as $initial_reviewer){
+            //         ProjectReviewer::create([
+            //             'order' => $initial_reviewer->order,
+            //             'review_status' => 'pending',
+            //             'project_id' => $project->id,
+            //             'user_id' => $initial_reviewer->user_id  ?? null,
+            //             'created_by' => $project->created_by ?? auth()->id(),
+            //             'updated_by' => $project->created_by ?? auth()->id(),
+            //             'reviewer_type' => 'initial',  
+            //         ]);
                     
-                }
-            // ./ set the initial reviewers
+            //     }
+            // // ./ set the initial reviewers
 
             // set the document reviewers
                 // check for the project documents
@@ -748,11 +773,15 @@ class ProjectHelper
                                 'reviewer_type' => 'document',
                                 'project_document_id' => $project_document->id, // id of the connected document 
 
-
+                                'slot_type' => $reviewer->slot_type  ?? null,
+                                'slot_role' => $reviewer->slot_role  ?? null,
                             ]);
 
                             
                         }
+
+
+                        Project::resetCurrentProjectDocumentReviewersByDocument($project_document->document_type_id,$project->id); 
                             
 
                     }
@@ -762,30 +791,30 @@ class ProjectHelper
 
 
 
-            // set the final reviewers 
-                // Fetch all reviewers in order that is part of the project document id 
-                $final_reviewers = Reviewer::orderBy('order')
-                    ->where('reviewer_type', 'final')
-                    ->get(); 
+            // // set the final reviewers 
+            //     // Fetch all reviewers in order that is part of the project document id 
+            //     $final_reviewers = Reviewer::orderBy('order')
+            //         ->where('reviewer_type', 'final')
+            //         ->get(); 
                         
 
-                foreach( $final_reviewers as $final_reviewer){
-                    ProjectReviewer::create([
-                        'order' => $final_reviewer->order,
-                        'review_status' => 'pending',
-                        'project_id' => $project->id,
-                        'user_id' => $final_reviewer->user_id ?? null,
-                        'created_by' => $project->created_by ?? auth()->id(),
-                        'updated_by' => $project->created_by ?? auth()->id(),
-                        'reviewer_type' => 'final',  
-                    ]);
+            //     foreach( $final_reviewers as $final_reviewer){
+            //         ProjectReviewer::create([
+            //             'order' => $final_reviewer->order,
+            //             'review_status' => 'pending',
+            //             'project_id' => $project->id,
+            //             'user_id' => $final_reviewer->user_id ?? null,
+            //             'created_by' => $project->created_by ?? auth()->id(),
+            //             'updated_by' => $project->created_by ?? auth()->id(),
+            //             'reviewer_type' => 'final',  
+            //         ]);
                     
-                }
-            // ./ set the final reviewers
+            //     }
+            // // ./ set the final reviewers
 
 
 
-            $project->resetCurrentProjectDocumentReviewers();
+            // $project->resetCurrentProjectDocumentReviewers();
             
 
         }else{ // re-submission
@@ -1187,7 +1216,7 @@ class ProjectHelper
         $projectTimer = ProjectTimer::first();
 
         // DocumentTypes that don't have any reviewers
-        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray() ?? [];
 
         // Check if all document types have at least one reviewer
         $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
@@ -1214,6 +1243,7 @@ class ProjectHelper
             'no_reviewers' => Reviewer::count() === 0,
             'no_document_types' => DocumentType::count() === 0, // Add a new error condition
             'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
+            
             'no_initial_reviewers' => !$hasInitialReviewers,
             'no_final_reviewers' => !$hasFinalReviewers,
         ];
@@ -1509,12 +1539,7 @@ class ProjectHelper
             }
 
 
-        }
- 
-
-        
-
- 
+        } 
 
         if(!empty($project_reviewers)){ // check if there are project reviewers 
 
@@ -1532,6 +1557,179 @@ class ProjectHelper
                     } catch (\Throwable $e) {
                         // Log the error without interrupting the flow
                         Log::error('Failed to send ProjectReviewerUpdatedNotification notification: ' . $e->getMessage(), [
+                            'project_id' => $project->id,
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                    }
+
+                    try {
+                        // Send DB notification to reviewer about the project reviewer update 
+                        Notification::send($user, new ProjectReviewerUpdatedNotificationDB($project, $user));
+                    } catch (\Throwable $e) {
+                        // Log the error without interrupting the flow
+                        Log::error('Failed to send ProjectReviewerUpdatedNotificationDB notification: ' . $e->getMessage(), [
+                            'project_id' => $project->id,
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                    }
+
+                    
+                    $current_reviewer = $project->getCurrentReviewer();
+
+                    // if reviewer is the current reviewer, send a review notification   
+                    if ($reviewer->id ==  $current_reviewer->id) {
+
+                        try {
+                             // Send email   notification to reviewer
+                            Notification::send($user, new ProjectReviewNotification($project, $reviewer));
+                        } catch (\Throwable $e) {
+                            // Log the error without interrupting the flow
+                            Log::error('Failed to send ProjectReviewNotification notification: ' . $e->getMessage(), [
+                                'project_id' => $project->id,
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                        }
+
+                        try {
+                             // Send   DB notification to reviewer
+                            Notification::send($user, new ProjectReviewNotificationDB($project, $reviewer));
+                        } catch (\Throwable $e) {
+                            // Log the error without interrupting the flow
+                            Log::error('Failed to send ProjectReviewNotificationDB notification: ' . $e->getMessage(), [
+                                'project_id' => $project->id,
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                        }
+
+                       
+                        
+
+                        
+
+                        
+                    }
+                     
+
+
+ 
+                }else{
+                    // if there is no user in project reviewer record, meaning this is an open review 
+
+
+
+
+                }
+
+ 
+                 
+            }
+
+                
+
+        }
+            
+        // // Message for the subscribers
+        $message = "The project '" . $project->name . "' has updated project reviewers ";
+
+        if (!empty($project->project_subscribers)) {
+            foreach ($project->project_subscribers as $subscriber) {
+                $subUser = User::where('id',$subscriber->user_id)->first();
+
+                if ($subUser) {
+
+
+                    try {
+                        // Send   email notification to reviewer
+                        Notification::send($subUser, new ProjectSubscribersNotification(
+                            $subUser,
+                            $project,
+                            'project_reviewers_updated',
+                            $message
+                        ));
+                    } catch (\Throwable $e) {
+                        // Log the error without interrupting the flow
+                        Log::error('Failed to send ProjectSubscribersNotification notification: ' . $e->getMessage(), [
+                            'project_id' => $project->id,
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                    }
+
+                    
+
+
+                }
+            }
+        }
+
+
+
+
+
+    }
+
+
+    // notify creator, project reviewers and project subscribers 
+    public static function notifyRevs_Subs_on_RevUpd($project, $project_document_id, $reviewer_type)
+    {
+
+        $project_document = ProjectDocument::where('id', $project_document_id)->first();
+
+
+        //get all the project reviewers of the project within that project document id
+        $project_reviewers = ProjectReviewer::where('project_document_id', $project_document_id)
+            ->where('project_id',$project->id)
+            ->where('reviewer_type', $reviewer_type)
+            ->get();
+        // dd($project_reviewers);
+
+
+
+        // notify the creator about the project reviewer update 
+        $creator = User::where('id',$project->created_by)->first();
+ 
+        if ($creator) {
+             
+            try {
+                // Send email  to creator about the project reviewer update 
+                Notification::send($creator, new ProjectReviewerUpdatedNotification($project, $creator));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to send ProjectReviewerUpdatedNotification notification: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+ 
+            try {
+                // Send DB notification to creator about the project reviewer update 
+                Notification::send($creator, new ProjectReviewerUpdatedNotificationDB($project, $creator));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to send ProjectReviewerUpdatedNotificationDB notification: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+
+        } 
+
+        if(!empty($project_reviewers)){ // check if there are project reviewers 
+
+            foreach($project_reviewers as $reviewer){
+               
+
+                $user = User::where('id',$reviewer->user_id)->first();
+
+                if ($user) {
+
+
+                    try {
+                        // Send email   notification to reviewer about the project reviewer update 
+                        Notification::send($user, new ProjectReviewerUpdatedByDocument($project, $user,$project_document));
+                    } catch (\Throwable $e) {
+                        // Log the error without interrupting the flow
+                        Log::error('Failed to send ProjectReviewerUpdatedByDocument notification: ' . $e->getMessage(), [
                             'project_id' => $project->id,
                             'trace' => $e->getTraceAsString(),
                         ]);
@@ -1709,6 +1907,125 @@ class ProjectHelper
     }
 
 
+    // notification to send to the admin reviewer about open project review notification
+    public static function sendForReviewersOpenProjectReviewNotification(Project $project, ProjectReviewer $reviewer){
+
+
+
+
+
+
+        // Determine users based on reviewer type
+            $reviewerType = $reviewer->reviewer_type; // assuming $reviewer is available
+
+            // if (in_array($reviewerType, ['initial', 'final'])) {
+            //     $users = \Spatie\Permission\Models\Permission::whereIn('name', [
+            //         'system access admin',
+            //         'system access global admin',
+            //     ])
+            //     ->with('roles.users')
+            //     ->get()
+            //     ->flatMap(function ($permission) {
+            //         return $permission->roles->flatMap(function ($role) {
+            //             return $role->users;
+            //         });
+            //     })->unique('id')->values();
+            // } elseif ($reviewerType === 'document') {
+            //     $users = \Spatie\Permission\Models\Permission::whereIn('name', [
+            //         'system access reviewer',
+            //         'system access admin',
+            //         'system access global admin',
+            //     ])
+            //     ->with('roles.users')
+            //     ->get()
+            //     ->flatMap(function ($permission) {
+            //         return $permission->roles->flatMap(function ($role) {
+            //             return $role->users;
+            //         });
+            //     })->unique('id')->values();
+            // } else {
+            //     $users = collect(); // fallback to empty if reviewer_type is unknown
+            // }
+
+             $users = \Spatie\Permission\Models\Permission::whereIn('name', [
+                    // 'system access reviewer',
+                    'system access admin',
+                    // 'system access global admin',
+                ])
+                ->with('roles.users')
+                ->get()
+                ->flatMap(function ($permission) {
+                    return $permission->roles->flatMap(function ($role) {
+                        return $role->users;
+                    });
+                })->unique('id')->values();
+
+
+
+
+            
+            foreach ($users as $user) {
+                try {
+                    Notification::send($user, new ProjectOpenReviewNotification($project,$reviewer));
+                } catch (\Throwable $e) {
+                    Log::error('Failed to send ProjectOpenReviewNotification notification: ' . $e->getMessage(), [
+                        'project_id' => $project->id,
+                        'user_id' => $user->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+
+                try {
+                    Notification::send($user, new ProjectOpenReviewNotificationDB($project,$reviewer));
+                } catch (\Throwable $e) {
+                    Log::error('Failed to send ProjectOpenReviewNotificationDB notification: ' . $e->getMessage(), [
+                        'project_id' => $project->id,
+                        'user_id' => $user->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        try {
+            // notify the next reviewer
+            Notification::send($reviewer_user, new ProjectReviewNotification($project, $reviewer));
+        } catch (\Throwable $e) {
+            // Log the error without interrupting the flow
+            Log::error('Failed to send ProjectReviewNotification notification: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
+        try {
+           //send notification to the database
+            Notification::send($reviewer_user, new ProjectReviewNotificationDB($project, $reviewer));
+        } catch (\Throwable $e) {
+            // Log the error without interrupting the flow
+            Log::error('Failed to send ProjectReviewNotificationDB notification: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
+        
+
+    }
+
+
+
 
     // send notification regarding complete project aproval notification
     public static function sendCompleteProjectApprovalNotification(Project $project){
@@ -1856,6 +2173,42 @@ class ProjectHelper
 
 
 
+    // return home route for Livewire classes
+    public static function returnHomeProjectRoute(Project $project = null){
+
+        if(!empty($project)){
+             
+            if($project->created_by == Auth::user()->id && Auth::user()->can('project list view')){
+
+                return route('project.index');
+            }elseif(Auth::user()->can('project list view all') || Auth::user()->can('system access global admin')){
+                return route('project.index.all');
+            }elseif(Auth::user()->can('project list view all no drafts')){
+                return route('project.index.all.no-drafts');
+            }else{
+                return route('dashboard');
+            }  
+        }else{
+            if(Auth::user()->can('project list view all') || Auth::user()->can('system access global admin')){
+                return route('project.index.all');
+            }elseif(Auth::user()->can('project list view all no drafts')){
+                return route('project.index.all.no-drafts');
+            } elseif(Auth::user()->can('project list view')){ // for pure users only
+                return route('project.index');
+            }else{
+                return route('dashboard');
+            }  
+        } 
+
+
+
+    }
+
+
+
+
+
+
     public static function open_review_project($project_id){
 
         return redirect()->route('project.review',['project' => $project_id]);
@@ -1984,7 +2337,72 @@ class ProjectHelper
 
 
 
-    // send for updating 
+    static public function updateTitleAndSub($route)
+    {   
+        $title =  "";
+        switch ($route) {
+            case 'project.index':
+                $title = 'My Projects';
+                  
+                break;
+
+            case 'project.index.update-pending':
+                $title = 'My Projects - Update Pending';
+                 
+                break;
+
+            case 'project.index.review-pending':
+                $title = 'My Projects - Review Pending';
+                 
+                break;
+
+            case 'project.index.all':
+                $title = 'All Projects';
+                 
+                break;
+
+            case 'project.index.update-pending.all':
+                $title = 'All Projects - Update Pending';
+                 
+                break;
+
+            case 'project.index.review-pending.all':
+                $title = 'All Projects - Review Pending';
+                 
+                break;
+
+
+
+            case 'project.index.all.no-drafts':
+                $title = 'All Projects (No Drafts)';
+                 
+                break;
+
+            case 'project.index.update-pending.all-linked':
+                $title = 'Linked Projects - Update Pending';
+                 
+                break;
+
+            case 'project.index.review-pending.all-linked':
+                $title = 'Linked Projects - Review Pending';
+                 
+                break;
+
+            case 'project.index.open-review':
+                $title = 'Open Review projects';
+                 
+                break;  
+
+            
+
+            default:
+                $title = 'Projects';
+                 
+                break;
+        }
+
+        return $title;
+    }
 
 
 }

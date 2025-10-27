@@ -1,9 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl  leading-tight">
-            {{ __('Settings Manager Update ') }}
-        </h2>
-    </x-slot>
+    <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Settings Keys', 'url' => '#'], 
+    ]" />
     
     
     <!-- setting manager -->

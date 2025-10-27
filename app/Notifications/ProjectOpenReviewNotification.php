@@ -47,7 +47,10 @@ class ProjectOpenReviewNotification extends Notification implements ShouldQueue
 
         $attachments = $this->project->attachments;
         // $projectLink = url()->to(route('project.review', $this->project->id, false));
-        $projectLink = url()->to(route('project.index.open-review'));
+        $projectLink = url()->to(route('project-document.index.open-review',[
+            'project' => $this->project->id,
+            'project_document' => $this->project_reviewer->project_document_id
+        ]));
         
 
         $email = (new MailMessage)

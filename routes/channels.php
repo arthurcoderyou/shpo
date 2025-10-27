@@ -109,3 +109,22 @@ Broadcast::channel('review', function ($review) {
 Broadcast::channel('notifications.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
+
+
+
+Broadcast::channel('project-document-submitted.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
+
+
+Broadcast::channel('attachment.{authId}', function ($user, int $authId) {
+    return (int) $user->id === (int) $authId;
+});
+
+
+Broadcast::channel('attachments', function ($attachment) { 
+    
+    return Auth::check();
+
+});
+

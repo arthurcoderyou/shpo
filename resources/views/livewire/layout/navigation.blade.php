@@ -297,9 +297,9 @@ new class extends Component
 
             <!-- Collapse Button -->
             <button type="button" class="hs-collapse-toggle lg:hidden relative size-9 flex justify-center items-center font-medium text-[12px] rounded-lg border border-gray-200 text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none  " id="hs-header-base-collapse"  aria-expanded="false" aria-controls="hs-header-base" aria-label="Toggle navigation"  data-hs-collapse="#hs-header-base" >
-            <svg class="hs-collapse-open:hidden size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
-            <svg class="hs-collapse-open:block shrink-0 hidden size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            <span class="sr-only">Toggle navigation</span>
+                <svg class="hs-collapse-open:hidden size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+                <svg class="hs-collapse-open:block shrink-0 hidden size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                <span class="sr-only">Toggle navigation</span>
             </button>
             <!-- End Collapse Button -->
         </div>
@@ -315,16 +315,21 @@ new class extends Component
                             $inactive = "bg-white text-gray-800 hover:text-gray-800 hover:bg-gray-100 focus:outline-none focus:text-gray-800 focus:bg-gray-100 "
                         @endphp
 
-                        
-
-
-
                         <a class="p-2 flex items-center text-sm  rounded-lg  {{ request()->routeIs('dashboard') ? $active : $inactive }} "
                             href="{{ route('dashboard') }}"
                             wire:navigate
                             aria-current="dashboard">
                             <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
                             Dashboard
+                        </a>
+
+
+                        <a class="p-2 flex items-center text-sm  rounded-lg  {{ request()->routeIs('file_manager.attachment.index') ? $active : $inactive }} "
+                            href="{{ route('file_manager.attachment.index') }}"
+                            wire:navigate
+                            aria-current="file_manager.attachment.index">
+                            <svg class="shrink-0 size-4 me-3 md:me-2 block md:hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                            File Manager 
                         </a>
 
                         <!-- only show for users that has role and permissions for project  -->
@@ -583,7 +588,12 @@ new class extends Component
                                             </a>
                                         @endif
 
-
+                                        @if(
+                                            Auth::user()->can('system access global admin') || 
+                                            Auth::user()->can('reviewer list view') || 
+                                            Auth::user()->can('timer list view') || 
+                                            Auth::user()->can('document type list view')
+                                            )
                                         <hr>
                                         <span class="px-2 py-0 md:px-3 block text-gray-500 text-xs  "
                                                 
@@ -595,7 +605,7 @@ new class extends Component
                                                 
                                         </span>
                                         <hr>
-
+                                        @endif
  
 
                                         @if(Auth::user()->can('system access global admin') || Auth::user()->can('reviewer list view'))
@@ -1162,9 +1172,9 @@ new class extends Component
                     </button> --}}
                     @if(authorizeWithModules(['Notifications']) )
                         
-                    <livewire:notification.notification-counter/>
+                        <livewire:notification.notification-counter/>
 
-                    <livewire:layout.notification-panel />
+                        <livewire:layout.notification-panel />
                     @endif
 
 

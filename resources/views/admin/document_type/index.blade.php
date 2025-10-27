@@ -1,9 +1,8 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Document Types ') }}
-        </h2>
-    </x-slot>
+<x-app-layout> 
+    <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Document Types', 'url' => '#'],
+    ]" />
 
 
     @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type create') )

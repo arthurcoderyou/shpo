@@ -1,6 +1,6 @@
  
 <!-- Card Section -->
-<div class="max-w-[85rem] px-4 py-10   mx-auto">
+<div class="  px-4 py-10   mx-auto">
     <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
@@ -315,7 +315,7 @@
 
     <!-- User Report -->
     <div class="relative overflow-hidden">
-        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
+        <div class="mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
             <div class="text-center ">
 
                 <h1 class="text-4xl sm:text-6xl font-bold text-gray-800 ">
@@ -342,7 +342,7 @@
             </div>
         </div>
 
-        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
+        <div class="mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
           <div class="text-center ">
 
               <h1 class="text-4xl sm:text-6xl font-bold text-gray-800 ">

@@ -8,7 +8,7 @@
 
 
 <!-- Table Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto"
+<div class=" px-4 py-6 sm:px-6 lg:px-8  mx-auto"
 
     x-data="{
         showModal: false,  
@@ -150,7 +150,13 @@
             <table class="min-w-full divide-y divide-gray-200 ">
                 <thead class="bg-gray-50 ">
                 <tr>
-                     
+                    <th scope="col" class="px-2 py-3 text-start max-w-32 text-wrap">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
+                            Actions
+                            </span>
+                        </div>
+                    </th>
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
@@ -160,8 +166,7 @@
                         </div>
                     </th>
 
- 
-
+  
                     <th scope="col" class="px-6 py-3 text-end"></th>
                 </tr>
                 </thead>
@@ -207,135 +212,380 @@
                                     </div>
                                 </td> --}}
 
- 
-
-                                <td class="size-auto text-wrap max-w-full ">
-                                    <div class="px-2 py-2">
-                                        {{-- 
-                                        <!-- Check if it is an admin review-->
-                                        @if($review->admin_review == true)
-
-                                            <!-- Profile -->
-                                            <div class="flex items-center gap-x-3">
-                                                    
-                                                
-                                                <div class="grow">
-                                                    <h1 class="text-lg font-medium text-black ">
-                                                        {{ $review->project_review }}
-                                                    </h1>
-                                                    <p class="text-sm text-gray-600 ">
-                                                        Project Status : {!! $review->getStatus() !!}
-                                                        
-                                                    </p>
-                                                    <p class="text-sm text-gray-500">
-                                                        Project updated 
-                                                        at {{ \Carbon\Carbon::parse($review->created_at)->format('d M, h:i A') }}  
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <!-- End Profile -->
-
- 
-
-                                            
+                                <!-- Actions -->
+                                <td class="w-fill text-nowrap align-top px-4 py-3   ">
+                                    <div class="flex items-center justify-between space-x-2">
+                                        <div class="flex items-center gap-1">
 
 
 
-                                            @if($review->project->status !== "approved" && $review->review_status == "approved" && !empty( $next_reviewer->user ) && !empty(  $review->project ))
-                                            <!-- Profile -->
-                                            <div class="  p-2  ">
-                                                
-                                                
-                                                <div class="grow">
-                                                    <h1 class="text-lg font-medium text-gray-800 ">
-                                                        Next Reviewer: {{ $next_reviewer->user->name ? $next_reviewer->user->name : '' }}
-                                                    </h1>
-                                                    
-                                                   
-                                                    <span class="block text-sm text-gray-500 ">
-                                                        Review Status: 
-                                                        @if($next_reviewer->review_status == "approved")
-                                                            <span class="font-bold text-lime-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
-                                                        @elseif($next_reviewer->review_status == "rejected")
-                                                            <span class="font-bold text-red-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
+                                            @if($review->project->creator->id == Auth::user()->id )
+                                                @if($review->viewed == false)
 
-                                                        @else 
-                                                            <span class="font-bold text-yellow-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
-
-                                                        @endif
-                                                        
+                                                    <button 
+                                                        onclick="confirm('Mark this as viewed?') || event.stopImmediatePropagation()" title="Mark as Viewed"
+                                                        wire:click.prevent="mark_as_viewed({{ $review->id }})"
+                                                        type="button"
+                                                        class="rounded-md bg-lime-600 px-2.5 py-1 text-xs font-medium text-white">
+                                                        Mark as Viewed
+                                                    </button> 
+                                                @else   
+                                                    <span class="text-sm text-gray-600 ">
+                                                        Viewed
                                                     </span>
+                                                @endif
 
-                                                    <span class="block text-sm text-gray-500   ">
-                                                        @if($next_reviewer->review_status == "pending") <!-- if review status is pending, it means the review due date must be seen here -->
-                                                            Expected <span class="font-bold text-blue-800 ">review</span> on or before <br>  
-                                                            <strong>
-                                                                {{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}
-                                                            </strong> 
-                                                        @endif
+                                            @elseif(!Auth::user()->hasRole('User'))
+                                                @if($review->viewed == false)
+                                                    <span class="text-sm text-gray-600 max-w-32 text-wrap">
+                                                        Not Viewed by {{ $review->project->creator->name }}
                                                     </span>
-
-
-                                                    <ul class="mt-2 flex flex-col gap-y-3">
-                                                        <li class="flex items-center gap-x-2.5">
-                                                            <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                                            <a class="text-[13px] text-gray-500 underline hover:text-gray-800 hover:decoration-2 focus:outline-none focus:decoration-2  " href="mailto:{{ $review->reviewer->email }}">
-                                                                {{ $next_reviewer->user->email }}
-                                                            </a>
-                                                        </li>
-                                                    
-                                                    
-                                                    </ul>
-
-                                                
-
-                                                </div>
-                                            </div>
-                                            <!-- End Profile -->
+                                                @else   
+                                                    <span class="text-sm text-gray-600 max-w-32 text-wrap ">
+                                                        Viewed at 
+                                                        <strong>{{ \Carbon\Carbon::parse($review->updated_at)->format('M d, Y h:i A') }}</strong> 
+                                                        by 
+                                                        <strong>{{ $review->project->creator->name }}</strong> 
+                                                    </span>
+                                                @endif
                                             @endif
 
-                                            
+
+ 
+                                            {{-- -
+                                            <el-dropdown class="inline-block p-0">
+                                                <button class=" inline-flex rounded-md border border-slate-200 p-1 text-slate-600 hover:bg-slate-50">
+                                                    
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                                        <circle cx="12" cy="5" r="2" />
+                                                        <circle cx="12" cy="12" r="2" />
+                                                        <circle cx="12" cy="19" r="2" />
+                                                    </svg>
+
+                                                </button>
+
+                                                <el-menu anchor="bottom end" popover class="m-0 w-56 origin-top-right rounded-md bg-white p-0 shadow-lg outline outline-1 outline-black/5 transition [--anchor-gap:theme(spacing.2)] [transition-behavior:allow-discrete] data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in">
+                                                    <div class="py-1">
+                                                        
+
+                                                          
+                                                        
+                                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('project submit'))
+                                                            @if($project_document->allow_project_submission == true)
+                                                            <!-- Submit Project Document -->
+                                                            <button
+                                                                {{ $project_document->allow_project_submission == true ? '' : 'disabled' }}
+                                                                onclick="confirm('Are you sure, you want to submit this project?') || event.stopImmediatePropagation()"
+
+                                                                wire:click.prevent="submit_project_document({{ $project_document->id }})"
+                                                                type="button"
+                                                                class="block w-full px-4 py-2 text-left text-sm  
+                                                                
+                                                                {{ $project_document->allow_project_submission == true ? 'text-gray-700' : 'text-gray-300' }}
+                                                                
+                                                                focus:bg-gray-100 focus:text-gray-900 focus:outline-none"
+                                                            >   
+                                                                <div class="flex justify-between items-center">
+                                                                    <div>
+                                                                        Submit
+                                                                    </div>
+
+                                                                    <div>
+                                                                        <x-svg.submit class="text-red-600 hover:text-red-700 size-4 shrink-0" title="Submit" />
+                                                                    </div>
+                                                                </div>
+
+                                                                
+                                                            </button>
+                                                            @endif
+                                                        @endif
+                                                        <!-- #endregion -->
+                                                            
+
+                                                       
+ 
+                                                            
+                                                        @if(Auth::user()->can('system access global admin') 
+                                                        // || Auth::user()->can('project delete')
+                                                        )
+                                                            <!-- Force Delete-->
+                                                            <button
+                                                                onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
+                                                                wire:click.prevent="delete({{ $project_document->id }})"
+                                                                type="button"
+                                                                class="block w-full px-4 py-2 text-left text-sm text-gray-700 focus:bg-gray-100 focus:text-gray-900 focus:outline-none"
+                                                            >   
+                                                                <div class="flex justify-between items-center">
+                                                                    <div>
+                                                                        Delete
+                                                                    </div>
+
+                                                                    <div>
+                                                                        <x-svg.delete class="text-red-600 hover:text-red-700 size-4 shrink-0" title="Delete" />
+                                                                    </div>
+                                                                </div>
+
+                                                                
+                                                            </button>
+                                                        @endif  
+                                                         
+
+                                                    </div>
+                                                </el-menu>
+                                            </el-dropdown>
+                                             --}}
+
+                                        </div>
+                                    </div>
+                                </td>
+                                <!-- ./ Actions -->
+
+
+                                @php    
+                                    $config = $this->returnStatusConfig($review->review_status); 
+                                    $document_config = $this->returnStatusConfig($review->project_document_status); 
+                                    $reviewerName = $this->returnReviewerName($review);
+                                    $slotType = $this->returnSlotData($review,'slot_type');
+                                    $slotRole = $this->returnSlotData($review,'slot_role');
+                                    // $reviewStatus = $this->returnReviewStatus($project_document);
+                                    // $dueAtText = $this->returnDueDate($project_document, 'dueAtText');
+                                    // $dueAtDiff = $this->returnDueDate($project_document, 'dueAtDiff');
+                                    // $flags = $this->returnReviewFlagsStatus($project_document);
+                                @endphp
+
+
+
+                                <!-- Review -->
+                                <td class="px-4 py-2 align-top"
+                                
+                                    x-data="{ 
+
+                                        roleColors: {
+                                            'global admin': 'bg-red-100 text-red-700 ring-red-200',
+                                            'admin':        'bg-amber-100 text-amber-800 ring-amber-200',
+                                            'reviewer':     'bg-sky-100 text-sky-700 ring-sky-200',
+                                            'user':         'bg-slate-100 text-slate-700 ring-slate-200',
+                                            '__none':       'bg-zinc-100 text-zinc-700 ring-zinc-200',
+                                        },
+
+                                        badgeCls(role){
+                                            const key = (role || '').toLowerCase();
+                                            const base = 'px-1.5 py-0.5 rounded-md text-xs ring-1';
+                                            return `${base} ${(this.roleColors[key] ?? this.roleColors['__none'])}`;
+                                        }, 
+                                    }"  
+                                    >
+
+                                    <!-- Review status badge -->
+                                    <div class="mb-1">
+                                        <div class="flex items-center gap-1">
+                                            <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16Zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 10-1.414 1.414L9 13.414l4.707-4.707Z"/>
+                                            </svg>
+                                            <span class="text-[11px] font-medium text-slate-700">Review status:</span> 
+
+                                            <span class="inline-flex items-center gap-1 rounded-full {{ $config['bg'] }} px-2 py-0.5 text-[11px] font-semibold {{ $config['text'] }} ring-1 ring-inset {{ $config['ring'] }}">
+                                                {{ $config['label'] }}  
+                                            </span>
+
+                                        </div> 
                                         
-                                        <!-- if it is a reviewer review , show review details -->
-                                        @elseif(!$review->isSubmitterReview() && $review->review_status !== "submitted") 
+                                    </div>
 
-                                         --}}
 
+                                    <!-- Document status badge -->
+                                    <div class="mb-1">
+                                        <div class="flex items-center gap-1">
+                                            <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16Zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 10-1.414 1.414L9 13.414l4.707-4.707Z"/>
+                                            </svg>
+                                            <span class="text-[11px] font-medium text-slate-700">Document status:</span> 
+
+                                            <span class="inline-flex items-center gap-1 rounded-full {{ $document_config['bg'] }} px-2 py-0.5 text-[11px] font-semibold {{ $document_config['text'] }} ring-1 ring-inset {{ $document_config['ring'] }}">
+                                                {{ $document_config['label'] }}  
+                                            </span>
+
+                                        </div> 
+                                        
+                                    </div>
+
+  
+                                    <!-- Reviewer block -->
+                                    <div class="space-y-1 text-[11px] leading-4 text-slate-600">
+
+                                        <div class="flex items-center gap-1">
+                                            <!-- Eye/user icon -->
+                                            <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                            <span class="font-medium text-slate-700">Reviewer:</span>
+                                            <span class="truncate">{{ $reviewerName }}</span>
+ 
+                                            @if($slotType === 'person')
+
+                                                @php 
+                                                     
+                                                    $roles = $this->getUserRoles($review->reviewer_id);
+
+                                                    // dd($roles);
+                                                @endphp
+
+                                                {{-- <span class="ml-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-700">{{ $slotRole }}</span> --}}
+                                                <!-- If this row has a userId (person or claimed open slot), show that user's roles -->
+                                                @if(!empty($roles))
+                                                    <div class="flex flex-wrap items-center gap-1.5">
+                                                        @foreach ($roles as $role)
+                                                            <span :class="badgeCls('{{ $role }}')"  >{{ $role }}</span>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <span :class="badgeCls('')">No role</span>
+                                                @endif
+
+
+                                            @elseif(($slotType === 'open'))
+
+                                                @if($slotType === 'open' && empty($project_document->user_id)) 
+                                                    <span class="ml-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">Open</span>
+                                                    @php 
+                                                         
+
+                                                        $roles = $this->getUserRoles($review->reviewer_id);
+
+                                                        // dd($roles);
+                                                    @endphp
+                                                    {{-- <span class="ml-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-700">{{ $slotRole }}</span> --}}
+                                                    <!-- If this row has a userId (person or claimed open slot), show that user's roles -->
+                                                    @if(!empty($roles))
+                                                        <div class="flex flex-wrap items-center gap-1.5">
+                                                            @foreach ($roles as $role)
+                                                                <span :class="badgeCls('{{ $role }}')"  >{{ $role }}</span>
+                                                            @endforeach
+                                                        </div>
+                                                    @else
+                                                        <span :class="badgeCls('')">No role</span>
+                                                    @endif
+
+                                                    
+                                                @elseif($slotType === 'open' && !empty($project_document->user_id))
+                                                    <span class="ml-1 rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] text-sky-700">Claimed</span>
+                                                @else
+                                                    <span class="ml-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">Open</span>
+                                                @endif
+                                            @endif
+                                                
+
+
+                                        </div>
+
+                                        {{-- @if(!empty($reviewStatus))
+                                        <div class="flex items-center gap-1">
+                                            <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16Zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 10-1.414 1.414L9 13.414l4.707-4.707Z"/>
+                                            </svg>
+                                            <span class="font-medium text-slate-700">Review status:</span>
+                                            <span class="uppercase tracking-wide">{{ $reviewStatus }}</span>
+                                        </div>
+                                        @endif
+
+                                        <div class="flex items-center gap-1">
+                                            <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M3.5 9h17M5 20h14a2 2 0 0 0 2-2v-9H3v9a2 2 0 0 0 2 2Z"/>
+                                            </svg>
+                                            <span class="font-medium text-slate-700">Expected:</span>
+                                            @if($dueAtText)
+                                                <span>{{ $dueAtText }}</span>
+                                                <span class="text-slate-400">({{ $dueAtDiff }})</span>
+                                            @else
+                                                <span class="italic text-slate-400">No due date</span>
+                                            @endif
+                                        </div>
+
+                                        <!-- Flags -->
+                                        <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                            @php
+                                                $flagLabels = [
+                                                    'requires_project_update' => 'Project update',
+                                                    // 'requires_document_update' => 'Document update',
+                                                    'requires_attachment_update' => 'Attachment update',
+                                                ];
+                                            @endphp
+
+                                            @foreach($flagLabels as $key => $label)
+                                                @if($flags[$key] ?? false)
+                                                    <span class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 ring-1 ring-amber-200 text-[10px] font-medium text-amber-700">
+                                                        <svg class="size-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16Zm.75 4a.75.75 0 00-1.5 0v5.25c0 .414.336.75.75.75h3.5a.75.75 0 000-1.5h-2.75V6Z"/></svg>
+                                                        {{ $label }}
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 rounded-md bg-slate-50 px-1.5 py-0.5 ring-1 ring-slate-200 text-[10px] text-slate-500">
+                                                        <svg class="size-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10 18a8 8 0 100-16 8 8 0 000 16Zm-1-5 5-5-1.414-1.414L9 10.172 7.414 8.586 6 10l3 3Z"/></svg>
+                                                        {{ $label }}
+                                                    </span>
+                                                @endif
+                                            @endforeach
+                                        </div> --}}
+
+                                        <div>
+                                            <ul class="  flex flex-col gap-y-3">
+                                                <li class="flex items-center gap-x-2.5">
+                                                    <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                                    <a class="text-[13px] text-gray-500 underline hover:text-gray-800 hover:decoration-2 focus:outline-none focus:decoration-2  " href="mailto:{{ $review->reviewer->email }}">
+                                                        {{ $review->reviewer->email }}
+                                                    </a>
+                                                </li>
+                                            
+                                            
+                                            </ul>
+                                        </div>
+
+                                            
+
+
+                                    </div>
+                                                 
+ 
+    
+
+  
+
+                                </td>
+                                <!-- ./ Review -->
+
+
+ 
+                                <!-- Reviewer Information -->
+                                <td class="size-auto text-wrap max-w-full ">
+                                    <div class="px-2 py-2 align-top">
+                                        
                                             <!-- Profile -->
-                                            <div class="flex items-center gap-x-3">
+                                            <div class="flex   gap-x-3">
                                                 
                                             
                                                 <div class="grow">
-                                                    <h1 class="text-lg font-medium text-gray-800 ">
-                                                        Reviewed by {{ $review->reviewer->name }}
-                                                    </h1>
-                                                    <p class="text-sm text-gray-600 ">
-                                                        Project Status : {!! $review->getStatus() !!}
-                                                        
-                                                    </p>
-                                                    <p class="text-sm text-gray-500">
-                                                        Review 
+                                                     
+                                                    <p class="text-sm text-gray-500"> 
                                                         @if($review->review_status == "rejected")
                                                             <span class="font-bold text-red-500">Rejected</span>
+                                                        @elseif($review->review_status == "changes_requested")
+                                                            <span class="font-bold text-amber-500">Changes Requested</span>
                                                         @elseif ($review->review_status == "approved")
                                                             <span class="font-bold text-lime-500">Approved</span>
                                                         @endif
                                                         at {{ \Carbon\Carbon::parse($review->created_at)->format('d M, h:i A') }} by {{ $review->creator ? $review->creator->name : '' }}
-                                                    </p>
-
-                                                   
-
+                                                    </p> 
                                                 </div>
                                             </div>
                                             <!-- End Profile -->
                                             
                                             <!-- About -->
-                                            <div class="mt-2">
+                                            <div class=" ">
 
                                                 {{-- Reviewer Notes --}}
-                                                <div class="space-y-2">
-                                                <p class="text-sm font-medium text-gray-800">Reviewer Notes</p>
-                                                <p class="text-sm text-gray-700">{{ $review->project_review }}</p>
+                                                <div class="space-y-1">
+                                                    <p class="text-sm font-medium text-gray-800">Reviewer Notes</p>
+                                                    <p class="text-sm text-gray-700">{{ $review->project_review }}</p>
                                                 </div>
                                             
                                                 @if(!empty($review) && $review->review_status == "rejected")
@@ -517,16 +767,7 @@
 
 
                                             
-                                                <ul class="mt-2 flex flex-col gap-y-3">
-                                                    <li class="flex items-center gap-x-2.5">
-                                                        <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                                        <a class="text-[13px] text-gray-500 underline hover:text-gray-800 hover:decoration-2 focus:outline-none focus:decoration-2  " href="mailto:{{ $review->reviewer->email }}">
-                                                            {{ $review->reviewer->email }}
-                                                        </a>
-                                                    </li>
                                                 
-                                                
-                                                </ul>
                                                 
 
                                                  
@@ -536,7 +777,7 @@
                                                     
                                                     
                                                     <div class="grow">
-                                                        <h1 class="text-lg font-medium text-gray-800 ">
+                                                        <h1 class="text-sm font-medium text-gray-800 ">
                                                             Next Reviewer: {{ $next_reviewer->user->name ? $next_reviewer->user->name : '' }}
                                                         </h1>
                                                         
@@ -587,115 +828,15 @@
                                             </div>
                                             <!-- End About -->
                                             
-
  
-
-                                        {{-- 
-                                        <!-- if it is a submitter review , show submitted details -->
-                                        @else 
-
-
-                                            <!-- Profile -->
-                                            <div class="flex items-center gap-x-3">
-                                                
-                                            
-                                                <div class="grow">
-                                                    <h1 class="text-lg font-medium text-blue-800 ">
-                                                        @if($review->review_status == "submitted")
-                                                            Submitted
-                                                        @elseif($review->review_status == "re_submitted")
-                                                            Re-submitted
-                                                        @endif 
-                                                        by {{ $review->reviewer->name }}
-                                                    </h1>
-                                                    <p class="text-sm text-gray-600 ">
-                                                        Project Status : {!! $review->project->getStatus() !!}
-                                                        
-                                                    </p>
-                                                    <p class="text-sm text-gray-500">
-                                                        Project <span class="font-bold text-yellow-500">Submitted</span> 
-                                                        at {{ \Carbon\Carbon::parse($review->created_at)->format('d M, h:i A') }}  
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <!-- End Profile -->
-
-                                            <!-- About -->
-                                            <div class="mt-2">
- 
-                                                <p class="text-sm text-gray-600 ">
-                                                    {{ $review->project_review }}
-                                                </p>
-                                            </div>
-
-
-                                        @endif
-                                         --}}
-
                                     </div>
                                 </td>
-
+                                <!-- ./ Reviewer Information -->
 
 
                                 
 
-
-                                <td class="w-4 whitespace-nowrap">
-                                    <div class="px-2 py-2">
-                                        {{-- <!-- show -->
-                                        <a href="{{ route('project.show',['project' => $review->id]) }}" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-lime-600 text-white hover:bg-lime-700 focus:outline-none focus:bg-lime-700 disabled:opacity-50 disabled:pointer-events-none">
-                                             
-                                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z"/></svg>
-                                        </a>
-
-
-                                        <!-- edit -->
-                                        <a href="{{ route('project.edit',['project' => $review->id]) }}" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-                                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M402.6 83.2l90.2 90.2c3.8 3.8 3.8 10 0 13.8L274.4 405.6l-92.8 10.3c-12.4 1.4-22.9-9.1-21.5-21.5l10.3-92.8L388.8 83.2c3.8-3.8 10-3.8 13.8 0zm162-22.9l-48.8-48.8c-15.2-15.2-39.9-15.2-55.2 0l-35.4 35.4c-3.8 3.8-3.8 10 0 13.8l90.2 90.2c3.8 3.8 10 3.8 13.8 0l35.4-35.4c15.2-15.3 15.2-40 0-55.2zM384 346.2V448H64V128h229.8c3.2 0 6.2-1.3 8.5-3.5l40-40c7.6-7.6 2.2-20.5-8.5-20.5H48C21.5 64 0 85.5 0 112v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V306.2c0-10.7-12.9-16-20.5-8.5l-40 40c-2.2 2.3-3.5 5.3-3.5 8.5z"/></svg>
-                                        </a> --}}
-
-                                        <!-- delete -->
-
-                                        {{-- @if( Auth::role()->can('role delete')  ||  Auth::role()->hasRole('system access global admin')) --}}
-
-                                        @if($review->project->creator->id == Auth::user()->id )
-                                            @if($review->viewed == false)
-                                                <button
-                                                onclick="confirm('Mark this as viewed?') || event.stopImmediatePropagation()" title="Mark as Viewed"
-                                                wire:click.prevent="mark_as_viewed({{ $review->id }})"
-                                                type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-lime-600 text-white hover:bg-lime-700 focus:outline-none focus:bg-lime-700 disabled:opacity-50 disabled:pointer-events-none">
-                                                    
-                                                    Mark as Viewed
-                                                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z"/></svg>
-                                                </button>
-                                            @else   
-                                                <span class="text-sm text-gray-600 ">
-                                                    Viewed
-                                                </span>
-                                            @endif
-
-                                        @elseif(!Auth::user()->hasRole('User'))
-                                            @if($review->viewed == false)
-                                                <span class="text-sm text-gray-600 ">
-                                                    Not Viewed by {{ $review->project->creator->name }}
-                                                </span>
-                                            @else   
-                                                <span class="text-sm text-gray-600 ">
-                                                    Viewed at 
-                                                    <strong>{{ \Carbon\Carbon::parse($review->updated_at)->format('M d, Y h:i A') }}</strong> 
-                                                    by 
-                                                    <strong>{{ $review->project->creator->name }}</strong> 
-                                                </span>
-                                            @endif
-                                        @endif
-
-
-                                        {{-- @endif --}}
-
-
-
-                                    </div>
-                                </td>
+                                
 
 
 

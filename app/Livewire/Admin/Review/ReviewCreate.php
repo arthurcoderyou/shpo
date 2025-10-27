@@ -10,6 +10,7 @@ use Livewire\Component;
 use App\Models\ActivityLog;
 
 use App\Models\DocumentType;
+use App\Models\ProjectTimer;
 use Livewire\WithFileUploads;
 use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
@@ -18,10 +19,13 @@ use Illuminate\Validation\Rule;
 use App\Models\ProjectReferences;
 use App\Models\ReviewAttachments;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectDocumentHelpers;
+use App\Helpers\ProjectReviewerHelpers;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Models\ReviewRequireDocumentUpdates;
 use Illuminate\Support\Facades\Notification;
 use App\Models\ReviewRequireAttachmentUpdates;
+use App\Events\ProjectDocument\Review\Reviewed;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ReviewerReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
@@ -29,16 +33,56 @@ use App\Notifications\ReviewerReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
 
 class ReviewCreate extends Component
-{
+{   
+
+
+    /** Actions with Password Confirmation panel */
+        public $passwordConfirm = '';
+        public $passwordError = null;
+         
+        public $review_status;
+
+        /** Delete Confirmation  */
+            public $confirmingReview = false; // closes the confirmation delete panel
+            
+            public function confirmReview($review_status = "approved")
+            {
+                $this->confirmingReview = true;
+                $this->review_status = $review_status;
+                $this->passwordConfirm = '';
+                $this->passwordError = null;
+            }
+
+            public function saveReview()
+            {
+                if (!Hash::check($this->passwordConfirm, auth()->user()->password)) {
+                    $this->passwordError = 'Incorrect password.';
+                    return;
+                }
+ 
+
+                // save the review
+                 
+
+                $this->reset(['confirmingReview', 'passwordConfirm', 'recordId', 'passwordError','selected_record']); 
+            }
+
+        /** ./ Delete Confirmation */
+
+    /** ./ Actions with Password Confirmation panel */
+
+
 
     use WithFileUploads;
 
     public $project_review;
     public $project;
 
+    public $project_document;
+
     public $attachments = []; // Initialize with one phone field 
 
-    public $shpo_number;
+    public $rc_number;
     public $allotted_review_time_hours;
     public $submitter_response_duration;
     public $submitter_response_duration_type;
@@ -53,7 +97,7 @@ class ReviewCreate extends Component
     public $documentTypes = [];
     public $usedProjectDocuments = [];
 
-    public $review_status;
+    
     public $project_status;
 
     public $rfi  = false; // request for additional information
@@ -70,27 +114,37 @@ class ReviewCreate extends Component
     // For the Search Project Functionality
         public $query = ''; // Search input
         public $projects = []; // Search results
-        public $selectedProjects = []; // Selected project references
+        public $selectedProjectDocuments = []; // Selected project references
 
+
+ 
     
-    public function mount($id){
+    public function mount($id,$project_document_id){
         $this->project = Project::findOrFail($id);
+        $this->project_document = ProjectDocument::findOrFail($project_document_id);
 
-        // Generate the project number
-        if(empty($this->project->shpo_number)){ 
-            $this->shpo_number = Project::generateProjectNumber(rand(10, 99));
-        }
+        // // Generate the project number
+        // if(empty($this->project->rc_number)){ 
+        //     $this->rc_number = ProjectDocument::generateProjectNumber(rand(10, 99));
+        // }
 
 
         // dd($this->project->project_documents);
 
-        $this->submitter_due_date = $this->project->submitter_due_date;
-        $this->submitter_response_duration_type = $this->project->submitter_response_duration_type;
-        $this->submitter_response_duration = $this->project->submitter_response_duration;
+        $this->rc_number = $this->project_document->rc_number;
 
-        $this->reviewer_due_date = $this->project->reviewer_due_date;
-        $this->reviewer_response_duration = $this->project->reviewer_response_duration;
-        $this->reviewer_response_duration_type = $this->project->reviewer_response_duration_type; 
+
+      
+
+
+        $this->submitter_due_date = $this->project_document->submitter_due_date;
+        $this->submitter_response_duration_type = $this->project_document->submitter_response_duration_type;
+        $this->submitter_response_duration = $this->project_document->submitter_response_duration;
+
+        $this->reviewer_due_date = $this->project_document->reviewer_due_date;
+        $this->reviewer_response_duration = $this->project_document->reviewer_response_duration;
+        $this->reviewer_response_duration_type = $this->project_document->reviewer_response_duration_type; 
+ 
 
         // $this->allotted_review_time_hours = $this->project->allotted_review_time_hours;
         $value = (float) $this->project->allotted_review_time_hours;
@@ -111,15 +165,19 @@ class ReviewCreate extends Component
 
 
 
-        if(!empty( $this->project->project_references) && count($this->project->project_references) > 0){
+        if(!empty( $this->project_document->document_references) && count($this->project_document->document_references) > 0){
             // add to the project references
-            foreach($this->project->project_references as $project_reference){
-                $project = Project::find($project_reference->referenced_project_id);
-                $this->selectedProjects[] = [
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'shpo_number' => $project->shpo_number,
-                    'project_number' => $project->project_number,
+            foreach($this->project_document->document_references as $document_reference){
+                $project_document = ProjectDocument::find($document_reference->referenced_project_document_id);
+
+                $project = Project::find($project_document->project_id);
+
+                $this->selectedProjectDocuments[] = [
+                    'id' => $project_document->id,
+                    'project_name' => $project->name,
+                    'document_name' => $project_document->document_type->name,
+                    'rc_number' => $project_document->rc_number,
+                    'project_number' => $project_document->project_number,
                     'location' => $project->location,
                     'type' => $project->type,
                     'federal_agency' => $project->federal_agency,
@@ -132,7 +190,7 @@ class ReviewCreate extends Component
 
          
 
-        // dd( $this->selectedProjects );
+        // dd( $this->selectedProjectDocuments );
 
 
     }
@@ -174,11 +232,11 @@ class ReviewCreate extends Component
         }
     }
 
-    public function updatedReviewStatus(){
-        if(!empty($this->review_status)){
-            $this->project_status = false;
-        }
-    }
+    // public function updatedReviewStatus(){
+    //     if(!empty($this->review_status)){
+    //         $this->project_status = false;
+    //     }
+    // }
 
     
 
@@ -188,218 +246,75 @@ class ReviewCreate extends Component
         $this->reviewer_due_date = Project::calculateDueDate($this->project->updated_at,$this->reviewer_response_duration_type, $this->reviewer_response_duration );
     }
 
-    // full approval of the project
-    public function approve_project($project_id){
-        
-        $project = Project::find($project_id);
-        
-
-       
-        // reset all roject reviewers
-        $reviewers = ProjectReviewer::where('project_id', $project->id) 
-                ->orderBy('order', 'asc')
-                ->get();
-
-        // make all reviewers approved
-        foreach($reviewers as $rev){
-            $rev->status = false; // make all reviewers as none active
-            $rev->review_status = "approved";
-            $rev->save();
-        }
-
-         
-                
-        // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-        $reviewer = ProjectReviewer::where('project_id', $project->id)
-            // ->where('review_status', 'pending') 
-            ->orderBy('order', 'desc') // the order is backwards making the last as first
-            ->first();
-
-
-        // update the first reviewer as the current reviewer
-        $reviewer->status = true;
-        $reviewer->save();
-
-
-        //create an approval review
-        $review  = new Review();
-        $review->viewed = false;
-        $review->project_review = "Project is approved";
-        $review->project_id = $project->id;
-        $review->reviewer_id =  $reviewer->user_id;
-        $review->review_status = "approved";
-        // # ['pending','approved','rejected']
-        $review->created_by = $reviewer->user_id;
-        $review->updated_by = $reviewer->user_id;
-        $review->save();
-
-
-        // Send notification email to the creator of the project
-        $user = User::where('id', $project->created_by)->first();
-
-        $project = Project::where('id', $project->id)->first();
-        if ($user) {
-
-            // Notification::send($user, new ReviewerReviewNotification($project, $review));
-
-            ProjectHelper::sendForProjectCreatorReviewerReviewNotification($user,$project,$review);
-
-        }
-
- 
-        
-        
-        $project->status = "approved"; // aprove the project
-        $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-        $project->save();
-
-
-        // send project approval updates for creators and project subscribers if the project is approved 
-        if($project->status == "approved"){
-            ProjectHelper::sendCompleteProjectApprovalNotification($project);
-        }
-
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" approved ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-            'project_id' => $project->id,
-        ]);
-
-        Alert::success('Success','Project approved ');
-        return redirect()->route('project.show',['project' => $project->id]);
-
-
-    }
-
-
-    // full rejection of the project
-    public function reject_project($project_id){
-        
-        $project = Project::find($project_id);
-        
-
-       
-        // reset all roject reviewers
-        $reviewers = ProjectReviewer::where('project_id', $project->id) 
-                ->orderBy('order', 'asc')
-                ->get();
-
-        // make all reviewers approved
-        foreach($reviewers as $rev){
-            $rev->status = false; // make all reviewers as none active
-            $rev->review_status = "rejected";
-            $rev->save();
-        }
-
-         
-                
-        // while status is true for project reviewer, this means that the project reviewer is the active/current reviewer o
-        $reviewer = ProjectReviewer::where('project_id', $project->id)
-            // ->where('review_status', 'pending') 
-            ->orderBy('order', 'desc') // the order is backwards making the last as first
-            ->first();
-
-
-        // update the first reviewer as the current reviewer
-        $reviewer->status = true;
-        $reviewer->save();
-
-
-        //create an approval review
-        $review  = new Review();
-        $review->viewed = false;
-        $review->project_review = $this->project_review;
-        $review->project_id = $project->id;
-        $review->reviewer_id =  $reviewer->user_id ?? Auth::user()->id;
-        $review->review_status = "rejected";
-        // # ['pending','approved','rejected']
-        $review->project_status = "rejected";
-        $review->created_by = $reviewer->user_id ?? Auth::user()->id;
-        $review->updated_by = $reviewer->user_id ?? Auth::user()->id;
-        $review->save();
-
-
-        // Send notification email to the creator of the project
-        $user = User::where('id', $project->created_by)->first();
-
-        $project = Project::where('id', $project->id)->first();
-        if ($user) {
-
-            // Notification::send($user, new ReviewerReviewNotification($project, $review));
-
-            ProjectHelper::sendForProjectCreatorReviewerReviewNotification($user,$project,$review);
-
-        }
-
- 
-        
-        
-        $project->status = "rejected"; // reject the project
-        $project->allow_project_submission = false; // do not allow double submission until it is reviewed
-        $project->save();
-
-
-        ActivityLog::create([
-            'log_action' => "Project \"".$project->name."\" rejected ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-            'project_id' => $project->id,
-        ]);
-
-        Alert::success('Success','Project rejected ');
-        return redirect()->route('project.show',['project' => $project->id]);
-
-
-    }
-
-
-
+    
 
     public function update_project(){
-        // dd($this->selectedProjects);
+        
 
+        $project_document = ProjectDocument::find($this->project_document->id);  // get the current project document 
+        $project_reviewer = $project_document->getCurrentReviewerByProjectDocument(); // get the current reviewer
+
+        // dd($project_document);
+ 
 
         $this->validate([
-            'shpo_number' => [
+            'rc_number' => [
                 'required',
                 'string',
-                Rule::unique('projects', 'shpo_number'), // Ensure shpo_number is unique
+                Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
             ]
         ],[
             'The shpo number has already been taken. Please enter other combinations of shpo number '
         ]);
 
-        $project = Project::findOrFail($this->project->id);
+        if(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1){
+            // the review is automatically approved if the first reviewer had save and confirmed that the project is approved in the initial review
+            $this->review_status = "approved";
 
-        $project->shpo_number = $this->shpo_number;
-        $project->allotted_review_time_hours = $this->allotted_review_time_hours;
+        }
+
+        // dd(empty($project_reviewer) ||  (!empty($project_reviewer) && $project_reviewer->user_id !== Auth::user()->id) ); 
+        // dd(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1);
+        // dd($this->all());
+         
+
+        $project_document->rc_number = $this->rc_number;
+        // $project_document->allotted_review_time_hours = $this->allotted_review_time_hours;
         
 
 
-        $project->reviewer_response_duration = $this->reviewer_response_duration;
-        $project->reviewer_response_duration_type = $this->reviewer_response_duration_type;
+        $project_timer = ProjectTimer::first();
+
+        if(!empty($project_timer)){
+            $this->reviewer_response_duration = $this->reviewer_response_duration ?? $project_timer->reviewer_response_duration ?? null;
+            $this->reviewer_response_duration_type = $this->reviewer_response_duration_type ?? $project_timer->reviewer_response_duration_type ?? null;
+            $this->submitter_response_duration = $this->submitter_response_duration ?? $project_timer->submitter_response_duration ?? null;
+            $this->submitter_response_duration_type = $this->submitter_response_duration_type ?? $project_timer->submitter_response_duration_type ?? null;
+
+
+        }
+
+        $project_document->reviewer_response_duration = $this->reviewer_response_duration;
+        $project_document->reviewer_response_duration_type = $this->reviewer_response_duration_type;
         // after updating the project, update the due date timers
-        $project->reviewer_due_date = Project::calculateDueDate(now(),$this->reviewer_response_duration_type, $this->reviewer_response_duration );
+        $project_document->reviewer_due_date = Project::calculateDueDate(now(),$this->reviewer_response_duration_type, $this->reviewer_response_duration );
 
 
-        $project->submitter_response_duration = $this->submitter_response_duration;
-        $project->submitter_response_duration_type = $this->submitter_response_duration_type;  
-        // $project->submitter_due_date = Project::calculateDueDate(now(),$project->submitter_response_duration_type, $project->submitter_response_duration );
-        $project->submitter_due_date = Project::calculateDueDate(now(),$this->submitter_response_duration_type, $this->submitter_response_duration );
+        $project_document->submitter_response_duration = $this->submitter_response_duration;
+        $project_document->submitter_response_duration_type = $this->submitter_response_duration_type;  
+        // $project_document->submitter_due_date = Project::calculateDueDate(now(),$project_document->submitter_response_duration_type, $project_document->submitter_response_duration );
+        $project_document->submitter_due_date = Project::calculateDueDate(now(),$this->submitter_response_duration_type, $this->submitter_response_duration );
  
-        $project->save();
+        $project_document->save();
 
 
 
-        // delete existing project references 
-        if(!empty($project->project_references)){
-            // delete project_references
-            if(!empty($project->project_references)){
-                foreach($project->project_references as $project_reference){
-                    $project_reference->delete();
+        // delete existing project document references 
+        if(!empty($project_document->document_references)){
+            // delete document_references
+            if(!empty($project_document->document_references)){
+                foreach($project_document->document_references as $document_reference){
+                    $document_reference->delete();
                 } 
             }
         }
@@ -407,11 +322,11 @@ class ReviewCreate extends Component
 
 
         // Save Project References (if any)
-        if (!empty($this->selectedProjects)) {
-            foreach ($this->selectedProjects as $selectedProject) {
-                ProjectReferences::create([
-                    'project_id' => $project->id,
-                    'referenced_project_id' => $selectedProject['id'],
+        if (!empty($this->selectedProjectDocuments)) {
+            foreach ($this->selectedProjectDocuments as $selectedProjectDocument) {
+                ProjectDocumentReferences::create([
+                    'project_document_id' => $project_document->id,
+                    'referenced_project_document_id' => $selectedProjectDocument['id'],
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
                 ]);
@@ -419,17 +334,245 @@ class ReviewCreate extends Component
         }
 
 
+        $message = "";
+ 
+        
+        // if project reviewer is not empty and the user is not the current reviewer, just save it 
+        if( empty($project_reviewer) || 
+            (!empty($project_reviewer) && $project_reviewer->user_id !== Auth::user()->id )  
+            ){ 
+
+            $message = 'Project Document Information Saved Successfully';
+
+            Alert::success('Success',$message);
+            return redirect()->route('project-document.review',[
+                'project' => $this->project->id,
+                'project_document' => $this->project_document->id,
+            
+            ]);
+
+
+        // if project reviewer is not empty and the user is current reviewer and he is the first reviewer, then add a review as well  
+        }elseif(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1){
+
+ 
+            $message = "Project Document \"".$project_document->document_type->name."\" on \"".$project_document->project->name."\" reviewed successfully ";
+
+            // update project reviewer
+                // dd($project_reviewer);
+
+                $project_reviewer->review_status = $this->review_status;
+
+                if($this->review_status == "approved"){
+                    $project_reviewer->status = false; 
+                }
+
+                if($this->review_status == "changes_requested"){
+                    $project_reviewer->requires_project_update = true; 
+                    // $project_reviewer->requires_document_update = $this->requires_document_update; 
+                    $project_reviewer->requires_attachment_update = true;
+                }
+                
+
+                $project_reviewer->updated_at = now();
+                $project_reviewer->updated_by = Auth::user()->id;
+                $project_reviewer->save();
+            // ./ update project reviewer
+
+
+
+
+
+            // Add review
+
+                //add review
+                $review = new Review();
+                // $review->project_review = $this->project_review;
+                $review->project_review = $message;
+                $review->project_id = $project_document->project_id;
+                $review->project_document_id = $project_document->id;
+                $review->project_document_status = $project_document->status;
+                $review->project_reviewer_id = $project_reviewer->id ;
+                $review->reviewer_id = Auth::user()->id;
+
+
+                /** Update the review time */
+                    /**
+                     * Review Time is now based on last_submitted_at of the project
+                     * 
+                     * last_reviewed_at
+                     * 
+                     */
+
+                    // Ensure updated_at is after created_at
+                    if ($project_document->updated_at && now()->greaterThan($project_document->updated_at)) {
+                        // Calculate time difference in hours
+                        // $review->review_time_hours = $project_document->updated_at->diffInHours(now()); 
+                        $review->review_time_hours = $project_document->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
+                    }
+        
+                /** ./ Update the review time */
+        
+                
+
+                if($this->review_status == "changes_requested"){ 
+
+                    $review->requires_project_update = true; 
+                    // $review->requires_document_update = $this->requires_document_update; 
+                    $review->requires_attachment_update = true; 
+
+                }else{ // if it is not changes request, then it must be approved 
+
+                    $this->review_status == "approved";
+                }
+
+                $review->review_status = $this->review_status; 
+
+
+                $review->created_by = Auth::user()->id;
+                $review->updated_by = Auth::user()->id;
+                $review->created_at = now();
+                $review->updated_at = now();
+                $review->save();
+
+                // add review attachments
+                if (!empty($this->attachments)) {
+                    foreach ($this->attachments as $file) {
+                
+                        // Generate a unique file name
+                        $fileName = Carbon::now()->timestamp . '-' . $review->id . '-' . uniqid() . '.' . $file['extension'];
+                
+                        // Move the file manually from temporary storage
+                        $sourcePath = $file['path'];
+                        $destinationPath = storage_path("app/public/uploads/review_attachments/{$fileName}");
+                
+                        // Ensure the directory exists
+                        if (!file_exists(dirname($destinationPath))) {
+                            mkdir(dirname($destinationPath), 0777, true);
+                        }
+                
+                        // Move the file to the destination
+                        if (file_exists($sourcePath)) {
+                            rename($sourcePath, $destinationPath);
+                        } else {
+                            // Log or handle the error (file might not exist at the temporary path)
+                            continue;
+                        }
+                
+                        // Save to the database
+                        ReviewAttachments::create([
+                            'attachment' => $fileName,
+                            'review_id' => $review->id,
+                            'created_by' => Auth::user()->id,
+                            'updated_by' => Auth::user()->id,
+                        ]);
+                    }
+                }
+                // ./ add review attachments 
+ 
  
 
-        ActivityLog::create([
-            'log_action' => "Project SHPO number on \"".$project->name."\" updated ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-            'project_id' => $project->id,
-        ]);
+            // ./ Add review
 
-        Alert::success('Success', "Project SHPO number on \"".$project->name."\" updated. You can now submit a review");
-        return redirect()->route('project.review',['project' => $this->project->id]);
+
+
+            // notifications
+                // reset the project document reviewers 
+                // sets all reviewers into status = false and makes the first reviewer as active
+                ProjectDocument::resetCurrentProjectDocumentReviewersByDocument($project_document->id); 
+                
+                
+
+                //update the next reviewer
+                if($this->review_status == "approved"){
+                    
+                    // update project document  
+                    $project_document->allow_project_submission = false;
+                    $project_document->save();
+
+                    // the reviewers had been reset, we can just get the current reviewer now 
+                    // $next_project_reviewer = $project->getNextReviewer();
+                    $next_project_reviewer = $project_document->getCurrentReviewerByProjectDocument();
+
+                    if(!empty($next_project_reviewer)){ // check if there are next reviewers
+                        
+
+                        // // send notification to the next reviewer
+                        ProjectReviewerHelpers::sendReviewNotificationToReviewer($project_document);
+    
+
+                    }else{ // if there are no more reviewers, meaning the project is completed
+
+                        // update project document  
+                        $project_document->status = "approved";
+                        $project_document->save();
+    
+                    }
+
+                
+
+
+                }else{ // if the review is not approved and either the project is rejected or changes_requested 
+                    // update project document  
+                    $project_document->allow_project_submission = true;
+                    $project_document->save();
+
+                }
+
+
+                // notify submitter about the review update 
+                // get the submitter user id 
+                $submitter_id = $project_document->created_by;
+                // submit
+                ProjectDocumentHelpers::notifySubmitter(
+                    $review->id, 
+                    $submitter_id
+                );
+
+
+
+                // send project approval updates for creators and project subscribers if the project is approved 
+                if($project_document->status == "approved"){
+                    ProjectDocumentHelpers::sendCompleteProjectDocumentApprovalNotification($project_document);
+                }
+
+
+
+
+            // ./ notifications
+
+
+            
+ 
+
+
+
+            ActivityLog::create([
+                'log_action' => $message,
+                'log_username' => Auth::user()->name,
+                'created_by' => Auth::user()->id,
+                'project_id' => $project_document->project->id,
+                'project_document_id' => $project_document->id,
+            ]);
+
+            Alert::success('Success', $message);
+            return redirect()->route('project-document.review',[
+                'project' => $this->project->id,
+                'project_document' => $this->project_document->id,
+            
+            ]);
+
+ 
+        }
+
+         
+ 
+        Alert::success('Success', $message);
+        return redirect()->route('project-document.review',[
+            'project' => $this->project->id,
+            'project_document' => $this->project_document->id,
+        
+        ]);
 
     }
 
@@ -443,46 +586,74 @@ class ReviewCreate extends Component
                 $user = Auth::user();   
 
                 // Extract selected project IDs to exclude from results
-                $excludedIds = array_column($this->selectedProjects, 'id');
+                $excludedIds = array_column($this->selectedProjectDocuments, 'id');
 
 
-                $this->projects = Project::whereNotNull('shpo_number')
-                    ->whereNotNull('project_number')
-                    ->whereNotIn('id', $excludedIds) // 👈 Exclude selected projects
+                $this->project_documents = ProjectDocument::query()
+                    ->with('document_type','project') // optional: for display without extra queries
+                    ->whereNotNull('rc_number')
+                    // ->whereNotNull('project_number')
+                    ->when(!empty($excludedIds), fn($q) => $q->whereNotIn('id', $excludedIds)) // safe guard
                     ->where(function ($mainQuery) use ($user) {
-                    $mainQuery->where('name', 'like', '%' . $this->query . '%')
-                            ->orWhere('shpo_number', 'like', '%' . $this->query . '%');
+                        $search = trim((string) $this->query);
 
-                    // Optional: Apply access control if needed
-                    if (!$user->can('system access global admin') && !$user->can('system access admin')) {
-                        // Example: only show projects the user created or is assigned to
-                        $mainQuery->where(function ($q) use ($user) {
-                            $q->where('created_by', $user->id);
-                            // Add more project-level access rules here if needed
+                        // group all OR conditions
+                        $mainQuery->where(function ($q) use ($search) {
+                            $q
+                            // ->where('name', 'like', "%{$search}%")
+                                ->orWhere('rc_number', 'like', "%{$search}%")
+                                ->orWhereHas('document_type', function ($dq) use ($search) {
+                                    $dq->where('name', 'like', "%{$search}%");
+                                })
+                                ->orWhereHas('project', function ($dq) use ($search) {
+                                    $dq->where('name', 'like', "%{$search}%")
+                                        ->orWhere('federal_agency', 'like', "%{$search}%")
+                                        ->orWhere('description', 'like', "%{$search}%");
+                                }) ;
                         });
-                    }
 
-                })
-                ->limit(10)
-                ->get();
+                        // Optional: access control
+                        if (!$user->can('system access global admin') && !$user->can('system access admin')) {
+                            $mainQuery->where(function ($q) use ($user) {
+                                $q->where('created_by', $user->id);
+                                // add more rules if needed
+                            });
+                        }
+                    })
+                    ->limit(10)
+                    ->get();
 
             } else {
-                $this->projects = [];
+                $this->project_documents = [];
             }
         }
 
-        public function addProjectReference($projectId)
+        public function addProjectDocumentReference($projectDocumentId)
         {
-            if (!in_array($projectId, array_column($this->selectedProjects, 'id'))) {
-                $project = Project::find($projectId);
-                $this->selectedProjects[] = [
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'shpo_number' => $project->shpo_number,
-                    'project_number' => $project->project_number,
+            if (!in_array($projectDocumentId, array_column($this->selectedProjectDocuments, 'id'))) {
+                $project_document = ProjectDocument::find($projectDocumentId);
+                $project = Project::find($project_document->project_id);
+                $this->selectedProjectDocuments[] = [
+
+
+                     'id' => $project_document->id,
+                    'project_name' => $project->name,
+                    'document_name' => $project_document->document_type->name,
+                    'rc_number' => $project_document->rc_number,
+                    'project_number' => $project_document->project_number,
                     'location' => $project->location,
                     'type' => $project->type,
                     'federal_agency' => $project->federal_agency,
+
+
+
+                    // 'id' => $project->id,
+                    // 'name' => $project->name,
+                    // 'rc_number' => $project->rc_number,
+                    // 'project_number' => $project->project_number,
+                    // 'location' => $project->location,
+                    // 'type' => $project->type,
+                    // 'federal_agency' => $project->federal_agency,
                 ];
             }
 
@@ -492,8 +663,8 @@ class ReviewCreate extends Component
 
         public function removeProjectReference($index)
         {
-            unset($this->selectedProjects[$index]);
-            $this->selectedProjects = array_values($this->selectedProjects); // Re-index array
+            unset($this->selectedProjectDocuments[$index]);
+            $this->selectedProjectDocuments = array_values($this->selectedProjectDocuments); // Re-index array
         }
 
     // ./// For the Search Project Functionality
@@ -505,8 +676,10 @@ class ReviewCreate extends Component
 
         // dd($this->requires_document_update);
         
+       
+
         $this->validate([
-            'project_review' => [
+            'review_status' => [
                 'required',
             ],
 
@@ -541,90 +714,79 @@ class ReviewCreate extends Component
 
 
 
-        // dd($this->all());
-
-        // dd($this->project_status);
-
-        if(!empty($this->project_status)){
-            if($this->project_status == "approved"){
-
-                // dd("project is approved");
-                $this->approve_project($this->project->id);
-
-
-            }elseif($this->project_status == "rejected"){
-                // dd("project is rejected");
-                $this->reject_project($this->project->id);
-
-
-
-
-            }
+        if($this->review_status == "changes_requested"){
+            $this->requires_project_update = true; 
+            // $this->requires_document_update = $this->requires_document_update; 
+            $this->requires_attachment_update = true;
         }
 
-        // dd("Project status approved");
+        // dd($this->all());
+        
+  
+        // get the project document
+        $project_document = ProjectDocument::find($this->project_document->id);
 
-        // dd($this->review_status);
+        // dd($project_document->hasUnapprovedReviewers());
+ 
 
+        // dd($project_document);
 
+        //get the current reviewer
+        $current_reviewer = $project_document->getCurrentReviewerByProjectDocument();
+         
+        // check if the current user is the current reviewer
+        if(empty($current_reviewer) && $current_reviewer->user_id == Auth::user()->id){
+            Alert::error('Error','You are not the current reviewer for the project');
+            return redirect()->route('project-document.review',[
+                'project' => $this->project->id,
+                'project_document' => $this->project_document->id,
+            
+            ]);
+
+        }
 
         
+        //  dd($this->all());
 
-        // get the project reviewer instance of the current user reviewer
-        // $project_reviewer = $this->project->getReview(Auth::user()->id);
-        // $project_reviewer = $this->project->getUserReview(Auth::user()->id);
-
-        $project_reviewer = ProjectReviewer::getProjectReviewer($this->project->id,Auth::user()->id);
-
-
-        if(empty($project_reviewer)){
-            Alert::error('Error','You are not the current reviewer for the project');
-            return redirect()->route('project.review',['project' => $this->project->id]);
-
-        }
-
-        // dd($this->project->project_documents);
-        // dd($project_reviewer);
-
-
-        // dd($project_reviewer);
-
-
-        // dd($status);
-
-
-        // update project reviewer
+        // update current reviewer
             // dd($project_reviewer);
 
-            $project_reviewer->review_status = $this->review_status;
+            // update review status 
+            $current_reviewer->review_status = $this->review_status;
 
+            // if the review is approved / set the reviewer to not be the current reviewer by setting status to false 
             if($this->review_status == "approved"){
-                $project_reviewer->status = false; 
+                $current_reviewer->status = false; 
             }
 
-            $project_reviewer->requires_project_update = $this->requires_project_update; 
-            $project_reviewer->requires_document_update = $this->requires_document_update; 
-            $project_reviewer->requires_attachment_update = $this->requires_attachment_update; 
-
-            $project_reviewer->updated_at = now();
-            $project_reviewer->updated_by = Auth::user()->id;
-            $project_reviewer->save();
+            // if review status is changes_requested, require project and attachment update for the project document 
+            if($this->review_status == "changes_requested"){
+                $current_reviewer->requires_project_update = true; 
+                // $project_reviewer->requires_document_update = $this->requires_document_update; 
+                $current_reviewer->requires_attachment_update = true;
+            }
+             
+            // add update date time and updater 
+            $current_reviewer->updated_at = now();
+            $current_reviewer->updated_by = Auth::user()->id;
+            $current_reviewer->save();
         // ./ update project reviewer
  
 
-        //add review
-            $review = new Review();
+ 
+        // Add review
+
+            //add review
+            $review = new Review(); 
             $review->project_review = $this->project_review;
-            $review->project_id = $this->project->id;
-            $review->project_status = $this->project->status;
+            $review->project_id = $project_document->project_id;
+            $review->project_document_id = $project_document->id;
+            $review->project_document_status = $project_document->status; 
+            $review->reviewer_id = Auth::user()->id; // this is considered the user 
+ 
 
-            // check if the reviewer type is document, to add project_document_id
-            if($project_reviewer->reviewer_type == "document"){
-                $review->project_document_id = $project_reviewer->project_document_id; // the project reviewer reviewing project document will be associated to its review
-            }
-            
-            $review->reviewer_id = Auth::user()->id;
 
+            $review->project_reviewer_id = $current_reviewer->id;
 
             /** Update the review time */
                 /**
@@ -635,27 +797,34 @@ class ReviewCreate extends Component
                  */
 
                 // Ensure updated_at is after created_at
-                if ($this->project->updated_at && now()->greaterThan($this->project->updated_at)) {
+                if ($project_document->updated_at && now()->greaterThan($project_document->updated_at)) {
                     // Calculate time difference in hours
-                    // $review->review_time_hours = $this->project->updated_at->diffInHours(now()); 
-                    $review->review_time_hours = $this->project->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
+                    // $review->review_time_hours = $project_document->updated_at->diffInHours(now()); 
+                    $review->review_time_hours = $project_document->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
                 }
     
             /** ./ Update the review time */
     
-            $review->review_status = $this->review_status; 
-            $review->requires_project_update = $this->requires_project_update; 
-            $review->requires_document_update = $this->requires_document_update; 
-            $review->requires_attachment_update = $this->requires_attachment_update; 
+            // update review status
+            $review->review_status = $this->review_status;   
 
+            // if changes are requested, add project and attachment update requirement to the review
+            if($this->review_status == "changes_requested"){ 
 
+                $review->requires_project_update = true; 
+                // $review->requires_document_update = $this->requires_document_update; 
+                $review->requires_attachment_update = true; 
+
+            }
+ 
+            // add create & update datetime and the current user  
             $review->created_by = Auth::user()->id;
             $review->updated_by = Auth::user()->id;
             $review->created_at = now();
             $review->updated_at = now();
             $review->save();
 
-            // add review attachments
+            // add review attachments (optional)
             if (!empty($this->attachments)) {
                 foreach ($this->attachments as $file) {
             
@@ -690,268 +859,95 @@ class ReviewCreate extends Component
             }
             // ./ add review attachments 
 
-        // ./ add review
+
+
+        // ./ Add review
+
 
          
 
-
-       
-        
-    
-
-        // update project
-            $project = Project::where('id', $this->project->id)->first();
-
-            $project->allow_project_submission = true; 
+        // notifications
+            // reset the project document reviewers 
+            // sets all reviewers into status = false and makes the first reviewer as active
+            ProjectDocument::resetCurrentProjectDocumentReviewersByDocument($project_document->id); 
+            
+            
 
             //update the next reviewer
             if($this->review_status == "approved"){
-                $project->allow_project_submission = false;
-            }
+                
+                // update project document  
+                $project_document->allow_project_submission = false;
+                $project_document->save();
 
-            $project->updated_at = now(); 
+                // the reviewers had been reset, we can just get the current reviewer now 
+                // $next_project_reviewer = $project->getNextReviewer();
+                $next_project_reviewer = $project_document->getCurrentReviewerByProjectDocument();
 
-            $project->last_reviewed_at = now();
-            $project->last_reviewed_by = Auth::user()->id;
+                if(!empty($next_project_reviewer)){ // check if there are next reviewers
+                     
+
+                    // // send notification to the next reviewer
+                    ProjectReviewerHelpers::sendReviewNotificationToReviewer($project_document);
  
 
-            $project->reviewer_response_duration = $this->reviewer_response_duration;
-            $project->reviewer_response_duration_type = $this->reviewer_response_duration_type;
-            // after updating the project, update the due date timers
-            $project->reviewer_due_date = Project::calculateDueDate(now(),$this->reviewer_response_duration_type, $this->reviewer_response_duration );
+                }else{ // if there are no more reviewers, meaning the project is completed
 
+                    // update project document  
+                    $project_document->status = "approved";
+                    $project_document->save();
+ 
+                }
 
-            $project->submitter_response_duration = $this->submitter_response_duration;
-            $project->submitter_response_duration_type = $this->submitter_response_duration_type;  
-            // $project->submitter_due_date = Project::calculateDueDate(now(),$project->submitter_response_duration_type, $project->submitter_response_duration );
-            $project->submitter_due_date = Project::calculateDueDate(now(),$this->submitter_response_duration_type, $this->submitter_response_duration );
             
 
-            $project->save();
-        // ./ update project
+
+            }else{ // if the review is not approved and either the project is rejected or changes_requested 
+                // update project document  
+                $project_document->allow_project_submission = true;
+                $project_document->save();
+
+            }
+
+
+            // notify submitter about the review update 
+            // get the submitter user id 
+            $submitter_id = $project_document->created_by;
+            // submit
+            ProjectDocumentHelpers::notifySubmitter(
+                $review->id, 
+                $submitter_id
+            );
+
+            // notify the reviewer about his submitted review 
+             ProjectDocumentHelpers::notifyReviewSubmitter(
+                $review->id, 
+                $submitter_id
+            ); 
+
+
+            // send project approval updates for creators and project subscribers if the project is approved 
+            if($project_document->status == "approved"){
+                ProjectDocumentHelpers::sendCompleteProjectDocumentApprovalNotification($project_document);
+            }
+
+
+
+        // ./ notifications
+
 
         
-        // add review required project document updates 
-            if($this->requires_document_update){
-                if(!empty($this->required_document_updates)){
-                    foreach($this->required_document_updates as $key => $document_id){
-                        ReviewRequireDocumentUpdates::create([
-                            'review_id'  => $review->id,
-                            'project_id' => $project->id,
-                            'document_type_id' => $document_id, // document that is required to be added the next project submission
-                            'project_reviewer_id'  => $project_reviewer->id,
-                            'created_by' => Auth::user()->id,
-                            'updated_by' => Auth::user()->id,
-                        ]);
-                    }
-
-                }
-
-            }
-        // ./ add review required project document updates 
-
-
-        // add review required project document attachment updates 
-            if($this->requires_attachment_update){
-                if(!empty($this->required_attachment_updates)){
-                    foreach($this->required_attachment_updates as $key => $project_document_id){
-
-                        $project_document = ProjectDocument::find($project_document_id);
-
-
-                        ReviewRequireAttachmentUpdates::create([
-                            'review_id'  => $review->id,
-                            'project_id' => $project->id,
-                            'project_document_id' => $project_document_id,
-                            'document_type_id' => $project_document->document_type_id, // document that is required to be added the next project submission
-                            'project_reviewer_id' => $project_reviewer->id,
-                            'created_by'  => Auth::user()->id,
-                            'updated_by'  => Auth::user()->id,
-                        ]);
-                    }
-
-                }
-
-            }
-        // ./ add review required project document attachment updates
-
 
 
 
  
-        // Send notification email to reviewer 
-            $user = User::findOrFail($this->project->creator->id);// insert the project submitter and creator
-            if ($user) {
-
-                // notification to send to creator of the project about the reviewer review had been submitted . It is also an eamil notification
-                $creator = User::where('id',$this->project->creator->id)->first();
-                ProjectHelper::sendForProjectCreatorReviewerReviewNotification($creator, $project, $review);
-
-            }
-        // ./ Send notification email to reviewer
-
-
-
-        // reset the project document reviewers 
-        $project->resetCurrentProjectDocumentReviewers();
- 
-        //update the next reviewer
-        if($this->review_status == "approved"){
-
-
-            // the reviewers had been reset, we can just get the current reviewer now 
-            // $next_project_reviewer = $project->getNextReviewer();
-            $next_project_reviewer = $project->getCurrentReviewer();
-
-            if(!empty($next_project_reviewer)){ // check if there are next reviewers
-                // $next_project_reviewer->status = true;
-                // $next_project_reviewer->save();
-                
-                // check if the next reviewer has a user value , if not, then it is an open review
-                // NORMAL REVIEW NEXT
-                if(!empty($next_project_reviewer->user_id) ){
-                     // add to the review 
-                    $review->next_reviewer_name = $next_project_reviewer->user->name;
-                    $review->save();
-
-
-                    // notify that reviewer that he is the next in line
-                    // Send notification email to the next reviewer
-                    $next_project_reviewer_user = User::where('id', $next_project_reviewer->user_id)->first();
-                    if ($next_project_reviewer_user) {
-
-                        // notification to send to the reviewer about project review notification
-                        ProjectHelper::sendForReviewersProjectReviewNotification($next_project_reviewer_user,$project,  $next_project_reviewer);
-
-                    }
-                
-                // OPEN REVIEW NEXT 
-                }else{
-
-
-                    // Determine users based on reviewer type
-                    $reviewerType = $next_project_reviewer->reviewer_type; // assuming $reviewer is available
-
-                    if (in_array($reviewerType, ['initial', 'final'])) {
-                        $users = \Spatie\Permission\Models\Permission::whereIn('name', [
-                            'system access admin',
-                            'system access global admin',
-                        ])
-                        ->with('roles.users')
-                        ->get()
-                        ->flatMap(function ($permission) {
-                            return $permission->roles->flatMap(function ($role) {
-                                return $role->users;
-                            });
-                        })->unique('id')->values();
-                    } elseif ($reviewerType === 'document') {
-                        $users = \Spatie\Permission\Models\Permission::whereIn('name', [
-                            'system access reviewer',
-                            'system access admin',
-                            'system access global admin',
-                        ])
-                        ->with('roles.users')
-                        ->get()
-                        ->flatMap(function ($permission) {
-                            return $permission->roles->flatMap(function ($role) {
-                                return $role->users;
-                            });
-                        })->unique('id')->values();
-                    } else {
-                        $users = collect(); // fallback to empty if reviewer_type is unknown
-                    }
-
-
-
-
-                    
-                    foreach ($users as $user) {
-                        try {
-                            Notification::send($user, new ProjectOpenReviewNotification($project,$next_project_reviewer));
-                        } catch (\Throwable $e) {
-                            Log::error('Failed to send ProjectOpenReviewNotification notification: ' . $e->getMessage(), [
-                                'project_id' => $project->id,
-                                'user_id' => $user->id,
-                                'trace' => $e->getTraceAsString(),
-                            ]);
-                        }
-
-                        try {
-                            Notification::send($user, new ProjectOpenReviewNotificationDB($project,$next_project_reviewer));
-                        } catch (\Throwable $e) {
-                            Log::error('Failed to send ProjectOpenReviewNotificationDB notification: ' . $e->getMessage(), [
-                                'project_id' => $project->id,
-                                'user_id' => $user->id,
-                                'trace' => $e->getTraceAsString(),
-                            ]);
-                        }
-                    }
-
-
-
-
-                }
-
-               
-
-
-            
-
-
-
-
-            }else{ // if there are no more reviewers, meaning the project is completed
-
-                $project->status = "approved";
-                $project->save();
-
- 
-
-
-            }
-
-           
-
-
-        }
-
-
-        ActivityLog::create([
-            'log_action' => "Project review on \"".$project->name."\" submitted ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
-
-
- 
-
-        // update the subscribers 
-
-            //message for the subscribers 
-            $message = "The project '".$project->name."' had been rejected by reviewer '".Auth::user()->name."'";
-    
-            if($this->review_status == "approved"){
-                
-                $message = "The project '".$project->name."' had been approved by reviewer '".Auth::user()->name."'";
-            }
-
-            ProjectHelper::sendForProjectSubscribersProjectSubscribersNotification($project,$message,"project_reviewed");
-            
- 
-        // ./ update the subscribers 
-
-
-
-
-        // send project approval updates for creators and project subscribers if the project is approved 
-        if($project->status == "approved"){
-            ProjectHelper::sendCompleteProjectApprovalNotification($project);
-        }
-
-        
 
         Alert::success('Success','Project review submitted successfully');
-        return redirect()->route('project.review',['project' => $this->project->id]);
+        return redirect()->route('project-document.review',[
+            'project' => $this->project->id,
+            'project_document' => $this->project_document->id,
+        
+        ]);
 
 
 
@@ -959,8 +955,19 @@ class ReviewCreate extends Component
 
 
 
+
+ 
+
+
+
+
     public function render()
     {
-        return view('livewire.admin.review.review-create');
+        return view('livewire.admin.review.review-create',[
+ 
+            'project_reviewer' => $this->project_document->getCurrentReviewerByProjectDocument(),
+                               
+
+        ]);
     }
 }

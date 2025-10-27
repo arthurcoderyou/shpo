@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Permissions') }}
-        </h2>
-    </x-slot>
+    <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Permissions', 'url' => route('permission.index')], 
+        ['label' => 'Edit '.$permission->name, 'url' => '#'],
+    ]" />
 
     <livewire:admin.permission.permission-edit :id="$permission->id" />
 

@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard\DashboardTile;
 
 use App\Models\Project;
 
+use App\Models\ProjectDocument;
 use Livewire\Component;
 use Illuminate\Support\Facades\Cache;
 
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 class ProjectTile extends Component
 {   
 
-     protected $listeners = [
+    protected $listeners = [
         'projectCreated' => 'refreshCount',
         'projectUpdated' => 'refreshCount',
         'projectDeleted' => 'refreshCount',
@@ -25,6 +26,7 @@ class ProjectTile extends Component
     public $route;
     public $routeKey;        // routeKey is the route name connected
     public $count; 
+ 
 
     public function mount($title,  $icon = null, $route = null, $routeKey = null ,$iconBg = "bg-blue-600", $iconColor = "text-white")
     {
@@ -37,7 +39,7 @@ class ProjectTile extends Component
         $this->iconColor = $iconColor;
         $this->iconBg = $iconBg;
         $this->route = $route;
-        $this->routeKey = $routeKey;
+        $this->routeKey = $routeKey; 
          
         $this->refreshCount();
     }
@@ -45,8 +47,10 @@ class ProjectTile extends Component
     public function refreshCount()
     {
         // $this->count = Cache::get($this->routeKey, 0);
-
+  
         $this->count = Project::countProjects($this->routeKey);
+         
+        
 
     }
 

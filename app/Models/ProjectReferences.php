@@ -34,9 +34,7 @@ class ProjectReferences extends Model
         'project_id',
         'referenced_project_id', 
         'created_by',
-        'updated_by', 
-
-
+        'updated_by',  
 
     ];
 

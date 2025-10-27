@@ -1,9 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl  leading-tight">
-            {{ __('Users') }}
-        </h2>
-    </x-slot>
+     <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Users', 'url' => '#'], 
+    ]" />
 
     <livewire:admin.user.user-list />
 

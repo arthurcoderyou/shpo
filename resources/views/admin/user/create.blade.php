@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Users') }}
-        </h2>
-    </x-slot>
+     <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Users', 'url' => route('user.index')], 
+        ['label' => 'Create New User', 'url' => '#'],
+    ]" />
 
 
     <livewire:admin.user.user-create />

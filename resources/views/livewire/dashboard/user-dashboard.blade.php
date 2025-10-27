@@ -1,6 +1,6 @@
  
 <!-- Card Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="  px-4 py-6 sm:px-6 lg:px-8  mx-auto">
   <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
       <div></div>
       <div></div>

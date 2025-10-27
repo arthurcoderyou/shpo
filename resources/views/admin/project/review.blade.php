@@ -28,12 +28,19 @@
     <livewire:admin.project-discussion.project-discussion-list :project="$project" /> --}}
 
 
+ 
+    @php 
+        $url = App\Helpers\ProjectHelper::returnHomeProjectRoute();
+    @endphp 
 
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Projects') }}
-        </h2>
-    </x-slot>
+     <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ],
+        ['label' => 'Projects', 'url' => $url],
+        ['label' => 'Review Project', 'url' => '#'],
+    ]" />
+
+
+
  
 
     <livewire:admin.project.project-show :id="$project->id" /> 

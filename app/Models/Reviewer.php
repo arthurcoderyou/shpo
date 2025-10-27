@@ -24,6 +24,8 @@ class Reviewer extends Model
        'created_by',
        'updated_by',
        'document_type_id',
+       'slot_type',
+       'slot_role',
        'reviewer_type', // initial, document, final
         // initial reviews the project before approved
         // document reviews the project documents

@@ -64,6 +64,12 @@ class ProjectLogs extends Component
             $this->log_filter = "Project Attachment Logs";
         }
 
+        if( !empty($project_document_id) ){
+
+            $this->log_filter = "Project Document Logs";
+        }
+
+
         $project = Project::findOrFail($project_id);
 
 

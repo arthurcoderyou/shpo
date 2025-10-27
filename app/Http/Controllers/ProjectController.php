@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\ProjectDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -74,8 +75,77 @@ class ProjectController extends Controller
         }
 
  
+        // project documents section 
+            // project_documents
+            public function project_documents($project_id = null){
 
+                $user = Auth::user();  
+                // Check if the user has the role "system access global admin" OR the permission "project list view"
+                // if (
+                //         !$user || (
+                //             !$user->can('system access global admin') && 
+                //             !$user->can('system access reviewer') && 
+                //             !$user->can('system access admin') && 
+                //             !$user->hasPermissionTo('project list view review pending')
+                //         )
+                //     ) {
+                //     Alert::error('Error', 'You do not have permission to access this section.');
 
+                //     // If there is no previous URL, redirect to the dashboard
+                //     return redirect()->route('dashboard');
+                    
+                    
+                // }
+        
+                // if(!empty($id)){
+                $project = Project::findOrFail($project_id);
+                // }   
+                
+
+                // return view('admin.project.project_documents',[
+                //     'project' => $project ?? null,
+                //     'route' => 'project.project_documents',
+                // ]);
+
+                return view('admin.project.project-document.index',[
+                    'project' => $project ?? null,
+                    'route' => 'project.project_documents',
+                ]);
+
+            } 
+
+            // project_documents_open
+            public function project_documents_open($id = null){
+
+                $user = Auth::user();  
+                // Check if the user has the role "system access global admin" OR the permission "project list view"
+                if (
+                        !$user || (
+                            !$user->can('system access global admin') && 
+                            !$user->can('system access reviewer') && 
+                            !$user->can('system access admin') && 
+                            !$user->hasPermissionTo('project list view review pending')
+                        )
+                    ) {
+                    Alert::error('Error', 'You do not have permission to access this section.');
+
+                    // If there is no previous URL, redirect to the dashboard
+                    return redirect()->route('dashboard');
+                    
+                    
+                }
+        
+                if(!empty($id)){
+                    $project = Project::findOrFail($id);
+                }   
+                
+
+                return view('admin.project.project_documents',[
+                    'project' => $project ?? null,
+                    'route' => 'project.project_documents.open',
+                ]);
+            }
+        // ./  project documents section 
 
 
     // ./ own
@@ -215,7 +285,11 @@ class ProjectController extends Controller
                 
             }
     
-            return view('admin.project.index',[
+            // return view('admin.project.index',[
+            //     'route' => 'project.index.open-review'
+            // ]);
+
+            return view('admin.project.project_documents',[
                 'route' => 'project.index.open-review'
             ]);
         }
@@ -348,19 +422,103 @@ class ProjectController extends Controller
 
 
 
-        // check if the user is a reviewer 
-        $isReviewer = $project->project_reviewers()->where('user_id', auth()->id())->exists();
+        // // check if the user is a reviewer 
+        // $isReviewer = $project->project_reviewers()->where('user_id', auth()->id())->exists();
 
-        if(!$isReviewer){
-            Alert::error('Error', 'You are not a reviewer for this project');
+        // if(!$isReviewer){
+        //     Alert::error('Error', 'You are not a reviewer for this project');
 
-            // If there is no previous URL, redirect to the dashboard
-            return redirect()->route('project.in_review');
-        }
+        //     // If there is no previous URL, redirect to the dashboard
+        //     return redirect()->route('project.in_review');
+        // }
 
 
 
         return view('admin.project.review',compact('project'));
+
+    }
+
+
+    public function project_document_review($project_document_id){
+         
+        $user = Auth::user();
+        $project_document = ProjectDocument::findOrFail($project_document_id);
+        $project = Project::findOrFail($project_document->project_id);
+
+
+        // check if the current project reviewer is an open review
+        if(!empty($project_document->getCurrentReviewer()) && empty($project_document->getCurrentReviewer()->user_id) ){
+            // Check if the user has the role "system access global admin" OR the permission "project review"
+            if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review create'))) {
+                Alert::error('Error', 'You do not have permission to access this section.');
+
+                // If there is no previous URL, redirect to the dashboard
+                return redirect()->to(url()->previous() ?? route('dashboard'));
+                
+                
+            }
+
+
+            //
+
+            // dd("Open Review");
+
+            $project_reviewer = $project_document->getCurrentReviewer();
+            $project_reviewer->user_id = Auth::user()->id;
+            $project_reviewer->updated_at = now();
+            $project_reviewer->updated_by = Auth::user()->id;
+            $project_reviewer->save();
+
+
+
+
+        }
+
+
+
+        // Check if the user has the role "system access global admin" OR the permission "project review"
+        if (
+                !$user || ( 
+                    !$user->hasPermissionTo('system access global admin') && 
+                    !$user->hasPermissionTo('project review create') && 
+                    !$user->hasPermissionTo('system access admin') 
+                )
+            ) {
+            Alert::error('Error', 'You do not have permission to access this section.');
+
+            // If there is no previous URL, redirect to the dashboard
+            return redirect()->to(url()->previous() ?? route('dashboard'));
+               
+             
+        }
+
+ 
+        // update the status of the project if it is submitted and when the reviewer enter this view, the new status should be in_review
+        if($project->status == "submitted"){
+            $project->status = "in_review";
+            $project->save();
+
+            $project_document->status = "in_review";
+            $project_document->save();
+            
+        }
+
+
+
+
+        // // check if the user is a reviewer 
+        // $isReviewer = $project->project_reviewers()->where('user_id', auth()->id())->exists();
+
+        // if(!$isReviewer){
+        //     Alert::error('Error', 'You are not a reviewer for this project');
+
+        //     // If there is no previous URL, redirect to the dashboard
+        //     return redirect()->route('project.in_review');
+        // }
+
+
+
+        return view('admin.project.project_document_review',compact('project_document','project'));
 
     }
 

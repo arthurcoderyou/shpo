@@ -1,9 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl  leading-tight">
-            {{ __('Settings') }}
-        </h2>
-    </x-slot>
+    <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Setting Manager', 'url' => '#'], 
+    ]" />
 
     <livewire:setting.setting-create />
     <livewire:setting.setting-list />

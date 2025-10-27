@@ -20,12 +20,12 @@ class Review extends Model
         'project_reviewer_id', // project reviewer 
         'review_status',
         
-        # ['pending','approved','rejected']
+        # ['pending','approved','rejected','changes_requested']
         # 'submitted' is the special review status for users 
         # re_submitted for resubmission
 
-        'project_status', 
-        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',
+        'project_document_status', 
+        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',','changes_requested'
         'next_reviewer_name',
 
         'admin_review', // means that this is a review from the admin
@@ -156,6 +156,16 @@ class Review extends Model
         return $this->belongsTo(ProjectDocument::class, 'project_document_id', 'id');
     }
 
+    /**
+     * Get the Project reviewer connected to the review
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function project_reviewer() # : BelongsTo
+    {
+        return $this->belongsTo(ProjectReviewer::class, 'project_reviewer_id', 'id');
+    }
+
 
 
     /**
@@ -189,7 +199,10 @@ class Review extends Model
         return $this->hasMany(ReviewRequireDocumentUpdates::class, 'review_id');
     }
 
+    static public function returnReviewCount($project_reviewer_id){
 
+        return Review::where('project_reviewer_id', $project_reviewer_id)->count();
+    }
 
 
     static public function countUnseenEmails($project_id){

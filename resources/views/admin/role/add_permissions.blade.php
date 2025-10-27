@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Roles') }}
-        </h2>
-    </x-slot>
+    <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Roles', 'url' => route('role.index')], 
+        ['label' => 'Update Permissions to Role '.$role->name, 'url' => '#'],
+    ]" />
 
     <livewire:admin.role.add-permissions :role_id="$role->id" />
 

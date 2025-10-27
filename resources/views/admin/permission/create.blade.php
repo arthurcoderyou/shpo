@@ -1,9 +1,11 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Permissions') }}
-        </h2>
-    </x-slot>
+     <!-- #endregion -->
+
+    <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Permissions', 'url' => route('permission.index')], 
+        ['label' => 'Create New Permission', 'url' => '#'],
+    ]" />
 
     <livewire:admin.permission.permission-create />
  

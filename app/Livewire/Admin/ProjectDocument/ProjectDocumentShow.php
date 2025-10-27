@@ -10,11 +10,51 @@ use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class ProjectDocumentShow extends Component
 {
+
+
+    /** Actions with Password Confirmation panel */
+        public $passwordConfirm = '';
+        public $passwordError = null;
+
+
+        /** Delete Confirmation  */
+            public $confirmingDelete = false; // closes the confirmation delete panel
+            
+            public $recordId = null; 
+            public function confirmDelete($recordId)
+            {
+                $this->confirmingDelete = true;
+                $this->recordId = $recordId;
+                $this->passwordConfirm = '';
+                $this->passwordError = null;
+            }
+
+            public function executeDelete()
+            {
+                if (!Hash::check($this->passwordConfirm, auth()->user()->password)) {
+                    $this->passwordError = 'Incorrect password.';
+                    return;
+                }
+
+                $this->selected_record = $this->recordId;
+
+                // delete the record
+                $this->delete();
+
+                $this->reset(['confirmingDelete', 'passwordConfirm', 'recordId', 'passwordError','selected_record']); 
+            }
+
+        /** ./ Delete Confirmation */
+
+    /** ./ Actions with Password Confirmation panel */
+
+
     public $project_id;
     public $project_document_id;
 
@@ -23,11 +63,18 @@ class ProjectDocumentShow extends Component
     public $project;
     public $project_document;
 
+
+    public $counts; 
+
     public function mount($project_id, $project_document_id){
         $this->project_id = $project_id;
         $this->project_document_id;
         $this->project = Project::findOrFail($this->project_id);
         $this->project_document = ProjectDocument::findOrFail($this->project_document_id);
+
+
+        $this->counts = $this->project_document->attachmentTypeCounts();
+
     }
 
 
@@ -36,6 +83,13 @@ class ProjectDocumentShow extends Component
         ProjectHelper::submit_project($project_id);
 
     }
+
+    public function submit_project_document($project_document_id){
+
+        ProjectDocumentHelpers::submit_project_document($project_document_id);
+
+    }
+    
 
     public function getExistingFilesProperty()
     {
@@ -260,6 +314,67 @@ class ProjectDocumentShow extends Component
 
 
     }
+
+
+    public function delete($attachment_id){
+        
+
+        $attachment = ProjectAttachments::find($attachment_id);
+        $project = Project::find($attachment->project_id);
+        $project_document = ProjectDocument::find($attachment->project_document_id);
+
+        // Construct the full file path
+        $dir = "uploads/project_attachments/project_{$project_document->project->id}/project_document_{$project_document->id}/{$project_document->created_at}/{$attachment->attachment}";
+
+
+
+
+        // // check if the file is completely uploaded on the ftp server
+        // if (Storage::disk('ftp')->exists($dir)) { 
+
+        //     // delete the file on the ftp server
+        //     Storage::disk('ftp')->delete($dir); 
+
+
+        //     // check if the file does not exist any more 
+            
+        //     $attachment->delete();
+        //     $attachment->save(); 
+            
+
+        // }
+
+        // check if the file is completely uploaded on the ftp server
+        if (Storage::disk('public')->exists($dir)) { 
+
+            // delete the file on the public server
+            Storage::disk('public')->delete($dir); 
+
+
+            // check if the file does not exist any more 
+            
+            $attachment->delete();
+            $attachment->save(); 
+            
+
+        }
+
+
+
+        // Delete the record from the database
+        $attachment->delete(); 
+
+
+
+        Alert::success('Success',"Project attachment deleted ");
+        return redirect()->route('project.project-document.show',[
+            'project' => $this->project->id,
+            'project_document' => $this->project_document->id,
+        ]);
+
+
+    }
+    
 
 
     public function render()

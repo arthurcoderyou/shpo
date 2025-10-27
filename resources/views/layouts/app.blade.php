@@ -7,6 +7,20 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
+
+        <script>
+            window.currentUser = {
+                id: {{ Auth::id()  ?? 0 }} ,
+                roles: {!! json_encode(Auth::user()?->getRoleNames() ?? []) !!},
+                permissions: {!! json_encode(Auth::user()?->getAllPermissions()->pluck('name') ?? []) !!}
+            };
+
+
+            // console.log('roles : ' + window.currentUser.roles);
+
+        </script>
+        
+         
         {{--
         <!-- Arc GIS-->
             <!-- Load Calcite components from CDN -->
@@ -21,6 +35,7 @@
         <!-- ./ Arc GIS-->
          --}}
 
+         
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -51,6 +66,12 @@
         </script>
 
 
+        {{-- <style>
+            .filepond--credits {
+                display: none !important;
+            }
+        </style> --}}
+
 
         {{-- <!-- The callback parameter is required, so we use console.debug as a noop -->
         <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA70BOfcc1ELmwAEmY-rFNkbNauIXT79cA&callback=console.debug&libraries=maps,marker&v=beta">
@@ -79,6 +100,8 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        @filepondScripts
 
         @yield('script')
         @auth
@@ -129,6 +152,7 @@
                 permissions: @json(auth()->user()->getAllPermissions()->pluck('name')),
                 reviewerOfProjects: @json(auth()->user()->reviewed_projects->pluck('id')), // assuming relation exists
                 myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
+                  
             };
             
             /** notifications */
@@ -811,12 +835,191 @@
                 // })
                 ;
 
-            
-        </script>
+
+            window.Echo.private("attachments")
+                .listen('.created', (e) => {
+
+                    console.log(e.message); 
+
+                    const attachment_id = e.attachment_id;
+ 
+                    Livewire.dispatch('attachmentCreated');
+ 
+                    const isCreator = currentUser.id == e.auth_id;
+
+                    const shouldNotify =  isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.url, "View Attachments");
+                    }
+                })
+                .listen('.deleted', (e) => {
+
+                    console.log(e.message); 
+ 
+ 
+                    Livewire.dispatch('attachmentDeleted');
+ 
+                    const isCreator = currentUser.id == e.auth_id;
+
+                    const shouldNotify =  isCreator;
+
+                    if (shouldNotify) {
+                        showNewDiscussionAlert(e.message, e.url, "View Attachments");
+                    }
+                })
+                // .listen('.updated', (e) => {
+
+                //     console.log(e.message);
+
+                //     Livewire.dispatch('projectReviewerUpdated');
+
+
+                //     const projectId = e.project_id; 
+
+                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
+                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                //     const isReviewer = currentUser.roles.includes('Reviewer');
+                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+                //     if (shouldNotify) {
+                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                //     }
+                // }).listen('.deleted', (e) => {
+
+                //     console.log(e.message);
+
+                //     Livewire.dispatch('projectReviewerDeleted');
+
+
+                //     const projectId = e.project_id; 
+
+                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
+                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
+                //     const isReviewer = currentUser.roles.includes('Reviewer');
+                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
+
+                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
+
+                //     if (shouldNotify) {
+                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
+                //     }
+                // })
+                ;
+
+            // console.log(currentUser.id);
+        </script>   
         <!-- ./ Discussion Listeners -->
         @endauth
          
+         <script>
+            // Simple toggle for mobile sidebar
+            function toggleSidebar(open) {
+                const sidebar = document.getElementById('mobile-drawer');
+                const backdrop = document.getElementById('backdrop');
+                if (open) {
+                    sidebar.classList.remove('translate-x-[-100%]');
+                    backdrop.classList.remove('hidden');
+                    document.body.classList.add('overflow-hidden');
+                } else {
+                    sidebar.classList.add('translate-x-[-100%]');
+                    backdrop.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                }
+            }
 
+            function toggleOffcanvas(open) {
+                const panel = document.getElementById('notif-offcanvas');
+                const backdrop = document.getElementById('offcanvas-backdrop');
+                if (open) {
+                panel.classList.remove('translate-x-full');
+                backdrop.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                } else {
+                panel.classList.add('translate-x-full');
+                backdrop.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                }
+            }
+
+
+            function toggleProfileLg(){
+                const dd = document.getElementById('profile-dd-lg');
+                dd.classList.toggle('hidden');
+
+                const dd_mobile = document.getElementById('profile-dd-lg-mobile');
+                dd_mobile.classList.toggle('hidden');
+
+            }
+
+ 
+
+        </script>
+        <script>
+
+            function closeSidebarDetails() {
+                document
+                .querySelectorAll('#desktop-sidebar details[open]')
+                .forEach(d => d.open = false); // or d.removeAttribute('open')
+            }
+
+            function setSidebarCollapsed(state){
+                const aside = document.getElementById('desktop-sidebar');
+                const iconCollapse = document.getElementById('icon-collapse');
+                const iconExpand = document.getElementById('icon-expand');
+                if(!aside) return;
+
+                // Attribute for Tailwind data-variants
+                aside.setAttribute('data-collapsed', state ? 'true' : 'false');
+
+                // Fallback width classes (in case data-variant isn’t picked up)
+                aside.classList.toggle('w-72', !state);
+                aside.classList.toggle('w-20', !!state);
+
+                // Hide text labels when collapsed (elements with .label)
+                document.querySelectorAll('#desktop-sidebar .label').forEach(el=>{
+                    el.classList.toggle('hidden', !!state);
+                });
+
+                // Flip icons
+                if(iconCollapse && iconExpand){
+                    if(state){ // collapsed
+                    iconCollapse.classList.add('hidden');
+                    iconExpand.classList.remove('hidden');
+                    } else {   // expanded
+                    iconCollapse.classList.remove('hidden');
+                    iconExpand.classList.add('hidden');
+                    }
+                }
+
+                // NEW: when collapsing, close all <details>
+                // if (state) closeSidebarDetails();
+
+                try { localStorage.setItem('sidebar-collapsed', state ? '1' : '0'); } catch(e){}
+            }
+
+            function toggleSidebarCollapsed(){
+                const aside = document.getElementById('desktop-sidebar');
+                const isCollapsed = aside?.getAttribute('data-collapsed') === 'true';
+                setSidebarCollapsed(!isCollapsed);
+            }
+
+            document.addEventListener('DOMContentLoaded', ()=>{
+                const saved = (typeof localStorage !== 'undefined' && localStorage.getItem('sidebar-collapsed') === '1');
+                setSidebarCollapsed(saved);
+            });
+
+            // Listen for Livewire `navigate` events
+            document.addEventListener('livewire:navigated', () => {
+                const saved = (typeof localStorage !== 'undefined' && localStorage.getItem('sidebar-collapsed') === '1');
+                setSidebarCollapsed(saved);
+
+            });
+
+
+            
+        </script>
 
         <!-- Inside the <head> -->
         @livewireStyles
@@ -824,9 +1027,7 @@
     <body  class="font-sans antialiased bg-white overflow-y-auto scroll-smooth" 
      @if(isset($project)) data-project-id="{{ $project->id }}" @endif 
         >
- 
-
-
+  
         <!-- Notification Alert -->
         <div id="dismiss-alert" class="hidden transition duration-300 bg-teal-50 border border-teal-200 text-sm text-teal-800 rounded-lg p-4 fixed top-4 right-4 z-50" role="alert" tabindex="-1" aria-labelledby="hs-dismiss-button-label">
 
@@ -891,7 +1092,11 @@
         </div>
         <!-- ./ Discussion Alert -->
 
-        <div class="min-h-screen  ">
+
+
+        
+
+        {{-- <div class="min-h-screen  ">
  
             <div class="bg-gray-100 text-sm text-gray-700 py-2">
                 <div class="max-w-[85rem] mx-auto px-4   sm:px-6">
@@ -922,7 +1127,58 @@
             <main class=" ">
                 {{ $slot }}
             </main>
+        </div> --}}
+
+
+
+
+          
+    <div class="bg-gray-100 text-sm text-gray-700 py-2">
+        <div class="max-w-[85rem] mx-auto px-4   sm:px-6">
+            For feedback or comments, please email <a href="mailto:portal@khlgassociates.com" class="text-blue-600 underline">portal@khlgassociates.com</a>.
         </div>
+        
+    </div> 
+
+
+
+    <!-- Mobile top bar -->
+    <livewire:admin.layout.navigation.topbar.mobile-top-bar />
+
+    <!-- Layout wrapper -->
+    <div class="flex" >
+        <!-- Static sidebar (desktop) -->
+        <livewire:admin.layout.navigation.desktop-side-bar />
+
+        <!-- Mobile drawer -->
+        <livewire:admin.layout.navigation.mobile-drawer />
+
+        <!-- Main content -->
+        <main class="flex-1 min-w-0">
+
+            <!-- Desktop top bar -->
+            <livewire:admin.layout.navigation.topbar.desktop-top-bar />
+
+            {{ $slot }}
+
+        </main>
+    </div>
+
+
+
+
+
+
+
+    {{-- <!-- Offcanvas Notifications -->
+    <div id="offcanvas-backdrop" class="hidden fixed inset-0 bg-black/40 z-50" onclick="toggleOffcanvas(false)"></div>
+         
+    </div> --}}
+
+    <livewire:admin.layout.navigation.topbar.notification-bar />
+
+
+
         {{--
         <script>
             document.addEventListener("DOMContentLoaded", function () {
@@ -981,6 +1237,7 @@
         </script>   --}}
 
 
+ 
 
         <!-- Push custom scripts from views -->
         @stack('scripts')  <!-- This will include any scripts pushed to the stack -->
@@ -1038,7 +1295,7 @@
                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"></circle>
                 <path fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8z" opacity=".75"></path>
                 </svg>
-                <div style="font-size:14px;font-weight:600;">Loading Website…</div>
+                <div style="font-size:14px;font-weight:600;">Loading data...</div>
             </div>
         </div>
         <!-- ./ Full Page Loader -->
@@ -1084,5 +1341,20 @@
         </script>
         <!-- ./ Script for Full Page Loader -->    
 
+ 
+
     </body>
+
+  
+
+
+
+
+
+
+
+
+
+
+
 </html>

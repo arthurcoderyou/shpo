@@ -1,4 +1,4 @@
-<div class="max-w-[85rem] mx-auto px-4 pt-2 sm:px-6">
+<div class="  px-6 sm:px-6 lg:px-8 pb-4  mx-auto ">
      
     @if (  
       (!isset($errors['no_reviewers']) || $errors['no_reviewers'] == false)  

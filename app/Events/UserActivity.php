@@ -23,7 +23,7 @@ class UserActivity  implements ShouldBroadcast, ShouldQueue
      */
     public function __construct($userId)
     {
-        $this->uyserId = $userId;
+        $this->userId = $userId;
     }
 
     /**

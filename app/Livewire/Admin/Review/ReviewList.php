@@ -2,17 +2,21 @@
 
 namespace App\Livewire\Admin\Review;
 
+use App\Helpers\ProjectReviewHelpers;
 use App\Models\Review;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Models\ProjectDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ReviewAttachments;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Models\User;
 
 class ReviewList extends Component
 {
@@ -42,12 +46,17 @@ class ReviewList extends Component
     public $file;
 
     public $project_id;
+
+    public $project_document_id;
+
     public $project;
+
+    public $project_document;
 
     public $project_search;
     public $next_reviewer;
 
-    public function mount($id = null){
+    public function mount($id = null, $project_document_id = null){
 
 
         if(request()->routeIs('review.index')){
@@ -62,6 +71,15 @@ class ReviewList extends Component
                 $project = Project::find($this->project_id);
                 $this->project =  $project;
             }
+
+
+            $this->project_document_id = request()->query('project_document_id', '');
+
+            if(!empty( $this->project_document_id)){
+                $project_document = ProjectDocument::find($this->project_document_id);
+                $this->project_document =  $project_document;
+            }
+
             
             
 
@@ -70,6 +88,11 @@ class ReviewList extends Component
             $project = Project::find($id);
             $this->project =  $project;
             $this->project_id = $id;
+
+            $project_document = ProjectDocument::find($project_document_id);
+            $this->project_document =  $project_document;
+            $this->project_document_id = $project_document_id;
+            
         }
         
 
@@ -77,6 +100,15 @@ class ReviewList extends Component
             $this->next_reviewer = $project->getCurrentReviewer(); 
 
         }
+
+        if(!empty( $project_document)){
+            
+            $project_document = ProjectDocument::find($this->project_document_id);
+             $this->next_reviewer = $project_document->getCurrentReviewerByProjectDocument(); 
+             
+        }
+
+
 
 
     }
@@ -342,7 +374,37 @@ class ReviewList extends Component
     }
 
 
+    public function returnStatusConfig($status){
+        return ProjectDocumentHelpers::returnStatusConfig($status);
+    }
 
+
+    public function returnSlotData(Review $review, $type){
+        return ProjectReviewHelpers::returnSlotData($review, $type); 
+    }
+
+     public function returnReviewerName(Review $review){
+        return ProjectReviewHelpers::returnReviewerName($review);
+    }
+    
+ 
+
+    public function getUserRoles($user_id)
+    {
+
+        // dd($user_id);
+        // Find the user by ID
+        $user = User::find($user_id);
+
+        // Return an empty array if not found
+        if (!$user) {
+            return [];
+        }
+
+        // Return the roles as an array (e.g. ['Admin', 'Reviewer'])
+        return $user->getRoleNames()->toArray();
+    }
+    
 
     
     public function render()
@@ -497,6 +559,12 @@ class ReviewList extends Component
         if(!empty( $this->project_id)){
             $reviews = $reviews->where('project_id' ,$this->project_id);
         }
+
+
+        if(!empty( $this->project_document_id)){
+            $reviews = $reviews->where('project_document_id' ,$this->project_document_id);
+        }
+
 
 
         $this->selected_records = $reviews->pluck('id')->toArray();

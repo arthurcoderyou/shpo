@@ -2,6 +2,7 @@
 
 namespace App\Livewire\ActivityLogs;
 
+use App\Models\User;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Livewire\WithPagination;
@@ -111,37 +112,25 @@ class ActivityLogsList extends Component
         $activity_logs = ActivityLog::select('activity_logs.*');
 
 
-        // Find the role
-        $role = Role::where('name', 'Admin')->first();
+        // All users who effectively have the "system access global admin" permission (directly OR via roles)
+        $globalAdminUserIds = User::permission('system access global admin')->pluck('id');
 
-        if ($role) {
-            // Get user IDs only if role exists
-            $dsiGodAdminUserIds = $role->users()->pluck('id');
-        } else {
-            // Set empty array if role doesn't exist
-            $dsiGodAdminUserIds = [];
+        // Visibility rules
+        // for global admin
+        if (Auth::user()->can('system access global admin')) {
+            // See everything (no filters)
         }
-
-
-        // if(!Auth::user()->hasRole('system access global admin')){
-        //     $activity_logs =  $activity_logs->where('activity_logs.created_by','=',Auth::user()->id);
-        // }
-
-        // Adjust the query
-        if(Auth::user()->can('system access global admin'))
-        {
-
-
+        // for admin
+        elseif (Auth::user()->can('system access admin')) {
+            // If the user lacks "system access admin", hide logs created by admin users
+            $activity_logs->whereNotIn('activity_logs.created_by', $globalAdminUserIds);
         }
+        // for users and reviewers
         elseif (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
-            $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
-        }elseif(!Auth::user()->can('system access admin')){
-            $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);
-        } 
+            // Regular users: only their own logs
+            $activity_logs->where('activity_logs.created_by', Auth::id());
+        }
          
-            
-
-
         if (!empty($this->search)) {
             $search = $this->search;
 
@@ -163,14 +152,12 @@ class ActivityLogsList extends Component
             if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
                 $activity_logs = $activity_logs->where('activity_logs.created_by', '=', Auth::user()->id);
             }elseif(!Auth::user()->can('system access admin')){
-                $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $dsiGodAdminUserIds);
+                $activity_logs = $activity_logs->whereNotIn('activity_logs.created_by', $globalAdminUserIds);
             } 
 
         }
 
-    
-        
-
+     
         // dd($this->sort_by);
         if(!empty($this->sort_by) && $this->sort_by != ""){
 

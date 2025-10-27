@@ -1,619 +1,468 @@
+<!-- resources/views/livewire/reviewer-board-per-doc-type.blade.php -->
 <!-- Table Section -->
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
-    {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
-        <div></div>
-        <div></div>
+  
+    
+
+  <!-- Document Type Selector -->
+  <div class="flex gap-3 items-end mb-2">
+    <div class="grow">
+      <label class="block text-sm font-medium text-gray-800 ">Document Type</label>
+      <select
+        wire:model.live="currentTypeId"
+        class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500"
+      >
+        @foreach($documentTypes as $t)
+          <option value="{{ $t['id'] }}">{{ $t['name'] }}</option>
+        @endforeach
+      </select>
+    </div>
+
+    <div class="shrink-0">
+      <button type="button"
+              wire:click="save"
+              class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-indigo-600 text-white hover:bg-indigo-700">
+        Save All
+      </button>
+    </div>
+  </div>
+ 
+
+  
+  @php
+    $typeId   = (int) $currentTypeId;
+    // $options  = $optionsByType[$typeId]  ?? [];
+    $selected = $selectedByType[$typeId] ?? [];
+    $assigned = $assignedByType[$typeId] ?? [];
+  @endphp
+
+  <!-- Multi-select + Times to add -->
+  <div wire:key="type-{{ $typeId }}" class="grid grid-cols-12 gap-3 items-end mb-2">
+    <div 
+      class="col-span-12 md:col-span-8" 
+    
+    >
+      <label class="inline-block text-sm font-medium text-gray-800">
+        Select reviewers ({{ $documentTypes[array_search($typeId, array_column($documentTypes,'id'))]['name'] ?? '' }})
+      </label>
+
+      <div
+        x-data="{
+          open:false,   // dropdown open/closed state
+          search:'',    // search filter
+          options:@js($options),                               // [{id,name,roles:[]}]
+          selected:@entangle('selectedByType.' . $typeId),          //  selected array of options [users] as a reviewer to a document type 
+          roleColors: {       // role colors 
+            'global admin': 'bg-red-100 text-red-700 ring-red-200',
+            'admin':        'bg-amber-100 text-amber-800 ring-amber-200',
+            'reviewer':     'bg-sky-100 text-sky-700 ring-sky-200',
+            'user':         'bg-slate-100 text-slate-700 ring-slate-200',
+            '__none':       'bg-zinc-100 text-zinc-700 ring-zinc-200', // no role
+          },
+          toggle(id){     // toggle remove / add options [users] to the selected multi-select input 
+            this.isSelected(id) ? this.remove(id) : this.add(id)    // check if it is selected first, then common sense that if it is not, then the id is to be added but if it is already included then it is to be removed  
+          },
+          add(id){    // adds the id to the selected array list 
+            if(!this.isSelected(id)) this.selected.push(id) 
+          },
+          remove(id){   // removes the id on the selected array list 
+            this.selected = (this.selected ?? []).filter(v => v !== id) 
+          },
+          isSelected(id){   // function to check if the id is selected 
+            return (this.selected ?? []).includes(id) 
+          }, 
+          labelFor(id){      // Looks up the option by id. Returns its name if found, otherwise just the raw id.
+            const o = this.options.find( o => o.id === id); 
+            return o?o.name:id; 
+          },
+          rolesFor(id){     // Gets the array of roles for the given user.  Returns empty array if not found.
+            const o = this.options.find( o => o.id === id); 
+            return o ? (o.roles ?? []) : []; 
+          },
+          badgeCls(role){  
+            const key = (role || '').toLowerCase();   // Normalizes the role name to lowercase. 
+            const base = 'px-1.5 py-0.5 rounded-md text-xs ring-1';   // always added 
+            return `${base} ${(this.roleColors[key] ?? this.roleColors['__none'])}`;   //  Returns a base set of Tailwind classes plus a role-specific color. If no matching role, falls back to __none.
+          },
+          filterList(){
+            const q = this.search.trim().toLowerCase();   // Reads search input, lowercases it.
+            if(!q) return this.options;     // If empty, returns all options.
+            return this.options.filter(o => {       // Otherwise filters options:
+              const inName = (o.name || '').toLowerCase().includes(q);    // Matches if the name contains the search string, OR
+              const inRoles = (o.roles || []).some(r => (r||'').toLowerCase().includes(q));     // Any of the user’s roles contain the search string.
+              return inName || inRoles;
+            });
+          }
+        }"
+        class="relative"
+      >
+        <!-- Trigger -->
+        <div
+          @click="open = !open"
+          class="border rounded-lg px-3 py-1 flex flex-wrap items-center gap-2 bg-white focus-within:ring-2 focus-within:ring-sky-500 min-h-[44px]"
+        >
+          <!-- Selected chips -->
+          <template x-for="id in (selected ?? [])" :key="id">
+            <span class="bg-indigo-100 text-indigo-700 text-sm px-2 py-1 round` ed-full flex items-center gap-2">
+              <span class="flex items-center gap-2">
+
+                <span x-text="labelFor(id)"></span>   <!-- displays the opion [user] name or id if null -->
+
+                <!-- role badges inside chip -->
+                <template x-for="role in rolesFor(id)" :key="role">
+                  <span :class="badgeCls(role)" x-text="role"></span>
+                </template>
+                
+                
+                <!-- no role -->
+                <template x-if="rolesFor(id).length === 0">
+                  <span :class="badgeCls('')" >No role</span>
+                </template>
+
+
+              </span>
+
+              <button type="button" @click.stop="remove(id)" class="leading-none">&times;</button>  <!-- remove the id from the selected options [users]-->
+            </span>
+          </template>
+
+          <!-- search input -->
+          <input
+            type="text"
+            x-model="search"
+            placeholder="Search by name or role…"
+            class="flex-grow border-0 focus:ring-0 text-sm text-gray-700 outline-none"
+          />
+
+
+        </div>
+
+        <!-- Dropdown -->
+        {{-- 
+        x-show="open"
+         --}} 
+        <div
+          x-show="open" x-transition @click.outside="open=false" x-cloak
+          class="absolute left-0 right-0 z-50 mt-1 bg-white border rounded-lg shadow max-h-60 overflow-y-auto"
+        >
+          <template x-for="opt in filterList()" :key="opt.id">
+            <button
+              type="button"
+              @click="toggle(opt.id)"
+              class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-indigo-50"
+            >
+              <span class="flex flex-col">
+                <span class="font-medium" x-text="opt.name"></span>
+                <span class="mt-1 flex flex-wrap gap-1.5">
+                  <!-- role badges -->
+                  <template x-for="role in (opt.roles ?? [])" :key="role">
+                    <span :class="badgeCls(role)" x-text="role"></span>
+                  </template>
+                  <!-- no role -->
+                  <template x-if="(opt.roles ?? []).length === 0">
+                    <span :class="badgeCls('')">No role</span>
+                  </template>
+                </span>
+              </span>
+
+              <span x-show="isSelected(opt.id)" class="text-indigo-600 font-bold">✓</span>
+            </button>
+          </template>
+
+          <div
+            x-show="filterList().length===0"
+            class="px-3 py-2 text-sm text-slate-500"
+          >
+            No results
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+
+    {{-- <!-- Times to add -->
+    <div class="col-span-6 md:col-span-2">
+      <label class="block text-sm font-medium text-gray-800 ">Times to add</label>
+      <input type="number" min="1" max="20"
+            wire:model.lazy="repeatByType.{{ $typeId }}"
+            class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500"
+            placeholder="1">
     </div> --}}
- 
-    {{-- <form wire:submit="save"> --}}
-    <div>
-        <!-- Card -->
-        <div class="bg-white rounded-xl shadow mb-2">
 
-
-            <div class="  p-4">
-
-                <div class="sm:col-span-12">
-                    <h2 class="text-lg font-semibold text-gray-800 ">
-                    Add Reviewer
-                    </h2>
-                </div>
-                <!-- End Col -->
-
-                <!-- Grid -->
-                <div class="grid grid-cols-12 gap-x-2  ">
-
-                    <!-- reviewer type -->
-                    <x-reviewer-type-info :type="$reviewer_type" />
- 
-
-                    <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="user_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            User
-                        </label>
-
-                        <select autofocus autocomplete="user_id"
-                        wire:model="user_id" 
-                        id="user_id"
-                        name="user_id"
-                        class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
-
-                            @if(!empty($users) && count($users) > 0) 
-                                <option value="">Open Review</option>
-                                @foreach ($users as $user_name => $user_id)
-                                    <option value="{{ $user_id }}">{{ $user_name }}</option>
-                                @endforeach
-                                 
-                            @else  
-                                <option disabled >No Users found</option>
-                            @endif
-                        </select>
-                        @error('user_id')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
-                    </div>
-
-                    <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="order" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Order
-                        </label>
-
-                        <select autofocus autocomplete="order"
-                        wire:model="order" 
-                        id="order"
-                        name="order"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
-                            <option value="">Select Order</option>
-                            <option value="top">Add at the beginning of the order</option>
-                            <option value="end">Add at the end of the order</option> 
-                        </select>
-
-                        @error('order')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
-                    </div>
-
-                    <div class="space-y-2 col-span-12 sm:col-span-4">
-                        <label for="reviewer_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Reviewer Type
-                        </label>
-
-                        <select autofocus autocomplete="reviewer_type"
-                        wire:model.live="reviewer_type" 
-                        id="reviewer_type"
-                        name="reviewer_type"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none ">
-                            <option value="initial">Initial Reviewers</option>
-                            <option value="document">Document</option>
-                            <option value="final">Final Reviewers</option>
-                            
-                        </select>
-
-                        @error('reviewer_type')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
-                    </div>
-
-
-                    @if($reviewer_type == "document")
-                        <div class="space-y-2 col-span-12 ">
-                        {{-- <div class="space-y-2 col-span-12 sm:col-span-4"> --}}
-                            <label for="document_type_id" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                                Document Type
-                            </label>
-
-                            <select autofocus autocomplete="document_type_id"
-                            wire:model.live="document_type_id" 
-                            id="document_type_id"
-                            name="document_type_id"
-                            class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "> 
-                                @if(!empty($document_types))
-                                    @foreach ($document_types as $document_type)
-                                        <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
-                                    @endforeach
-                                @endif
-                                
-                            </select>
-
-                            @error('document_type_id')
-                                <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                            @enderror
-
-
-                        </div>
-                    @endif
-
-                    
-
-
-
-
-                </div>
-                <!-- End Grid -->
-
-                <div class="mt-5 flex justify-center gap-x-2">
-                    {{-- <a href="{{ route('role.index') }}" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                        Cancel
-                    </a> --}}
-                    <button type="button" wire:click="add" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-sky-600 text-white hover:bg-sky-700 focus:outline-none focus:bg-sky-700 disabled:opacity-50 disabled:pointer-events-none">
-                        Add 
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- End Card -->
+    <div class="col-span-6 md:col-span-2">
+      <!-- Add selected to the main assigned reviewers list -->
+      <button type="button" wire:click="addSelected"
+              class="w-full py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700">
+        Add to Table
+      </button>
     </div>
-    {{-- </form> --}}
 
-
-    <!-- Card -->
-    <div class="flex flex-col">
-        <div class="-m-1.5 overflow-x-auto">
-        <div class="p-1.5 min-w-full inline-block align-middle">
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden  ">
-            <!-- Header -->
-            <div class="px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 ">
-                <div>
-                <h2 class="text-xl font-semibold text-gray-800 ">
-                    Reviewers
-                </h2>
-                <p class="text-sm text-blue-600 mt-1 max-w-4xl">
-                    <strong>Note:</strong> Please make sure to <span class="font-semibold">save your changes</span> before selecting another document type or leaving the page. Unsaved changes will be lost, and updates will only be applied once saved. Saved reviewers will be visible to all users. 
-                </p>
-                <p class="text-sm text-yellow-600 mt-1 max-w-4xl">
-                    <strong>OPEN REVIEW:</strong> An open review is a review type where all admins are notified and receive a review notification. The first admin to open the review will automatically become the assigned reviewer.  
-                </p>
-
-                </div>
-
-                <div>
-                <div class="inline-flex gap-x-2">
-
-                    {{-- 
-                    <input type="text" wire:model.live="search"
-                        class="py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
-                        placeholder="Search">
-                    --}}
-                    <div class="inline-flex items-center gap-x-2">
-
-                        <select wire:model.live="reviewer_type" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">  
-                            <option value="initial">Initial Reviewers</option>
-                            <option value="document">Document Reviewers</option>
-                            <option value="final">Final Reviewers</option>
-                            
-                        </select>
-                    </div>
-                     
-
-                    @if($reviewer_type == "document")
-                        <div class="inline-flex items-center gap-x-2 text-nowrap">
-
-                            <select wire:model.live="document_type_id" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
-                                <option value="">Document Type</option>
-                                @if(!empty($document_types))
-                                    @foreach ($document_types as $document_type)
-                                        <option value="{{ $document_type->id }}">{{ $document_type->name }}</option> 
-                                    @endforeach
-                                @endif
-                                
-                            </select>
-                        </div>
-                    @endif
-                    
-                    {{--  
-
-                    <div class="inline-flex items-center gap-x-2">
-
-                        <select wire:model.live="sort_by" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
-                            <option value="">Sort By</option>
-                            <option>Name A - Z</option>
-                            <option>Name Z - A</option>
-                            <option>Order Ascending</option>
-                            <option>Order Descending</option>
-                            <option>Latest Added</option>
-                            <option>Oldest Added</option>
-                            <option>Latest Updated</option>
-                            <option>Oldest Updated</option>
-                        </select>
-                    </div>
-
-                     --}}
-                    @if( (!isset($issues['no_reviewers']) || $issues['no_reviewers'] == false)  
-                    &&  (!isset($issues['document_types_missing_reviewers']) || $issues['document_types_missing_reviewers'] == false)  
-                    &&  (!isset($issues['no_initial_reviewers']) || $issues['no_initial_reviewers'] == false)
-                    &&  (!isset($issues['no_final_reviewers']) || $issues['no_final_reviewers'] == false)
-                    )
-                        @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer apply to all') )
-                            <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
-                                onclick="confirm('Are you sure, you want to apply this to all records? If you do this, all not approved projects will apply this list and order of reviewers. They will be notified on the changes of reviewers list and order. Are you still sure to proceed? ') || event.stopImmediatePropagation()"
-                                wire:click.prevent="apply_to_all" 
-                                class="text-nowrap py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-sky-500 text-white shadow-sm hover:bg-sky-50 hover:text-sky-600 hover:border-sky-500 focus:outline-sky-500 focus:text-sky-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
-                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M352 256c0 22.2-1.2 43.6-3.3 64l-185.3 0c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64l185.3 0c2.2 20.4 3.3 41.8 3.3 64zm28.8-64l123.1 0c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64l-123.1 0c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64zm112.6-32l-116.7 0c-10-63.9-29.8-117.4-55.3-151.6c78.3 20.7 142 77.5 171.9 151.6zm-149.1 0l-176.6 0c6.1-36.4 15.5-68.6 27-94.7c10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5c11.6 26 20.9 58.2 27 94.7zm-209 0L18.6 160C48.6 85.9 112.2 29.1 190.6 8.4C165.1 42.6 145.3 96.1 135.3 160zM8.1 192l123.1 0c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64L8.1 320C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64zM194.7 446.6c-11.6-26-20.9-58.2-27-94.6l176.6 0c-6.1 36.4-15.5 68.6-27 94.6c-10.5 23.6-22.2 40.7-33.5 51.5C272.6 508.8 263.3 512 256 512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6C112.2 482.9 48.6 426.1 18.6 352l116.7 0zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6c25.5-34.2 45.2-87.7 55.3-151.6l116.7 0z"/></svg>
-                                
-                                APPLY TO ALL 
-                            </button>
-                        @endif
-                    @endif
-
-                    <a href="{{ route('reviewer.index') }}"
-                        wire:navigate
-                        class="hs-tooltip hs-tooltip-toggle py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
-                        <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160 352 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l111.5 0c0 0 0 0 0 0l.4 0c17.7 0 32-14.3 32-32l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 35.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1L16 432c0 17.7 14.3 32 32 32s32-14.3 32-32l0-35.1 17.6 17.5c0 0 0 0 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.8c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352l34.4 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L48.4 288c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>
-                        <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded-md shadow-2xs dark:bg-neutral-700" role="tooltip">
-                            Refresh the page
-                        </span>
-                    </a>
-                </div>
-                </div>
-            </div>
-            <!-- End Header -->
-
-            <!-- Table -->
-            <table class="min-w-full divide-y divide-gray-200 ">
-                <thead class="bg-gray-50 ">
-                <tr>
-                    <th scope="col" class="px-2 py-3 text-start">
-                        {{-- <label for="hs-at-with-checkboxes-main" class="flex">
-                            <input
-                                type="checkbox"
-                                wire:model.live="selectAll"
-                                wire:click="toggleSelectAll"
-                                wire:change="updateSelectedCount"
-                                class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
-                                id="hs-at-with-checkboxes-main">
-                            <span class="sr-only">Checkbox</span>
-                        </label> --}}
- 
-                    </th>
-
-                    <th scope="col" class="px-2 py-3 text-start">
-                        <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
-                            Reviewer
-                            </span>
-                        </div>
-                    </th>
-
-
-
-                    <th scope="col" class="px-2 py-3 text-start">
-                        <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
-                            Order
-                            </span>
-                        </div>
-                    </th>
-
-
-
-                    <th scope="col" class="px-2 py-3 text-start">
-                        <div class="flex items-center gap-x-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
-                            Modified
-                            </span>
-                        </div>
-                    </th>
-
-                    <th scope="col" class="px-6 py-3 text-end"></th>
-                </tr>
-                </thead>
-
-                <tbody class="divide-y divide-gray-200 ">
-
-                    @if(!empty($reviewers) && count($reviewers) > 0)
-                        @foreach ($reviewers as $key => $reviewer)
-                            <tr>
-                                <td class="w-10 whitespace-nowrap flex flex-row items-center">
-                                    {{-- <div class="px-2 py-2 align-self-center">
-                                        <label for="reviewer_{{ $reviewer['id'] }}" class="flex">
-                                            <input type="checkbox"
-                                            wire:model="selected_records"
-                                            wire:change="updateSelectedCount"
-                                            class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
-                                            id="reviewer_{{ $reviewer['id'] }}"
-                                            value="{{ $reviewer['id'] }}"
-                                            >
-                                            <span class="sr-only">Checkbox</span>
-                                        </label>
-                                    </div> --}}
-
-
-                                    <div class="flex flex-col">
-                                        <button {{ $reviewer['order']  == 1 ? 'disabled' : '' }} type="button" 
-                                            {{-- wire:click="updateOrder( {{ $reviewer['id'] }},{{ $reviewer['order'] }},'move_up',{{ $reviewer['document_type_id'] ?? 0 }}, '{{ $reviewer['reviewer_type'] }}' )"  --}}
-                                            wire:click="updateOrder( {{ $key }},{{ $reviewer['order'] }},'move_up',{{ $reviewer['document_type_id'] ?? 0 }}, '{{ $reviewer['reviewer_type'] }}' )"
-                                            class="p-1 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " >
-            
-                                            <div class="hs-tooltip flex">
-            
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m15 11.25-3-3m0 0-3 3m3-3v7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                                </svg>
-                                                <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded shadow-sm " role="tooltip">
-                                                    Move order up
-                                                </span>
-                                            </div>
-            
-            
-                                        </button>
-            
-            
-                                        
-                                        <button {{ $reviewer['order'] == $lastOrder ? 'disabled' : '' }} type="button" 
-                                            {{-- wire:click="updateOrder( {{ $reviewer['id'] }},{{ $reviewer['order'] }},'move_down',{{ $reviewer['document_type_id'] ?? 0 }} , '{{ $reviewer['reviewer_type'] }}' )"  --}}
-                                            wire:click="updateOrder( {{ $key }},{{ $reviewer['order'] }},'move_down',{{ $reviewer['document_type_id'] ?? 0 }} , '{{ $reviewer['reviewer_type'] }}' )" 
-                                            class="p-1 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " >
-                                            <div class="hs-tooltip flex">
-            
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m9 12.75 3 3m0 0 3-3m-3 3v-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                                </svg>
-                                                <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded shadow-sm " role="tooltip">
-                                                    Move order down
-                                                </span>
-                                            </div>
-            
-            
-                                        </button>
-            
-                                    </div>
-            
-            
-
-
-
-                                </td>
-
-                                <td class="size-auto whitespace-nowrap">
-                                    <div class="px-2 py-2">
-                                        <div class="flex items-center gap-x-3">
-                                            <div class="grow">
-                                                @php   
-                                                    $user =  getUser($reviewer['user_id']);
-                                                @endphp 
-                                                @if($reviewer['user_id'] && !empty($user))
-                                                    
-
-                                                    <span class="block text-sm text-gray-500 ">{{ $user ? $user->name : '' }}</span>
-                                                    <span class="block text-sm text-gray-500 ">{{ $user ? $user->email : '' }}</span>
-                                                @else 
-                                                    <span class="block text-sm text-gray-500 ">{{ __('Open Review') }}</span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td class="size-auto whitespace-nowrap">
-                                    <div class="px-2 py-2">
-                                        <div class="flex items-center gap-x-3">
-                                            <div class="grow">
-                                                <span class="block text-sm text-gray-500 ">{{ $reviewer['order'] }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-
-
-
-                                <td class="size-auto whitespace-nowrap">
-                                    <div class="px-2 py-2">
-                                        <div class="flex items-center gap-x-3">
-                                        <div class="grow">
-                                            <span class="block text-sm text-gray-500 ">
-                                                {{ $reviewer['updated_at'] ? \Carbon\Carbon::parse($reviewer['updated_at'])->format('d M, h:i A') : \Carbon\Carbon::now()->format('d M, h:i A') }}
-                                            </span>
-                                        </div>
-                                        </div>
-                                    </div>
-                                </td>
-
-
-
-                                <td class="w-4 whitespace-nowrap">
-                                    <div class="px-2 py-2">
-
-                                         
-
-                                        @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('reviewer delete') )
-                                        <!-- delete -->
-                                         
-                                        <button
-                                        onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
-                                        {{-- wire:click.prevent="delete({{ $reviewer['id'] }})" --}}
-                                        wire:click.prevent="delete({{ $key }})" 
-                                        type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"/></svg>
-                                        </button>
-                                        @endif
-
-
-
-                                    </div>
-                                </td>
-
-
-
-                            </tr>
-
-                            
-                        @endforeach
-
-                        <tr>
-                            <td colspan="5" class=" text-center px-2 py-2">
-                                <button type="button" 
-                                    onclick="confirm('Are you sure you want to save the reviewer order? This will be reflected system-wide.') || event.stopImmediatePropagation()" 
-                                {{-- wire:click.prevent="delete({{ $reviewer['id'] }})" --}}
-                                    wire:click.prevent="save" 
-                                class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-                                    Save
-                                </button>
-                            </td>
-                        </tr>
-
-
-                    @else
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-start">
-                                <div class="flex items-center gap-x-2">
-                                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
-                                    No records found
-                                    </span>
-                                </div>
-                            </th>
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
-            <!-- End Table -->
-
-            <!-- Footer -->
-            <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 ">
-                {{-- {{ $reviewers->links() }} --}}
-
-                <div class="inline-flex items-center gap-x-2">
-                    <p class="text-sm text-gray-600 ">
-                    Showing:
-                    </p>
-                    <div class="max-w-sm space-y-3">
-                    <select wire:model.live="record_count" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 ">
-                        <option>10</option>
-                        <option>25</option>
-                        <option>50</option>
-                        <option>100</option>
-                        <option>200</option>
-                    </select>
-                    </div>
-                    {{-- <p class="text-sm text-gray-600 ">
-                        {{ count($reviewers) > 0 ? 'of '.$reviewers->total()  : '' }}
-                    </p> --}}
-                </div>
-
-
-            </div>
-            <!-- End Footer -->
-
-
-            </div>
-        </div>
-        </div>
+    <div class="col-span-6 md:col-span-2">
+      <!-- Add selected to the main assigned reviewers list -->
+      <button type="button" wire:click="addOpenSlots('admin')"
+              class="w-full py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        Add Admin Review
+      </button>
     </div>
-    <!-- End Card -->
+
+    
+  </div>
 
 
-    <!--  Loaders -->
-        {{-- wire:target="table"   --}}
-        <div wire:loading 
-            class="p-0 m-0"
-            style="padding: 0; margin: 0;">
-            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
-                <div>   
-                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                </div>
-                <div>
-                    Loading lists, please wait...
-                </div> 
-            </div>
-        </div>
+  {{-- <div class="grid grid-cols-12 gap-3 items-end mb-2">
+    <div class="col-span-6 md:col-span-4 ">
+      <label class="block text-sm font-medium text-gray-800 ">Open slot for role</label>
+      <select wire:model="openRoleByType.{{ $typeId }}"
+              class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
+        <option value="reviewer">Reviewer</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+
+    <div class="col-span-6 md:col-span-3 ">
+      <label class="block text-sm font-medium text-gray-800 ">Times to add</label>
+      <input type="number" min="1" max="20"
+            wire:model.lazy="openRepeatByType.{{ $typeId }}"
+            class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500"
+            placeholder="1">
+    </div>
+
+    <div class="col-span-12 md:col-span-5 ">
+      <button type="button" wire:click="addOpenSlots"
+              class="w-full py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
+        Add Open Slot(s)
+      </button>
+    </div>
 
 
-        
-        {{-- wire:target="apply_to_all"   --}}
-        <div wire:loading  wire:target="apply_to_all"
-        
-        >
-            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
-                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
-                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                    <div class="text-sm font-medium">
-                        Applying Reviewer List to project records...
-                    </div>
-                </div>
-            </div>
 
+
+  </div> --}}
+
+
+  
+
+  <!-- Draggable table (rows identified by row_uid) -->
+  <div
+    x-data="{
+      options:@js($options),
+      roleColors: {
+        'global admin': 'bg-red-100 text-red-700 ring-red-200',
+        'admin':        'bg-amber-100 text-amber-800 ring-amber-200',
+        'reviewer':     'bg-sky-100 text-sky-700 ring-sky-200',
+        'user':         'bg-slate-100 text-slate-700 ring-slate-200',
+        '__none':       'bg-zinc-100 text-zinc-700 ring-zinc-200',
+      },
+      labelFor(id){
+        const nid = Number(id);
+        const o = this.options.find(o => Number(o.id) === nid);
+        return o ? o.name : id;
+      },
+      rolesFor(id){
+        const nid = Number(id);
+        const o = this.options.find(o => Number(o.id) === nid);
+        return o ? (o.roles ?? []) : [];
+      },
+      badgeCls(role){
+        const key = (role || '').toLowerCase();
+        const base = 'px-1.5 py-0.5 rounded-md text-xs ring-1';
+        return `${base} ${(this.roleColors[key] ?? this.roleColors['__none'])}`;
+      },  
+
+
+      draggingUid: null,
+      start(e,uid){ this.draggingUid = uid; e.dataTransfer.effectAllowed='move' },
+      over(e){ e.preventDefault(); e.dataTransfer.dropEffect='move' },
+      drop(e, targetUid){
+        e.preventDefault();
+        if(this.draggingUid===null || this.draggingUid===targetUid) return;
+        const rows = Array.from($el.querySelectorAll('[data-row]')).map(r => r.dataset.uid);
+        const from = rows.indexOf(this.draggingUid);
+        const to   = rows.indexOf(targetUid);
+        rows.splice(to, 0, rows.splice(from,1)[0]);
+        @this.reorder({{ $typeId }}, rows);
+        this.draggingUid = null;
+      }
+    }"
+    wire:key="table-{{ $typeId }}"
+    class="bg-white rounded-xl border shadow-sm overflow-hidden"
+  >
+  
+
+    <table class="min-w-full">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="w-16 px-4 py-2 text-left text-xs font-semibold text-slate-600">Order</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Reviewer</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Roles</th>
+          <th class="w-24 px-4 py-2"></th>
+        </tr>
+      </thead>
+
+      {{-- LOADING BODY (shown only while those actions run) --}}
+      <tbody
+        class="divide-y divide-slate-200"
+        wire:loading
+        wire:target="addSelected,addOpenSlots,remove"
+      >
+        {{-- optional single-row announcement for screen readers --}}
+        <tr>
+          <td colspan="4" class="sr-only" role="status">Loading reviewers…</td>
+        </tr>
+
+        {{-- skeleton rows --}}
+        @for ($i = 0; $i < max(min(count($assigned), 6), 3); $i++)
+          <tr class="bg-white">
+            <td class="px-4 py-3">
+              <div class="h-4 w-10 rounded animate-pulse bg-slate-200"></div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="h-4 w-48 rounded animate-pulse bg-slate-200 mb-1"></div>
+              <div class="h-3 w-24 rounded animate-pulse bg-slate-100"></div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <div class="h-5 w-16 rounded-full animate-pulse bg-slate-200"></div>
+                <div class="h-5 w-14 rounded-full animate-pulse bg-slate-200"></div>
+                <div class="h-5 w-20 rounded-full animate-pulse bg-slate-200 hidden sm:block"></div>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <div class="inline-flex items-center gap-2">
+                <div class="h-8 w-20 rounded-lg animate-pulse bg-slate-200"></div>
+              </div>
+            </td>
+          </tr>
+        @endfor
+      </tbody>
+
+
+      <tbody
+      wire:loading.remove
+      wire:target="addSelected,addOpenSlots,remove"
+      class="divide-y divide-slate-200">
+        @forelse($assigned as $row)
+          <tr
+            data-row 
+            x-data="{
+              {{-- roles:@js($row['roles'] ?? []), --}}
+              {{-- userId:@js($row['user_id'] ?? null), --}}
+            }"
+
+            data-uid="{{ $row['row_uid'] }}"
             
-        </div>
-
-
-        
-        
-
-         {{-- wire:target="reviewer_type"   --}}
-        <div wire:loading  wire:target="reviewer_type"
-        
-        >
-            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
-                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
-                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                    <div class="text-sm font-medium">
-                        Updating reviewer list records...
-                    </div>
-                </div>
-            </div>
-
+            draggable="true"
+            @dragstart="start($event, '{{ $row['row_uid'] }}')"
+            @dragover="over($event)"
+            @drop="drop($event, '{{ $row['row_uid'] }}')"
+            class="bg-white hover:bg-slate-50"
             
-        </div>
+          >
+            <td class="px-4 py-2">
+              <div class="flex items-center gap-2"> 
+                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4h2v2H7V4zm4 0h2v2h-2V4zM7 9h2v2H7V9zm4 0h2v2h-2V9zM7 14h2v2H7v-2zm4 0h2v2h-2v-2z"/></svg>
+                <span class="text-sm text-slate-700">#{{ $row['order'] }}</span>
+              </div>
+            </td>
 
+            <!-- Reviewer -->
+            <td class="px-4 py-2">
 
-        {{-- wire:target="save"   --}}
-        <div wire:loading  wire:target="save"
-        
-        >
-            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
-                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
-                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                    <div class="text-sm font-medium">
-                        Saving record...
-                    </div>
+              
+              @if(($row['slot_type'] ?? 'person') === 'person')
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-slate-800">{{ $row['name'] }}</span>
+                  {{-- <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                    Current reviewer
+                  </span> --}}
                 </div>
-            </div>
+              @else
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium
+                      {{ ($row['slot_role'] ?? 'reviewer') === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800' }}">
+                    {{-- Open • {{ ucfirst($row['slot_role']) }} --}}
+                    Open Admin Review
+                  </span>
 
-            
-        </div>
-    <!--  ./ Loaders -->
+                  {{-- @if(!empty($row['user_id']) && !empty($row['name']))
+                    <span class="text-xs text-slate-500">claimed by</span>
+                    <span class="text-sm text-slate-800">{{ $row['name'] }}</span>
+                  @else
+                    <span class="text-xs text-slate-500">not claimed</span>
+                  @endif --}}
+                </div>
+              @endif
+                
+
+
+            </td>
+
+            <!-- Roles -->
+            <td class="px-4 py-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+
+                @php $uid = $row['user_id'] ?? null; @endphp
+
+                <!-- If this row has a userId (person or claimed open slot), show that user's roles -->
+                @if(!empty($row['roles']))
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    @foreach ($row['roles'] as $role)
+                        <span :class="badgeCls('{{ $role }}')"  >{{ $role }}</span>
+                    @endforeach
+                  </div>
+                @else
+                   <span :class="badgeCls('')">No role</span>
+                @endif
+
+
+                {{-- <template x-if="userId">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <template x-for="role in rolesFor(userId)" :key="role" >
+                      <span :class="badgeCls(role)" x-text="role"></span>
+                    </template>
+                    <template x-if="rolesFor(userId).length === 0">
+                      <span :class="badgeCls('')">No role</span>
+                    </template>
+                  </div>
+                </template>
+
+                <!-- If open & not claimed, show neutral -->
+                <template x-if="!userId">
+                  <span :class="badgeCls('')">No role</span>
+                </template> --}}
+
+
+              </div>
+            </td>
+
+            <td class="px-4 py-2 text-right">
+              <button type="button"
+                      wire:click="remove('{{ $row['row_uid'] }}', {{ $typeId }})"
+                      class="px-2 py-1 text-sm rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100">
+                Remove
+              </button>
+            </td>
+          </tr>
+        @empty
+          <tr>
+            <td colspan="4" class="px-4 py-6 text-sm text-slate-500 text-center">
+              No reviewers yet for this document type.
+            </td>
+          </tr>
+        @endforelse
+      </tbody>
+
+    </table>
+  </div>
+
+
 
 
 </div>
-<!-- End Table Section -->
-@push('scripts')
-{{-- <script>
-    let formDirty = false;
 
-    // Watch for changes in inputs to mark form as dirty
-    document.addEventListener('input', () => {
-        formDirty = true;
-    });
-
-    // Ask before leaving if form is dirty
-    window.addEventListener('beforeunload', function (e) {
-        if (formDirty) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
-    });
-
-    // Optional: Reset dirty flag after save
-    Livewire.on('formSaved', () => {
-        formDirty = false;
-    });
-</script> --}}
-@endpush
+<script>
+  window.addEventListener('notify', e => console.log(e.detail?.message ?? 'Saved'));
+</script>

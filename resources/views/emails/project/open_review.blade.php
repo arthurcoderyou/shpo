@@ -3,11 +3,7 @@
 
 A new project has been submitted for **Open Review**. You’re receiving this because you’re part of the
 @php
-    $team = match($project_reviewer->reviewer_type ?? 'document') {
-        'initial' => 'Initial Review Team',
-        'final' => 'Final Review Team',
-        default => 'Document Review Team',
-    };
+    $team =   'Document Review Team';
 @endphp
 **{{ $team }}**.
 

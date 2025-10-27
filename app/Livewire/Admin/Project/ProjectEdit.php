@@ -45,7 +45,7 @@ class ProjectEdit extends Component
 
 
     public $project_number;
-    public $shpo_number;
+    public $rc_number;
     public $submitter_due_date;
     public $reviewer_due_date;
 
@@ -64,6 +64,11 @@ class ProjectEdit extends Component
     public $latitude;
     public $longitude;
     public $location; 
+
+    public $street;
+    public $area;
+    public $lot_number;
+
 
     public $location_directions = [];
 
@@ -104,8 +109,8 @@ class ProjectEdit extends Component
         $this->federal_agency = $project->federal_agency;
 
         $this->project_number = $project->project_number ? $project->project_number: Project::generateProjectNumber();
-        // $this->shpo_number = $project->shpo_number ? $project->shpo_number : Project::generateProjectNumber(rand(10, 99)) ;
-         $this->shpo_number = $project->shpo_number ? $project->shpo_number : null;
+        // $this->rc_number = $project->rc_number ? $project->rc_number : Project::generateProjectNumber(rand(10, 99)) ;
+         $this->rc_number = $project->rc_number ? $project->rc_number : null;
         $this->submitter_due_date = $project->submitter_due_date;
         $this->reviewer_due_date = $project->reviewer_due_date;
         $this->submitter_response_duration_type = $project->submitter_response_duration_type;
@@ -116,7 +121,10 @@ class ProjectEdit extends Component
         /**default is Guam coordinates */
         $this->latitude = $project->latitude ?? 13.4443; 
         $this->longitude = $project->longitude ?? 144.7937;
-        $this->location = $project->location ?? "Guam";
+        $this->location = $project->location ;
+        $this->street = $project->street ;
+        $this->area = $project->area ;
+        $this->lot_number = $project->lot_number ;
         
 
         $this->location_directions[] =   Project::select(
@@ -221,8 +229,8 @@ class ProjectEdit extends Component
             ],
 
 
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            // 'latitude' => 'required|numeric',
+            // 'longitude' => 'required|numeric',
             'location' => 'required|string',
 
 
@@ -232,11 +240,11 @@ class ProjectEdit extends Component
             //     Rule::unique('projects', 'project_number')
             //         ->ignore($this->project_id), // Ensure project_number is unique
             // ],
-            // 'shpo_number' => [
+            // 'rc_number' => [
             //     'required',
             //     'string',
-            //     Rule::unique('projects', 'shpo_number')
-            //     ->ignore($this->project_id), // Ensure shpo_number is unique
+            //     Rule::unique('projects', 'rc_number')
+            //     ->ignore($this->project_id), // Ensure rc_number is unique
             // ],
 
             'federal_agency' => [
@@ -273,18 +281,18 @@ class ProjectEdit extends Component
                 'date', 
             ],
 
-            'document_type_id' => [
-                'nullable',
-            ],
-           'attachments' => [
-                function ($attribute, $value, $fail) {
-                    if (!empty($this->document_type_id)) {
-                        if (empty($value) || !is_array($value) || count($value) < 1) {
-                            $fail('The attachments field is required and must contain at least one item when a document type is selected.');
-                        }
-                    }
-                },
-            ],
+        //     'document_type_id' => [
+        //         'nullable',
+        //     ],
+        //    'attachments' => [
+        //         function ($attribute, $value, $fail) {
+        //             if (!empty($this->document_type_id)) {
+        //                 if (empty($value) || !is_array($value) || count($value) < 1) {
+        //                     $fail('The attachments field is required and must contain at least one item when a document type is selected.');
+        //                 }
+        //             }
+        //         },
+        //     ],
 
         ],[
             'latitude.required' => 'Location is required.',
@@ -396,9 +404,9 @@ class ProjectEdit extends Component
                 },
             ],
 
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'location' => 'required|string',
+            // 'latitude' => 'required|numeric',
+            // 'longitude' => 'required|numeric',
+            // 'location' => 'required|string',
 
             // 'project_number' => [
             //     'required',
@@ -406,11 +414,11 @@ class ProjectEdit extends Component
             //     Rule::unique('projects', 'project_number')
             //         ->ignore($this->project_id), // Ensure project_number is unique
             // ],
-            // 'shpo_number' => [
+            // 'rc_number' => [
             //     'required',
             //     'string',
-            //     Rule::unique('projects', 'shpo_number')
-            //     ->ignore($this->project_id), // Ensure shpo_number is unique
+            //     Rule::unique('projects', 'rc_number')
+            //     ->ignore($this->project_id), // Ensure rc_number is unique
             // ],
 
 
@@ -447,18 +455,18 @@ class ProjectEdit extends Component
                 'date', 
             ],
 
-            'document_type_id' => [
-                'nullable',
-            ],
-           'attachments' => [
-                function ($attribute, $value, $fail) {
-                    if (!empty($this->document_type_id)) {
-                        if (empty($value) || !is_array($value) || count($value) < 1) {
-                            $fail('The attachments field is required and must contain at least one item when a document type is selected.');
-                        }
-                    }
-                },
-            ],
+        //     'document_type_id' => [
+        //         'nullable',
+        //     ],
+        //    'attachments' => [
+        //         function ($attribute, $value, $fail) {
+        //             if (!empty($this->document_type_id)) {
+        //                 if (empty($value) || !is_array($value) || count($value) < 1) {
+        //                     $fail('The attachments field is required and must contain at least one item when a document type is selected.');
+        //                 }
+        //             }
+        //         },
+        //     ],
 
         ],[
             'latitude.required' => 'Location is required.',
@@ -479,7 +487,7 @@ class ProjectEdit extends Component
         $project->description = $this->description; 
 
         $project->project_number = $this->project_number;
-        $project->shpo_number = $this->shpo_number;
+        $project->rc_number = $this->rc_number;
         $project->submitter_response_duration_type = $this->submitter_response_duration_type;
         $project->submitter_response_duration = $this->submitter_response_duration;
         $project->submitter_due_date = $this->submitter_due_date;
@@ -491,77 +499,16 @@ class ProjectEdit extends Component
         $project->latitude = $this->latitude;
         $project->longitude = $this->longitude  ;
         $project->location = $this->location ;
+        $project->area = $this->area ;
+        $project->street = $this->street ;
+        $project->lot_number = $this->lot_number ;
 
         $project->updated_by = Auth::user()->id;
         $project->updated_at = now();
         $project->save();
 
         
-
-        if (!empty($this->attachments)) {
-
-            //create the project document 
-            $project_document = new ProjectDocument();
-            $project_document->project_id = $project->id;
-            $project_document->document_type_id = $this->document_type_id;
-            $project_document->created_by = Auth::user()->id;
-            $project_document->updated_by = Auth::user()->id;
-            $project_document->save();
-
-
-
-
-            foreach ($this->attachments as $file) {
-        
-                // // Store the original file name
-                // $originalFileName = $file->getClientOriginalName(); 
-
-                // // Generate a unique file name
-                // $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
-
-                // // Generate a unique file name
-                // $fileName = Carbon::now()->timestamp . '-' . $review->id . '-' . uniqid() . '.' . $file['extension'];
-
-
-
-                $originalFileName = $file['name'] ?? 'attachment';
-                $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
-
-                $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . pathinfo($originalFileName, PATHINFO_FILENAME) . '.' . $extension;
-
-
-        
-                // Move the file manually from temporary storage
-                $sourcePath = $file['path'];
-                $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
-        
-                // Ensure the directory exists
-                if (!file_exists(dirname($destinationPath))) {
-                    mkdir(dirname($destinationPath), 0777, true);
-                }
-        
-                // Move the file to the destination
-                if (file_exists($sourcePath)) {
-                    rename($sourcePath, $destinationPath);
-                } else {
-                    // Log or handle the error (file might not exist at the temporary path)
-                    continue;
-                }
-        
-                // Save to the database
-                ProjectAttachments::create([
-                    'attachment' => $fileName,
-                    'project_id' => $project->id,
-                    'project_document_id' => $project_document->id,
-                    'created_by' => Auth::user()->id,
-                    'updated_by' => Auth::user()->id,
-                ]);
-            }
-
-            
-
-        }
-
+ 
 
 
         // delete existing subscribers 

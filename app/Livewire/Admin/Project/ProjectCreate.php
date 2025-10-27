@@ -45,7 +45,7 @@ class ProjectCreate extends Component
 
 
     public $project_number;
-    public $shpo_number;
+    public $rc_number;
     public $submitter_due_date;
     public $reviewer_due_date;
 
@@ -59,6 +59,10 @@ class ProjectCreate extends Component
     public $latitude;
     public $longitude;
     public $location;
+
+    public $street;
+    public $area;
+    public $lot_number;
 
     public $project;
 
@@ -164,7 +168,7 @@ class ProjectCreate extends Component
         $this->project_number = Project::generateProjectNumber();
 
         // Generate the project number
-        // $this->shpo_number = Project::generateProjectNumber(rand(10, 99));
+        // $this->rc_number = Project::generateProjectNumber(rand(10, 99));
 
 
         $this->documentTypes = DocumentType::orderBy('order','ASC')->get(); 
@@ -260,8 +264,8 @@ class ProjectCreate extends Component
                 'string', 
             ],
 
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            // 'latitude' => 'required|numeric',
+            // 'longitude' => 'required|numeric',
             'location' => 'required|string',
 
             // 'project_number' => [
@@ -269,10 +273,10 @@ class ProjectCreate extends Component
             //     'string',
             //     Rule::unique('projects', 'project_number'), // Ensure project_number is unique
             // ],
-            // 'shpo_number' => [
+            // 'rc_number' => [
             //     // 'required',
             //     'string',
-            //     Rule::unique('projects', 'shpo_number'), // Ensure shpo_number is unique
+            //     Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
             // ],
 
             'federal_agency' => [
@@ -308,14 +312,14 @@ class ProjectCreate extends Component
                 'date', 
             ],
             
-            'document_type_id' => [
-                'required',
-            ],
-            'attachments' => [
-                'required',
-                'array',
-                'min:1', // Ensure at least one attachment
-            ],
+            // 'document_type_id' => [
+            //     'required',
+            // ],
+            // 'attachments' => [
+            //     'required',
+            //     'array',
+            //     'min:1', // Ensure at least one attachment
+            // ],
 
         ],[
             'latitude.required' => 'Location is required.',
@@ -362,59 +366,26 @@ class ProjectCreate extends Component
     public function save()
     {
 
-        $document_upload_location = Setting::getOrCreateWithDefaults('document_upload_location');
-
-        if(empty($document_upload_location) && empty($document_upload_location->value) ){
-
-            Alert::error('Error','The Document Upload location had not been set by the administrator');
-            return redirect()->route('project.create' );
-
-        } 
-
-
-        
-
-        // Check FTP connection before processing
-        try {
-            Storage::disk($document_upload_location->value)->exists('/'); // Basic check
-            // dd($document_upload_location->value." works");
-
-        } catch (\Exception $e) {
-            // Handle failed connection
-            // logger()->error("FTP connection failed: " . $e->getMessage());
-            // return; // Exit or show error as needed
-
-            Alert::error('Error','Connection cannot be stablished with the '.$document_upload_location->value.' server');
-            return redirect()->route('project.create' );
-
-        }
-        // dd("ftp does not work");
-
-        // $errors = $this->checkProjectRequirements(); // only required on project submission
          
-
-
-        // dd($this->all());
-
         $this->validate([
             'name' => [
                 'required',
                 'string', 
             ],
 
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'location' => 'required|string',
+            // 'latitude' => 'required|numeric',
+            // 'longitude' => 'required|numeric',
+            // 'location' => 'required|string',
 
             // 'project_number' => [
             //     // 'required',
             //     'string',
             //     Rule::unique('projects', 'project_number'), // Ensure project_number is unique
             // ],
-            // 'shpo_number' => [
+            // 'rc_number' => [
             //     // 'required',
             //     'string',
-            //     Rule::unique('projects', 'shpo_number'), // Ensure shpo_number is unique
+            //     Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
             // ],
             'description' => [
                 'required'
@@ -452,14 +423,15 @@ class ProjectCreate extends Component
                 'date', 
             ],
 
-            'document_type_id' => [
-                'required',
-            ],
-            'attachments' => [
-                'required',
-                'array',
-                'min:1', // Ensure at least one attachment
-            ],
+            // 'document_type_id' => [
+            //     'required',
+            // ],
+
+            // 'attachments' => [
+            //     'required',
+            //     'array',
+            //     'min:1', // Ensure at least one attachment
+            // ],
 
 
         ],[
@@ -469,9 +441,7 @@ class ProjectCreate extends Component
             'federal_agency.required' => 'Company is required' 
         ]);
 
-
-        
-        
+ 
  
         //save
         $project = Project::create([
@@ -482,7 +452,7 @@ class ProjectCreate extends Component
             'description' => $this->description,
 
             'project_number' => $this->project_number,
-            'shpo_number' => $this->shpo_number,
+            'rc_number' => $this->rc_number,
             'submitter_response_duration_type' => $this->submitter_response_duration_type,
             'submitter_response_duration' => $this->submitter_response_duration,
             'submitter_due_date' => $this->submitter_due_date,
@@ -494,340 +464,16 @@ class ProjectCreate extends Component
             'longitude' => $this->longitude,
             'location' => $this->location,
 
+            'street' => $this->street, 
+            'area' => $this->area, 
+            'lot_number' => $this->lot_number,
+
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
         ]); 
 
         
-
-        if (!empty($this->attachments)) {
-
-            // Check FTP connection before processing
-            try {
-                Storage::disk($document_upload_location->value)->exists('/'); // Basic check
-                // dd($document_upload_location->value." works");
-
-            } catch (\Exception $e) {
-                // Handle failed connection
-                // logger()->error("FTP connection failed: " . $e->getMessage());
-                // return; // Exit or show error as needed
-
-                Alert::error('Error','Connection cannot be stablished with the '.$document_upload_location->value.' server');
-                return redirect()->route('project.create' );
-
-            }
-
-            
-            //create the project document 
-            $project_document = new ProjectDocument();
-            $project_document->project_id = $project->id;
-            $project_document->document_type_id = $this->document_type_id;
-            $project_document->created_by = Auth::user()->id;
-            $project_document->updated_by = Auth::user()->id;
-            $project_document->save();
-
-
-
-           
-            $date = now(); // to ensure that only one date time will be used 
-
-            // try {
-            //     event(new \App\Events\ProjectCreated($project));
-            // } catch (\Throwable $e) {
-            //     // Log the error without interrupting the flow
-            //     Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
-            //         'project_id' => $project->id,
-            //         'trace' => $e->getTraceAsString(),
-            //     ]);
-            // }
-
-            // event(new  \App\Events\ProjectDocumentCreated($project_document));
-
-
-            $disk = $document_upload_location->value;
-
-
-
-            foreach ($this->attachments as $file) {
-                
-
-                // if filesystem: public  
-                /* 
-                if($this->$document_upload_location->value == "ftp")
-                {
-
-                    $originalFileName = $file['name'] ?? 'attachment';
-                    $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
-                    $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
-
-                    $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id. '-pdt' .$project_document->document_type->name. '-' . $baseName . '.' . $extension;
-
-                    $sourcePath = $file['path'];
-
-                    if (!file_exists($sourcePath)) {
-                        logger()->warning("Source file does not exist: $sourcePath");
-                        continue;
-                    }
-
-                    // Read the file content
-                    $fileContents = file_get_contents($sourcePath);
-
-                    // Destination path on FTP
-                    $ftpPath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
-
-                    // Create directory if not exists (Flysystem handles this automatically when uploading a file)
-                    $uploadSuccess = Storage::disk($document_upload_location->value)->put($ftpPath, $fileContents);
-
-                    if (!$uploadSuccess) {
-                        logger()->error("Failed to upload file to FTP: $ftpPath");
-                        continue;
-                    }
-
-                    // Delete local temp file
-                    unlink($sourcePath);
-
-
-
-                }elseif(in_array($disk, ['local', 'public'])){
-                    $originalFileName = $file['name'] ?? 'attachment';
-                    $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
-                    $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
-
-                    $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id. '-pdt' .$project_document->document_type->name. '-' . $baseName . '.' . $extension;
-
-                    $sourcePath = $file['path'];
-
-                    if (!file_exists($sourcePath)) {
-                        logger()->warning("Source file does not exist: $sourcePath");
-                        continue;
-                    }
-
-                    // Read the file content
-                    $fileContents = file_get_contents($sourcePath);
-
-                    // Destination path on FTP
-                    $ftpPath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
-
-                    // Create directory if not exists (Flysystem handles this automatically when uploading a file)
-                    $uploadSuccess = Storage::disk($document_upload_location->value)->put($ftpPath, $fileContents);
-
-                    if (!$uploadSuccess) {
-                        logger()->error("Failed to upload file to FTP: $ftpPath");
-                        continue;
-                    }
-
-                    // Delete local temp file
-                    unlink($sourcePath);
-
-                }
-                */
-                     
-
-
-                $disk = $document_upload_location->value;
-                $originalFileName = $file['name'] ?? 'attachment';
-                $extension = $file['extension'] ?? pathinfo($originalFileName, PATHINFO_EXTENSION);
-                $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
-
-                $fileName = Carbon::now()->timestamp . '-p_' . $project->id . '-pd_' . $project_document->id . '-pdt' . $project_document->document_type->name . '-' . $baseName . '.' . $extension;
-
-                $sourcePath = $file['path'];
-
-                if (!file_exists($sourcePath)) {
-                    logger()->warning("Source file does not exist: $sourcePath");
-                    return;
-                }
-
-                // Read the file content once
-                $fileContents = file_get_contents($sourcePath);
-
-                // Common path used for all disks (relative)
-                $relativePath = "uploads/project_attachments/project_{$project->id}/project_document_{$project_document->id}_{$project_document->document_type->name}/{$date}/{$fileName}";
-
-                // ==========================
-                // 1. FTP Upload
-                // ==========================
-                if ($disk === 'ftp') {
-                    $uploadSuccess = Storage::disk('ftp')->put($relativePath, $fileContents);
-
-                    if (!$uploadSuccess) {
-                        logger()->error("FTP upload failed: $relativePath");
-                    } else {
-                        @unlink($sourcePath);
-                    }
-
-                    
-                }else{
-
-
-
-                    // ==========================
-                    // 2. Local Disk and Public Upload
-                    // ==========================
-                   
-                    $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
-            
-                    // Ensure the directory exists
-                    if (!file_exists(dirname($destinationPath))) {
-                        mkdir(dirname($destinationPath), 0777, true);
-                    }
-            
-                    // Move the file to the destination
-                    if (file_exists($sourcePath)) {
-                        rename($sourcePath, $destinationPath);
-                    } else {
-                        // Log or handle the error (file might not exist at the temporary path)
-                        continue;
-                    }
-
-
-
-                }
  
- 
-        
-                // Save to the database
-                // ProjectAttachments::create([
-                //     'attachment' => $fileName,
-                //     'project_id' => $project->id,
-                //     'project_document_id' => $project_document->id,
-                //     'created_by' => Auth::user()->id,
-                //     'updated_by' => Auth::user()->id,
-                //     'created_at' => $date ,
-                //     'updated_at' => $date ,
-                // ]);
-
-                $attachment = new ProjectAttachments([
-                    'attachment' => $fileName,
-                    'filesystem' => $document_upload_location->value,
-                    'project_id' => $project->id,
-                    'project_document_id' => $project_document->id,
-                    'created_by' => Auth::user()->id,
-                    'updated_by' => Auth::user()->id,
-                ]);
-
-                $attachment->timestamps = false;
-                $attachment->created_at = $date;
-                $attachment->updated_at = $date;
-                $attachment->save();
-
-
-
-
-            }
-        }
-
-
-       
-
-        // project timer 
-        
-         
-
-        // if (!empty($this->attachments)) {
-        //     foreach ($this->attachments as $file) {
-
-        //         dd($this->attachments);
-
-        //         // if ($file instanceof \Illuminate\Http\UploadedFile) { // Ensure it's a file
-
-        //             // dd($this->attachments);
-
-        //             // Generate a unique file name
-        //             $fileName = Carbon::now()->timestamp . '-'.$project->id.'-' . uniqid() . '.' . $file->getClientOriginalExtension();
-        
-        //             // Store the file in 'uploads/project_attachments' (inside the 'public' disk)
-        //             $file->storeAs('uploads/project_attachments', $fileName, 'public');
-        
-        //             // Optionally save the filename to the database
-        //             // $project->attachments()->create([
-        //             //     'file_name' => $fileName,
-        //             // ]);
-
-        //             ProjectAttachments::create([
-        //                 'attachment' => $fileName, 
-        //                 'project_id' => $project->id,
-        //                 'created_by' => Auth::user()->id,
-        //                 'updated_by' => Auth::user()->id,
-        //             ]);
-            
-
-
-
-        //         // }
-        //     }
-        // }
-
-        // if (!empty($this->attachments)) {
-        //     foreach ($this->attachments as $file) {
-        
-        //         // Generate a unique file name
-        //         $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . uniqid() . '.' . $file['extension'];
-        
-        //         // Move the file manually from temporary storage
-        //         $sourcePath = $file['path'];
-        //         $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
-        
-        //         // Ensure the directory exists
-        //         if (!file_exists(dirname($destinationPath))) {
-        //             mkdir(dirname($destinationPath), 0777, true);
-        //         }
-        
-        //         // Move the file to the destination
-        //         if (file_exists($sourcePath)) {
-        //             rename($sourcePath, $destinationPath);
-        //         } else {
-        //             // Log or handle the error (file might not exist at the temporary path)
-        //             continue;
-        //         }
-        
-        //         // Save to the database
-        //         ProjectAttachments::create([
-        //             'attachment' => $fileName,
-        //             'project_id' => $project->id,
-        //             'created_by' => Auth::user()->id,
-        //             'updated_by' => Auth::user()->id,
-        //         ]);
-        //     }
-        // }
-
-        // if (!empty($this->attachments)) {
-        //     foreach ($this->attachments as $file) {
-                
-        //         // Store the original file name
-        //         $originalFileName = $file['name']; // Assuming 'name' contains the original file name
-        
-        //         // Generate a unique file name
-        //         $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . uniqid() . '.' . $file['extension'];
-        
-        //         // Move the file manually from temporary storage
-        //         $sourcePath = $file['path'];
-        //         $destinationPath = storage_path("app/public/uploads/project_attachments/{$fileName}");
-        
-        //         // Ensure the directory exists
-        //         if (!file_exists(dirname($destinationPath))) {
-        //             mkdir(dirname($destinationPath), 0777, true);
-        //         }
-        
-        //         // Move the file to the destination
-        //         if (file_exists($sourcePath)) {
-        //             rename($sourcePath, $destinationPath);
-        //         } else {
-        //             // Log or handle the error (file might not exist at the temporary path)
-        //             continue;
-        //         }
-        
-        //         // Save to the database
-        //         ProjectAttachments::create([
-        //             'attachment' => $fileName,  // Stored file name 
-        //             'project_id' => $project->id,
-        //             'created_by' => Auth::user()->id,
-        //             'updated_by' => Auth::user()->id,
-        //         ]);
-        //     }
-        // }
-
-
         // Save Project Subscribers (if any)
         if (!empty($this->selectedUsers)) {
             foreach ($this->selectedUsers as $index => $user ) {
@@ -842,37 +488,7 @@ class ProjectCreate extends Component
 
 
 
-
-        // //create the project forum for this project 
-        // Forum::create([
-        //     'project_id' => $project->id,   
-        //     'description' => "This forum serves as a central hub for both project \"".$this->name."\" collaborators and users. Team members can coordinate and share updates, while users can ask questions, provide feedback, and engage in discussions related to the project. It’s a space built for communication, clarity, and community around your project. ",
-        //     'title' => "Community Forum for Project Collaboration\"".$this->name."\"",
-        //     'created_by' => Auth::user()->id,
-        //     'updated_by' => Auth::user()->id,
-        // ]);
-
-
  
-
-
-        // ActivityLog::create([
-        //     'log_action' => "Project \"".$this->name."\" created ",
-        //     'log_username' => Auth::user()->name,
-        //     'created_by' => Auth::user()->id,
-        // ]);
-
-        
-        // try {
-        //     event(new \App\Events\ProjectCreated($project));
-        // } catch (\Throwable $e) {
-        //     // Log the error without interrupting the flow
-        //     Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
-        //         'project_id' => $project->id,
-        //         'trace' => $e->getTraceAsString(),
-        //     ]);
-        // }
-
 
         Alert::success('Success','Project created successfully');
         return redirect()->route('project.show',['project'=> $project->id]);
@@ -996,10 +612,10 @@ class ProjectCreate extends Component
             //     'string',
             //     Rule::unique('projects', 'project_number'), // Ensure project_number is unique
             // ],
-            // 'shpo_number' => [
+            // 'rc_number' => [
             //     // 'required',
             //     'string',
-            //     Rule::unique('projects', 'shpo_number'), // Ensure shpo_number is unique
+            //     Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
             // ],
             'description' => [
                 'required'
@@ -1080,7 +696,7 @@ class ProjectCreate extends Component
             'description' => $this->description,
 
             'project_number' => $this->project_number,
-            'shpo_number' => $this->shpo_number,
+            // 'rc_number' => $this->rc_number,
             'submitter_response_duration_type' => $this->submitter_response_duration_type,
             'submitter_response_duration' => $this->submitter_response_duration,
             'submitter_due_date' => $this->submitter_due_date,

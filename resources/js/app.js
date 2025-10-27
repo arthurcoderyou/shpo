@@ -1,5 +1,8 @@
 import './bootstrap';
 import 'preline';
+import '@tailwindplus/elements'; // registers <el-dropdown>, <el-menu>, etc.
+
+// import { initFlowbite } from 'flowbite';
 
 // import './forum-listeners';
 
@@ -8,6 +11,10 @@ document.addEventListener('livewire:navigated', () => {
     // Reinitialize Flowbite
     window.dispatchEvent(new Event('load'));
 
-    initFlowbite();
+    initFlowbite(); // function to reinitiate flowbite 
 
 });
+
+
+
+import './echo';

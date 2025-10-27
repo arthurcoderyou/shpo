@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('User Edit Role') }}
-        </h2>
-    </x-slot>
+     <x-breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('dashboard'), ], 
+        ['label' => 'Users', 'url' => route('user.index')], 
+        ['label' => 'Edit '.$user->name, 'url' => '#'],
+    ]" />
 
 
     <livewire:admin.user.user-edit :id="$user->id" />

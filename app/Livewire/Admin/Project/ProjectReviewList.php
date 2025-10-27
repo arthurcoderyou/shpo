@@ -88,13 +88,7 @@ class ProjectReviewList extends Component
 
 
         $project->delete();
-
-
-
-
-
-
-
+ 
         Alert::success('Success','Project deleted successfully');
         return redirect()->route('project.index');
 

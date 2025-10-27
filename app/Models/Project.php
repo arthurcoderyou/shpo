@@ -14,9 +14,34 @@ class Project extends Model
 {
     use SoftDeletes;
 
- 
-
+   
     protected $table = "projects";
+
+
+
+    /** @Array 
+     * Project data from the records 
+     * 
+     * myind    - id number, can be considered same as id 
+     * SED      - VA        [string] 
+     * FY       - Year 2025 , 2026 etc
+     * RC #     - 2017 - 0545,      2025-2016
+     * Curent Date      - 3/21/2025
+     * Doc Date         - 3/19/2025
+     * Date Recd        - 3/20/2025
+     * Due Date         - date
+     * Rsp Date         - date
+     * St               - RK            (not sure eyet what is this )
+     * Document F       - i think this is document file 
+     * 
+     * 
+     * 
+     * 
+     */
+
+
+
+
     protected $fillable = [
         'name',
         'description',
@@ -38,17 +63,19 @@ class Project extends Model
         'updated_at',
 
         'project_number',
-        'shpo_number',
-
-        
+        // 'shpo_number',
+        'rc_number',
+        'street',
+        'area',
+        'lot_number',
+ 
         'submitter_response_duration_type',
         'submitter_response_duration',
         'submitter_due_date',
         'reviewer_response_duration',
         'reviewer_response_duration_type',
         'reviewer_due_date', 
-
-
+ 
         'latitude', 'longitude', 'location',
 
         'last_submitted_at',
@@ -489,6 +516,29 @@ class Project extends Model
 
     }
 
+    static public function getCurrentReviewerByProjectDocument($project_document_id)
+    {
+        return ProjectReviewer::where('status', true)  // find the first active reviewer
+            ->where('project_document_id', $project_document_id)  // find the first active reviewer
+            ->orderBy('order')
+            ->first(); // Return the User model of the reviewer
+
+        // Iterate over all project documents ordered by id (i.e. oldest first)
+        // foreach ($this->project_documents()->orderBy('id')->get() as $document) {
+        //     $reviewer = $document->project_reviewers()
+        //         ->where('status', true)
+        //         ->where('review_status', '!=', 'approved')
+        //         ->orderBy('order')
+        //         ->first();
+
+        //     if ($reviewer) {
+        //         return $reviewer;
+        //     }
+        // }
+
+
+    }
+
 
     public function getCurrentProjectDocument()
     {
@@ -591,6 +641,40 @@ class Project extends Model
   
 
     }
+
+
+    static public function resetCurrentProjectDocumentReviewersByDocument($document_type_id,$project_id){
+
+
+        $project_document = ProjectDocument::where('document_type_id',$document_type_id)
+            ->where('project_id',$project_id)
+            ->first();
+
+        if(empty($project_document)){
+            return;
+        }
+
+        $project_document->project_reviewers()->update(['status' => false]);
+
+        // Activate the first eligible reviewer  
+        $firstReviewer = $project_document->project_reviewers() 
+            ->where('project_id',$project_id)
+            // ->where('project_document_id',$project_document->id)
+            ->where('review_status', '!=', 'approved') 
+            ->orderBy('order')
+            ->first();
+
+        if ($firstReviewer) {
+            $firstReviewer->status = true;
+            $firstReviewer->save();
+            
+        } 
+
+
+    }
+
+
+
 
 
 
@@ -1127,9 +1211,10 @@ class Project extends Model
     public static function countProjects($route = 'project.index', $status = null)
     {
         $userId = Auth::id();
-        $query = Project::query();
+        $query = Project::query();  // for the project 
 
         switch ($route) {
+ 
             case 'project.index':
                 // Owned projects
                 $query->where('created_by', $userId);
@@ -1206,7 +1291,10 @@ class Project extends Model
                         // ->where('review_status','pending')
                         ;
                     }); 
-                break;
+                break; 
+
+
+ 
 
 
             default:
@@ -1219,8 +1307,11 @@ class Project extends Model
         if (!empty($status)) {
             $query->where('status', $status);
         }
-
+ 
         return $query->count();
+ 
+
+        
     }
 
 

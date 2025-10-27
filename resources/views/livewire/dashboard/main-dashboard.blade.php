@@ -1,6 +1,6 @@
  
 <!-- Card Section -->
-<div class="max-w-[85rem] px-4 py-10   mx-auto">
+<div class="  px-4 pb-10 sm:px-6 lg:px-8   mx-auto">
     {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
         <div></div>
@@ -150,48 +150,47 @@
 
         <!-- Project Panels -->
             
-
-            <!-- project list view -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view') )   
-
-                
+            @if(Auth::user()->hasPermissionTo('system access user'))
+                <!-- project list view --> 
                 <livewire:dashboard.dashboard-tile.project-tile
-                        title="Your Projects"  
+                        title="My Projects"  
                         :icon="view('components.icons.projects-total')->render()" 
                         :route="route('project.index')" 
                         routeKey="project.index" 
                         :iconColor="$iconColor"
                         :iconBg="$iconBg" 
                     />
-    
-    
-            @endif
 
-            <!-- project list view update pending all  -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view update pending') )    
-
-                
-                <livewire:dashboard.dashboard-tile.project-tile
-                        title="Your Projects Update Pending"  
+                <!-- project documents list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="My Project Documents"  
                         :icon="view('components.icons.projects-total')->render()" 
-                        :route="route('project.index.update-pending')" 
-                        routeKey="project.index.update-pending" 
+                        :route="route('project-document.index')" 
+                        reviewStatus="all" 
                         :iconColor="$iconColor"
                         :iconBg="$iconBg" 
                     />
     
-    
-            @endif
-
-            <!-- project list view review pending all  -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view review pending') )    
-
-                
-                <livewire:dashboard.dashboard-tile.project-tile
-                        title="Your Projects Review Pending"  
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="My Project Documents with Required Changes"  
                         :icon="view('components.icons.projects-total')->render()" 
-                        :route="route('project.index.review-pending')" 
-                        routeKey="project.index.review-pending" 
+                        :route="route('project-document.index',[
+                            'review_status' => 'changes_requested'
+                        ])" 
+                        reviewStatus="changes_requested"  
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+      
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="My Project Documents Pending Review"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index',[
+                            'review_status' => 'pending'
+                        ])" 
+                        reviewStatus="pending"  
                         :iconColor="$iconColor"
                         :iconBg="$iconBg" 
                     />
@@ -320,8 +319,8 @@
 
 
     <!-- User Report -->
-    <div class="relative overflow-hidden">
-        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
+    <div class="relative overflow-hidden" wire:ignore>
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
             <div class="text-center ">
 
                 <h1 class="text-4xl sm:text-6xl font-bold text-gray-800 ">
@@ -348,7 +347,7 @@
             </div>
         </div>
 
-        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
           <div class="text-center ">
 
               <h1 class="text-4xl sm:text-6xl font-bold text-gray-800 ">
@@ -396,7 +395,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- User Report  -->
+     <!-- User Report  -->
     <script>
 
       /* Total User per Role Report  */
@@ -734,6 +733,165 @@
  
     </script>
     <!-- ./ Project Report  -->
+
+
+    <script>
+        // Keep chart instances so we can destroy them before re-creating
+        window.__dashCharts = window.__dashCharts || {};
+
+        // Common options for bars
+        const barOptions = {
+            scales: {
+            y: {
+                beginAtZero: true,
+                suggestedMin: 0,
+                ticks: {
+                stepSize: 5.0005,
+                callback: (v) => Number(v).toFixed(5),
+                },
+            },
+            },
+        };
+
+        // Common options for lines
+        const lineOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animations: {
+            tension: { duration: 1000, easing: 'linear', from: 1, to: 0, loop: false },
+            },
+            scales: {
+            y: {
+                beginAtZero: true,
+                suggestedMin: 0,
+                ticks: {
+                stepSize: 5.0005,
+                callback: (v) => Number(v).toFixed(5),
+                },
+            },
+            },
+        };
+
+        function makeChart(id, type, labels, values, datasetLabel, opts = {}) {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+
+            // Destroy previous instance if any
+            if (window.__dashCharts[id]) {
+            window.__dashCharts[id].destroy();
+            delete window.__dashCharts[id];
+            }
+
+            const cfg = {
+            type,
+            data: {
+                labels,
+                datasets: [{
+                label: datasetLabel,
+                data: values,
+                borderWidth: 1,
+                backgroundColor: '#0ea5e9',
+                borderColor: 'blue',
+                }],
+            },
+            options: opts,
+            };
+
+            // Create & store
+            window.__dashCharts[id] = new Chart(canvas, cfg);
+        }
+
+        // One place to (re)build all charts on the page
+        function initReports() {
+            // --- USER REPORTS ---
+            const data_user_count_table = @json($data_user_count_table);
+            makeChart(
+            'data_user_count_table_report',
+            'bar',
+            data_user_count_table.map(i => i.label),
+            data_user_count_table.map(i => i.value),
+            '# of Total Users',
+            barOptions
+            );
+
+            const data_user_registered_count_table = @json($data_user_registered_count_table);
+            makeChart(
+            'data_user_registered_count_table_report',
+            'bar',
+            data_user_registered_count_table.map(i => i.label),
+            data_user_registered_count_table.map(i => i.value),
+            '# of Total Registered Users',
+            barOptions
+            );
+
+            // --- PROJECT REPORTS ---
+            const data_project_count_per_status_table = @json($data_project_count_per_status_table);
+            makeChart(
+            'data_project_count_per_status_table_report',
+            'bar',
+            data_project_count_per_status_table.map(i => i.label),
+            data_project_count_per_status_table.map(i => i.value),
+            '# of Total Projects',
+            barOptions
+            );
+
+            const data_project_count_per_month_table = @json($data_project_count_per_month_table);
+            // custom bar option (beginAtZero: false for this one)
+            const monthBarOptions = JSON.parse(JSON.stringify(barOptions));
+            monthBarOptions.scales.y.beginAtZero = false;
+            makeChart(
+            'data_project_count_per_month_table_report',
+            'bar',
+            data_project_count_per_month_table.map(i => i.label),
+            data_project_count_per_month_table.map(i => i.value),
+            '# of Total Projects per Month',
+            monthBarOptions
+            );
+
+            const data_project_average_approval_time_table = @json($data_project_average_approval_time_table);
+            makeChart(
+            'data_project_average_approval_time_table_report',
+            'line',
+            data_project_average_approval_time_table.map(i => i.label),
+            data_project_average_approval_time_table.map(i => i.value),
+            'Average Project Approval time in Hours',
+            lineOptions
+            );
+
+            const data_project_average_response_time_table = @json($data_project_average_response_time_table);
+            makeChart(
+            'data_project_average_response_time_table_report',
+            'line',
+            data_project_average_response_time_table.map(i => i.label),
+            data_project_average_response_time_table.map(i => i.value),
+            'Average Project Response time in Hours',
+            lineOptions
+            );
+
+            const data_project_average_review_time_table = @json($data_project_average_review_time_table);
+            makeChart(
+            'data_project_average_review_time_table_report',
+            'line',
+            data_project_average_review_time_table.map(i => i.label),
+            data_project_average_review_time_table.map(i => i.value),
+            'Average Project Review time in Hours',
+            lineOptions
+            );
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            // wait a tick to ensure canvases exist (esp. with Livewire/Volt)
+            requestAnimationFrame(initReports);
+        });
+
+        // Re-run after Livewire SPA navigation
+        document.addEventListener('livewire:navigated', () => {
+            // Give Livewire a microtask to finish morphing the DOM
+            requestAnimationFrame(initReports);
+        });
+    </script>
+
 
 
 

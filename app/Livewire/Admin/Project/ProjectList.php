@@ -17,6 +17,7 @@ use App\Helpers\ProjectHelper;
 use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Support\Facades\Route;
+use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert; 
 use Illuminate\Support\Facades\Notification; 
@@ -224,17 +225,17 @@ class ProjectList extends Component
     {
         switch ($this->route) {
             case 'project.index':
-                $this->title = 'Your Projects';
-                $this->subtitle = 'Listing of your projects';
+                $this->title = 'My Projects';
+                $this->subtitle = 'Listing of my projects';
                 break;
 
             case 'project.index.update-pending':
-                $this->title = 'Your Projects - Update Pending';
+                $this->title = 'My Projects - Update Pending';
                 $this->subtitle = 'Projects you own that have pending updates';
                 break;
 
             case 'project.index.review-pending':
-                $this->title = 'Your Projects - Review Pending';
+                $this->title = 'My Projects - Review Pending';
                 $this->subtitle = 'Projects you own that are pending review';
                 break;
 
@@ -414,7 +415,9 @@ class ProjectList extends Component
 
         // }else{
 
-        return redirect()->back();
+        $route = ProjectHelper::returnHomeProjectRoute($project);
+
+        return redirect($route); 
         // }
 
         
@@ -510,13 +513,9 @@ class ProjectList extends Component
             if($project->status !== "draft"  ){
                 Alert::error('Error','Project is not draft. It cannot be deleted. Please contact administrator if you want to delete the project ');
 
-                if($project->created_by == auth()->user()->id){
-                    return redirect()->route('project.index');
-                }else{
-                    return redirect()->route($this->home_route);
-                }
+                $route = ProjectHelper::returnHomeProjectRoute($project);
 
-                
+                return redirect($route);
             }
 
             
@@ -608,11 +607,9 @@ class ProjectList extends Component
         // }
 
         // return ProjectHelper::returnHomeRouteBasedOnProject($project);
-        if($project->created_by == auth()->user()->id){
-            return redirect()->route('project.index');
-        }else{
-            return redirect($this->home_route);
-        }
+        $route = ProjectHelper::returnHomeProjectRoute($project);
+
+        return redirect($route); 
 
 
 
@@ -723,7 +720,10 @@ class ProjectList extends Component
         ]);
 
         Alert::success('Success','Project review restarted ');
-        return redirect()->route('project.index');
+
+         $route = ProjectHelper::returnHomeProjectRoute($project);
+
+        return redirect($route); 
 
 
     }
@@ -802,12 +802,25 @@ class ProjectList extends Component
         ]);
 
         Alert::success('Success','Project approved ');
-        return redirect()->route('project.index');
+        $route = ProjectHelper::returnHomeProjectRoute($project);
+
+        return redirect($route); 
 
 
     }
  
  
+
+    public function returnStatusConfig($status){
+        return ProjectDocumentHelpers::returnStatusConfig($status);
+    }
+
+    public function returnFormattedLabel($status){
+        return ProjectDocumentHelpers::returnFormattedLabel($status);
+    }
+
+
+    
 
 
     protected function applyRouteBasedFilters($query)

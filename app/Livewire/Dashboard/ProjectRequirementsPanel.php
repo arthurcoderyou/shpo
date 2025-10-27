@@ -53,8 +53,8 @@ class ProjectRequirementsPanel extends Component
         
 
         // Check if there are reviewers by type
-        $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
-        $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
+        // $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
+        // $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
 
 
         $errors = [
@@ -73,8 +73,8 @@ class ProjectRequirementsPanel extends Component
             'no_document_types' => DocumentType::count() === 0, // Add a new error condition
             'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
             'no_administrators' => !$hasAdministrators,
-            'no_initial_reviewers' => !$hasInitialReviewers,
-            'no_final_reviewers' => !$hasFinalReviewers,
+            // 'no_initial_reviewers' => !$hasInitialReviewers,
+            // 'no_final_reviewers' => !$hasFinalReviewers,
         ];
         
         // dd(Reviewer::count() === 0);
