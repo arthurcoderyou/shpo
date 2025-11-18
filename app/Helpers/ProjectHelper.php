@@ -2405,4 +2405,129 @@ class ProjectHelper
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+    static public function delete($id){
+ 
+        $project = Project::find($id);
+
+        if( Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('project delete override')  ){
+        }else{
+ 
+            if($project->status !== "draft"  ){
+                Alert::error('Error','Project is not draft. It cannot be deleted. Please contact administrator if you want to delete the project ');
+
+                $route = ProjectHelper::returnHomeProjectRoute($project);
+
+                return redirect($route);
+            }
+
+            
+        }
+            
+
+
+        // $project->status == "draft" && Auth::user()->id == $project->created_by
+
+
+
+
+        // delete project connected records 
+        
+            //delete project reviewers 
+            if(!empty($project->project_reviewers)){
+                foreach($project->project_reviewers as $reviewer){
+                    $reviewer->delete();
+                } 
+            }
+
+            //delete project reviews 
+            if(!empty($project->project_reviews)){
+                foreach($project->project_reviews as $review){
+                    $review->delete();
+                } 
+            }
+
+            //delete project documents 
+            if(!empty($project->project_documents)){
+                foreach($project->project_documents as $document){
+
+                    // delete project attachments for each project document 
+                    if(!empty($document->project_attachments)){
+                        foreach($document->project_attachments as $attachment){
+                            // Construct the full file path
+                            $filePath = "public/uploads/project_attachments/{$attachment->attachment}";
+
+                            // Check if the file exists in storage and delete it
+                            if (Storage::exists($filePath)) {
+                                Storage::delete($filePath);
+                            }
+
+                            // Delete the record from the database
+                            $attachment->delete();
+                        }
+
+
+                    }
+
+
+
+                    $document->delete();
+                } 
+            }
+
+            // delete project subscribers
+            if(!empty($project->project_subscribers)){
+                foreach($project->project_subscribers as $subcriber){
+                    $subcriber->delete();
+                } 
+            }
+        
+        // ./ delete project connected records 
+
+
+
+        $project->delete();
+
+
+        // ActivityLog::create([
+        //     'log_action' => "Project \"".$project->name."\" deleted ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
+
+
+
+
+        Alert::success('Success','Project deleted successfully');
+        // return redirect()->route('project.index');
+
+        // if($project->created_by == auth()->user()->id){
+        //     return redirect()->route('project.index');
+
+        // }else{
+
+        //     return redirect()->route('project.index');
+        // }
+
+        // return ProjectHelper::returnHomeRouteBasedOnProject($project);
+        $route = ProjectHelper::returnHomeProjectRoute($project);
+
+        return redirect($route); 
+
+
+ 
+
+    }
+
+
 }

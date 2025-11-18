@@ -24,6 +24,7 @@ class ReviewRequest implements ShouldBroadcast, ShouldQueue
 
 
     /**
+     * 
      * Create a new event instance.
      */
     public function __construct($project_reviewer_id,$authId, $sendMail, $sendNotification)
@@ -45,4 +46,10 @@ class ReviewRequest implements ShouldBroadcast, ShouldQueue
             new PrivateChannel('project-document'),
         ];
     }
+
+
+    public function broadcastAs(){
+        return "reviewed";
+    }
+    
 }

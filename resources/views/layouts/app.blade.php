@@ -694,6 +694,13 @@
                     }
                 });
 
+            // for project document updates without actual notifications shown
+            window.Echo.private('project-document')
+                .listen('.reviewed',(e) => {
+                    Livewire.dispatch('projectDocumentUpdated');
+                });
+
+
 
             window.Echo.private("project_reviewer")
                 .listen('.created', (e) => {
@@ -1134,7 +1141,7 @@
 
           
     <div class="bg-gray-100 text-sm text-gray-700 py-2">
-        <div class="max-w-[85rem] mx-auto px-4   sm:px-6">
+        <div class="max-w-full mx-auto px-4   sm:px-6">
             For feedback or comments, please email <a href="mailto:portal@khlgassociates.com" class="text-blue-600 underline">portal@khlgassociates.com</a>.
         </div>
         
@@ -1340,6 +1347,19 @@
             })();
         </script>
         <!-- ./ Script for Full Page Loader -->    
+
+
+        <script>
+            // Runs after Livewire finishes a wire:navigate swap
+            document.addEventListener('livewire:navigated', () => {
+                const el = document.querySelector('[autofocus]');
+                if (el) {
+                el.focus();
+                // Optional: select text
+                if (typeof el.select === 'function') el.select();
+                }
+            });
+        </script>   
 
  
 

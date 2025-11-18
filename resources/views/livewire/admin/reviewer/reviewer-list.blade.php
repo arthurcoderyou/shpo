@@ -1,6 +1,6 @@
 <!-- resources/views/livewire/reviewer-board-per-doc-type.blade.php -->
 <!-- Table Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 pb-6 sm:px-6 lg:px-8  mx-auto">
 
   
     
@@ -8,23 +8,47 @@
   <!-- Document Type Selector -->
   <div class="flex gap-3 items-end mb-2">
     <div class="grow">
-      <label class="block text-sm font-medium text-gray-800 ">Document Type</label>
-      <select
+       
+
+      <x-ui.select
+        
+        id="currentTypeId"
+        name="currentTypeId"
+        label="Document type " 
+
         wire:model.live="currentTypeId"
-        class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500"
-      >
-        @foreach($documentTypes as $t)
-          <option value="{{ $t['id'] }}">{{ $t['name'] }}</option>
-        @endforeach
-      </select>
+        :options="$documentTypes"
+
+        displayTooltip
+        position="right"
+        tooltipText="Select the document type to filter the reviewers list"
+
+      />
+
     </div>
 
     <div class="shrink-0">
-      <button type="button"
+      {{-- <button type="button"
               wire:click="save"
               class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-indigo-600 text-white hover:bg-indigo-700">
         Save All
-      </button>
+      </button> --}}
+      <x-ui.confirm-action-button 
+        permission="project reviewer edit"
+        button-label="Save All"
+        modal-title="Confirm Save"
+        modal-message=" Are you sure you want to save these records?"
+        wire-action="save"
+
+        displayTooltip 
+        position="top"
+        tooltipText="Click to Save Reviewer List"
+        class="w-full px-2.5 py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+
+      />
+
+
+
     </div>
   </div>
  
@@ -38,9 +62,15 @@
   @endphp
 
   <!-- Multi-select + Times to add -->
+ 
   <div wire:key="type-{{ $typeId }}" class="grid grid-cols-12 gap-3 items-end mb-2">
+
+
+     {{-- 
+
+
     <div 
-      class="col-span-12 md:col-span-8" 
+      class="col-span-12 md:col-span-4" 
     
     >
       <label class="inline-block text-sm font-medium text-gray-800">
@@ -139,9 +169,7 @@
         </div>
 
         <!-- Dropdown -->
-        {{-- 
-        x-show="open"
-         --}} 
+         
         <div
           x-show="open" x-transition @click.outside="open=false" x-cloak
           class="absolute left-0 right-0 z-50 mt-1 bg-white border rounded-lg shadow max-h-60 overflow-y-auto"
@@ -181,29 +209,91 @@
 
       </div>
     </div>
+    --}}
 
-
-    {{-- <!-- Times to add -->
+    {{--  
+    <!-- Times to add -->
     <div class="col-span-6 md:col-span-2">
       <label class="block text-sm font-medium text-gray-800 ">Times to add</label>
       <input type="number" min="1" max="20"
             wire:model.lazy="repeatByType.{{ $typeId }}"
             class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500"
             placeholder="1">
+    </div>
+    --}}
+
+    @if(count($assignedByType[$currentTypeId]) >= 1)
+
+    <!-- Multi-select + Times to add --> 
+    <div class="col-span-12 md:col-span-6">
+        <x-ui.reviewer.multi-select-search
+            :id="'selectedByType.' . $typeId"
+            :options="$options"
+            :entangle="'selectedByType.' . $typeId"
+            label="Select reviewers  "
+        />
+    </div> 
+
+ 
+
+
+    <div class="col-span-6 md:col-span-2" >
+      {{-- <label class="block text-sm font-medium text-gray-800 ">Times to add</label>
+      <input type="number" min="1" max="20"
+            wire:model.lazy="repeatByType.{{ $typeId }}"
+            class="w-full py-2.5 px-3 rounded-lg border border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500"
+            placeholder="1"> --}}
+
+
+      <x-ui.input
+        id="period_value"
+        label="Review Period"
+        wire:model.live="period_value"
+        required
+        placeholder="Estimated days of review Period"
+        {{-- help="Use the official title from the submission." --}}
+        :error="$errors->first('period_value')"
+        type="number"
+        min="0"
+        max="100"
+        displayTooltip
+        position="right"
+        tooltipText="Set the estimated days of review period"
+        
+      />
+    </div>
+
+
+    {{-- <div class="col-span-6 md:col-span-2" >
+      <x-ui.select
+        id="period_unit"
+        label="Period Unit"
+        wire:model.live="period_unit"
+        placeholder="Select a unit"
+        :options="$period_unit_options"
+        :error="$errors->first('period_unit')"
+        displayTooltip="true"
+        position="right"
+        tooltipText="Set the review period unit (day, week, month)"
+      />
     </div> --}}
+
 
     <div class="col-span-6 md:col-span-2">
       <!-- Add selected to the main assigned reviewers list -->
       <button type="button" wire:click="addSelected"
-              class="w-full py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700">
+              class="w-full text-nowrap py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700">
         Add to Table
       </button>
     </div>
+    @endif
+
+
 
     <div class="col-span-6 md:col-span-2">
       <!-- Add selected to the main assigned reviewers list -->
       <button type="button" wire:click="addOpenSlots('admin')"
-              class="w-full py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+              class="w-full text-nowrap py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
         Add Admin Review
       </button>
     </div>
@@ -297,6 +387,7 @@
         <tr>
           <th class="w-16 px-4 py-2 text-left text-xs font-semibold text-slate-600">Order</th>
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Reviewer</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Review Period</th>
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Roles</th>
           <th class="w-24 px-4 py-2"></th>
         </tr>
@@ -306,7 +397,7 @@
       <tbody
         class="divide-y divide-slate-200"
         wire:loading
-        wire:target="addSelected,addOpenSlots,remove"
+        wire:target="addSelected,addOpenSlots,remove,currentTypeId"
       >
         {{-- optional single-row announcement for screen readers --}}
         <tr>
@@ -342,28 +433,63 @@
 
       <tbody
       wire:loading.remove
-      wire:target="addSelected,addOpenSlots,remove"
+      wire:target="addSelected,addOpenSlots,remove,currentTypeId"
       class="divide-y divide-slate-200">
         @forelse($assigned as $row)
+
+            @php
+                $isFirst = $loop->first;
+                $isLast = $loop->last;
+            @endphp
+
+
+
           <tr
             data-row 
             x-data="{
               {{-- roles:@js($row['roles'] ?? []), --}}
               {{-- userId:@js($row['user_id'] ?? null), --}}
+
+              openEdit: false,
+              updated_period_value: '{{ $row['period_value'] }}',
+              updated_period_unit: '{{ $row['period_unit'] }}',
+              update(rowId,period_value,period_unit){
+                 
+                if(this.rowId===null ) return;
+                
+                {{-- @this.update_row({{ $typeId }}, rowId,period_value,period_unit); --}}
+                @this.update_row({{ $typeId }}, rowId,period_value,'day');
+                openEdit=false;
+
+              }
+
             }"
 
+ 
+
             data-uid="{{ $row['row_uid'] }}"
-            
-            draggable="true"
-            @dragstart="start($event, '{{ $row['row_uid'] }}')"
-            @dragover="over($event)"
-            @drop="drop($event, '{{ $row['row_uid'] }}')"
+            {{-- Only make middle rows draggable --}}
+            @unless($isFirst || $isLast)
+                draggable="true"
+                @dragstart="start($event, '{{ $row['row_uid'] }}')"
+                @dragover="over($event)"
+                @drop="drop($event, '{{ $row['row_uid'] }}')"
+            @endunless
             class="bg-white hover:bg-slate-50"
             
           >
             <td class="px-4 py-2">
               <div class="flex items-center gap-2"> 
-                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4h2v2H7V4zm4 0h2v2h-2V4zM7 9h2v2H7V9zm4 0h2v2h-2V9zM7 14h2v2H7v-2zm4 0h2v2h-2v-2z"/></svg>
+
+                @if($isFirst || $isLast)
+                    <svg class="w-4 h-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1v-8a1 1 0 00-1-1h-1V6a4 4 0 00-4-4z"/>
+                    </svg>
+                @else
+                    <svg class="w-4 h-4 text-nowrap text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4h2v2H7V4zm4 0h2v2h-2V4zM7 9h2v2H7V9zm4 0h2v2h-2V9zM7 14h2v2H7v-2zm4 0h2v2h-2v-2z"/></svg>
+                @endif
+
+               
                 <span class="text-sm text-slate-700">#{{ $row['order'] }}</span>
               </div>
             </td>
@@ -399,6 +525,15 @@
 
 
             </td>
+
+            <!-- Review Period -->
+            <td class="px-4 py-2"> 
+              <span class="text-sm text-slate-800 capitalize">{{ $row['period_value'] }} {{ $row['period_unit'] }}(s)</span> 
+            </td>
+
+
+
+
 
             <!-- Roles -->
             <td class="px-4 py-2">
@@ -438,7 +573,128 @@
               </div>
             </td>
 
-            <td class="px-4 py-2 text-right">
+            <td class="px-4 py-2 text-right flex space-x-2"
+            >
+
+               <button
+                    type="button"
+                    @click="openEdit = true"
+                    class="px-2 py-1 text-sm rounded-md bg-sky-50 text-sky-600 hover:bg-sky-100"
+                >
+                    
+                    Edit
+                </button>
+
+              <!-- ======================== -->
+              <!-- Edit -->
+              <!-- ======================== -->
+              <div
+                 
+                  x-show="openEdit"
+                  x-cloak
+                  x-transition.opacity
+                  @keydown.escape.window="openEdit = false"
+                  @click.self="openEdit = false"
+                  class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                  aria-modal="true" role="dialog"
+              >
+                  <!-- Modal box -->
+                  <div
+                      x-transition
+                      @click.stop
+                      class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+                  >
+                      <!-- Header -->
+                      <div class="flex items-center justify-between border-b bg-sky-50 px-5 py-3">
+                          <h3 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                              <svg class="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24"
+                                  stroke="currentColor" stroke-width="1.5">
+                                  <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M4 4v6h6M20 20v-6h-6M20 4h-6M4 20h6" />
+                              </svg>
+                              Edit Reviewer
+                          </h3>
+                          <button
+                              @click="openEdit = false"
+                              class="text-slate-500 hover:text-slate-700 transition"
+                          >
+                              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                  stroke-width="1.5">
+                                  <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                          </button>
+                      </div>
+
+                      <!-- Body -->
+                      <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                           
+                        <div class=" " >
+                          
+
+                          <x-ui.input
+                            id="{{ $row['row_uid'] }}_period_value"
+                            label="Review Period"
+                            x-model="updated_period_value"
+                            required
+                            placeholder="Review Period"
+                            {{-- help="Use the official title from the submission." --}}
+                            :error="$errors->first('updated_period_value')"
+                            type="number"
+                            min="0"
+                            max="100"
+                            displayTooltip
+                            position="right"
+                            tooltipText="Set the period on how long the review will take"
+                            
+                          />
+                        </div>
+
+
+                        {{-- <div class="col-span-6 md:col-span-2" >
+                          <x-ui.select
+                            id="{{ $row['row_uid'] }}_period_unit"
+                            label="Period Unit"
+                            x-model="updated_period_unit"
+                            placeholder="Select a unit"
+                            :options="$period_unit_options"
+                            :error="$errors->first('updated_period_unit')"
+                            displayTooltip="true"
+                            position="right"
+                            tooltipText="Set the review period unit (day, week, month)"
+                          />
+                        </div> --}}
+
+                           
+                      </div>
+
+                      <!-- Footer -->
+                      <div class="border-t px-5 py-3 flex justify-end gap-2 bg-slate-50">
+                          <button
+                              type="button"
+                              @click="openEdit = false"
+                              class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                          >
+                              Cancel
+                          </button>
+
+                          <button
+                              type="button"
+                              @click="update('{{ $row['row_uid'] }}',updated_period_value,updated_period_unit);openEdit=false"
+                              wire:loading.attr="disabled"
+                              class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition disabled:opacity-50"
+                          >
+                              <svg wire:loading class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"
+                                  stroke="currentColor" stroke-width="1.5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 018-8" />
+                              </svg>
+                              Save
+                          </button>
+                      </div>
+                  </div>
+              </div>
+ 
+
               <button type="button"
                       wire:click="remove('{{ $row['row_uid'] }}', {{ $typeId }})"
                       class="px-2 py-1 text-sm rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100">
@@ -448,7 +704,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="4" class="px-4 py-6 text-sm text-slate-500 text-center">
+            <td colspan="5" class="px-4 py-6 text-sm text-slate-500 text-center">
               No reviewers yet for this document type.
             </td>
           </tr>
@@ -459,7 +715,30 @@
   </div>
 
 
+  
+   <!--  Loaders -->
+         
 
+        {{-- wire:target="save"   --}}
+        <div wire:loading  wire:target="save"
+        
+        >
+            <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+                <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                    <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <div class="text-sm font-medium">
+                        Saving records...
+                    </div>
+                </div>
+            </div>
+
+            
+        </div> 
+
+    <!--  ./ Loaders -->
 
 </div>
 

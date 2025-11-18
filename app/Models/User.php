@@ -228,4 +228,25 @@ class User extends Authenticatable implements MustVerifyEmail
 
 
 
+    public static function generateInitials($name)
+    {
+        // Trim extra spaces
+        $name = trim($name);
+
+        // Split into words
+        $parts = preg_split('/\s+/', $name);
+
+        // If only one word → use first two letters
+        if (count($parts) === 1) {
+            return strtoupper(substr($parts[0], 0, 2));
+        }
+
+        // If multiple words → use first letter of each
+        $initials = collect($parts)->map(
+            fn($part) => strtoupper(substr($part, 0, 1))
+        );
+
+        return $initials->implode('');
+    }
+
 }

@@ -95,6 +95,38 @@ new class extends Component {
         return true;
     }
 
+    /**
+     * Check if the user does NOT have any of the given permissions.
+     *
+     * @param  array  $mods  Array of permission names to disallow
+     * @param  bool   $includeRolePermissions  true = include permissions inherited from roles
+     * @return bool
+     */
+    protected function mustNotHavePermissions(array $mods, bool $includeRolePermissions = true): bool
+    {
+        $u = $this->user();
+        if (! $u) return false;
+
+        if (empty($mods)) return true; // no permissions specified = always allowed
+
+        // Get user's permissions (names)
+        $userPermissions = $includeRolePermissions
+            ? $u->getAllPermissions()->pluck('name')->unique()->values()->all()
+            : $u->permissions()->pluck('name')->unique()->values()->all();
+
+        // Convert to array for simple comparison
+        $userPermissions = array_map('strval', $userPermissions);
+
+        // Check if user has ANY of the forbidden permissions
+        foreach ($mods as $perm) {
+            if (in_array($perm, $userPermissions, true)) {
+                return false; // ❌ user has a forbidden permission
+            }
+        }
+
+        return true; // ✅ user has none of the forbidden permissions
+    }
+
     protected function visibleBy(array $reqs = []): bool
     {
         // Normalize
@@ -103,6 +135,7 @@ new class extends Component {
 
         $rolesAny        = $reqs['roles_any']        ?? [];
         $rolesAll        = $reqs['roles_all']        ?? [];
+        $mustNotHavePermissions = $reqs['must_not_have_permissions']  ?? [];
         $permsAny        = $reqs['permissions_any']  ?? [];
         $permsAll        = $reqs['permissions_all']  ?? [];
         $modsAny         = $reqs['modules_any']      ?? [];
@@ -113,6 +146,7 @@ new class extends Component {
             $this->passAnyRole($requireAnyRole) &&
             $this->passRolesAny($rolesAny) &&
             $this->passRolesAll($rolesAll) &&
+            $this->mustNotHavePermissions($mustNotHavePermissions) &&
             $this->passPermsAny($permsAny) &&
             $this->passPermsAll($permsAll) &&
             $this->passModulesAny($modsAny) &&
@@ -365,15 +399,25 @@ new class extends Component {
                                 'review.index',
                             ],
                             'children' => [
+                                 
+
                                 [
                                     'label' => 'All Projects', 
                                     'route' => 'project.index.all',    
                                     'auth' => true, 
                                     'require' => [ 
-                                        'permissions_any' => [
-                                            'system access global admin', 
-                                            'project list view all',        // module: Project All Display
-                                        ],
+                                        // 'permissions_any' => [
+                                        //     'system access global admin', 
+                                        //     'project list view all',        // module: Project All Display
+                                        // ],
+
+                                         // for admin and global admin only
+                                        'must_not_have_permissions' => [
+                                            'system access reviewer',
+                                            // 'system access global admin', 
+                                            // 'system access admin',
+                                            'system access user',
+                                        ]
                                     ],
                                     'count' => Project::countProjects('project.index.all') ?? 0, // shows 0 if none
                                 ],
@@ -382,10 +426,19 @@ new class extends Component {
                                     'route' => 'project.index.all.no-drafts',    
                                     'auth' => true,
                                     'require' => [ 
-                                        'permissions_any' => [
-                                            // 'system access global admin', 
-                                            'system access reviewer',      // module: Project All Display
-                                        ],
+                                        // 'permissions_any' => [
+                                        //     // 'system access global admin', 
+                                        //     'system access reviewer',      // module: Project All Display
+                                        // ],
+
+                                        // for reviewer only
+                                        'must_not_have_permissions' => [
+                                            // 'system access reviewer',
+                                            'system access global admin', 
+                                            'system access admin',
+                                            'system access user',
+                                        ]
+
                                     ],
                                     'count' => Project::countProjects('project.index.all.no-drafts') ?? 0, // shows 0 if none
                                     
@@ -456,6 +509,23 @@ new class extends Component {
                                     'require' => [ 
                                         'permissions_any' => [
                                             'system access global admin', 
+                                            
+                                            'review list view',             // module: Review
+                                        ],
+                                    ],
+                                    
+                                    
+                                ],
+
+
+                                [
+                                    'label' => 'Re-review Requests', 
+                                    'route' => 're-review.index',    
+                                    'auth' => true,
+                                    'require' => [ 
+                                        'permissions_any' => [
+                                            'system access global admin', 
+                                            'system access admin', 
                                             
                                             'review list view',             // module: Review
                                         ],
@@ -1078,6 +1148,19 @@ new class extends Component {
 
                         ],
 
+                        [
+                            'label' => 'Re-Review', 
+                            'route' => 'test.review.re_review', // make sure this route exists
+                            'patterns' => ['test.review.re_review'],
+                            'require' => [  // requirement to show the heading
+                                'auth' => true,
+                                'permissions_any' => [
+                                    'system access global admin', 
+                                ], 
+                            ],
+
+                        ],
+
 
                         [
                             'label' => 'Attachments', 
@@ -1092,8 +1175,22 @@ new class extends Component {
 
                         ],
 
-                        
 
+                        [
+                            'label' => 'Signature', 
+                            'route' => 'test.review.digital_signature', // make sure this route exists
+                            'patterns' => ['test.review.digital_signature'],
+                            'require' => [  // requirement to show the heading
+                                'auth' => true,
+                                'permissions_any' => [
+                                    'system access global admin', 
+                                ], 
+                            ],
+
+                        ],
+
+                        
+            
 
                         
 

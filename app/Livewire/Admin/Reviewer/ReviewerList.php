@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reviewer;
 
+use App\Enums\PeriodUnit;
 use App\Models\User;
 use App\Models\Review;
 use App\Models\Project;
@@ -68,8 +69,20 @@ class ReviewerList extends Component
     public array $options = [];         // options [ actually this is the array that stores the user records that are options ]
 
 
+    /** Array of period unit options */
+    /** @var array<int,int> */
+    public array $period_unit_options = [];         // period_unit_options [ options for the period ]
+
+    
+    public $period_unit = "day";
+    public $period_value = 0;
+
+
     public function mount()
     {
+        
+
+
         // Load document types
         // $this->documentTypes = DocumentType::orderBy('name')->get(['id','name'])->toArray();
         // $this->documentTypes = [
@@ -78,33 +91,31 @@ class ReviewerList extends Component
         //     ['id' => 3, 'name' => 'Photos'],
         // ];
 
-        $this->documentTypes = DocumentType::orderBy('order','asc') // document types 
-            // ->orderBy('order','asc')
-            ->get(['id', 'name'])
-            ->toArray();
+       
+        $this->documentTypes = collect(DocumentType::orderBy('order','asc')->get())
+                ->mapWithKeys(fn ($doc) => [$doc->id => $doc->name])
+                ->toArray();
+
+        $this->period_unit_options = collect(PeriodUnit::cases())
+                ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
+                ->toArray();
+
+        
+
+        // dd($this->period_unit_options);
 
         // dd($this->documentTypes);
-        /**
-         * 
-            array:3 [▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:72
-                0 => array:2 [▼
-                    "id" => 57
-                    "name" => "Final Report"
-                ]
-                1 => array:2 [▼
-                    "id" => 66
-                    "name" => "HAAB/HAER"
-                ]
-                2 => array:2 [▼
-                    "id" => 67
-                    "name" => "Inadvertant"
-                ]
-            ]
-         */
+         
 
 
         // Set default current type
-        $this->currentTypeId = $this->documentTypes[0]['id'] ?? null;       // the first document on the array will be the default current document 
+        $this->currentTypeId = DocumentType::orderBy('order','asc')->first()->id ?? null;       // the first document on the array will be the default current document 
+
+        if(request()->has('document_type_id')){
+            $this->currentTypeId = request()->get('document_type_id');
+            
+        }
+
 
         // Pull users + their roles in one go (no N+1)
         $users = User::select('id','name')
@@ -120,18 +131,8 @@ class ReviewerList extends Component
             'system access admin', 
             'system access reviewer'
         ]; // set the permissions that the user must have atleast one of it 
-
-        $this->options = User::select('id','name')
-            ->with('roles:id,name')
-            ->permission($perms) // <- Spatie scope: matches direct perms OR via roles
-            ->orderBy('name')
-            ->get()
-            ->map(fn($u) => [
-                'id'    => (int) $u->id,
-                'name'  => $u->name,
-                'roles' => $u->getRoleNames()->toArray(), // ['admin','reviewer'] or []
-            ])
-            ->toArray();
+        
+ 
 
         // dd($this->options);
 
@@ -141,8 +142,8 @@ class ReviewerList extends Component
         // Example options (replace with DB)
         
          
-        foreach ($this->documentTypes as $t) {
-            $typeId = (int) $t['id']; 
+        foreach ($this->documentTypes as $key => $label) {
+            $typeId = (int) $key; 
 
             // enable this if you want to change the options [users] and make it different in every document type 
             // Map to the structure Alpine expects
@@ -184,7 +185,10 @@ class ReviewerList extends Component
                             'name'      => $user->name ?: null,
                             // ✅ Spatie role names (array of strings)
                             'roles'     => $user->getRoleNames()->values()->all(),
-                            'order'     => ++$order,
+                            'order'     => ++$order, 
+                            'period_value'     => $reviewer->period_value,
+                            'period_unit'      => $reviewer->period_unit,
+
                         ];
                     } else {
                         // OPEN SLOT (no user yet)
@@ -197,93 +201,233 @@ class ReviewerList extends Component
                             // Open slot has no roles until claimed
                             'roles'     => [],
                             'order'     => ++$order,
+                            'period_value'     => $reviewer->period_value,
+                            'period_unit'      => $reviewer->period_unit,
+
                         ];
                     }
                 }
             }
 
             $this->assignedByType[$typeId] = $assigned;
-
-
-
-
+ 
         }
+
+
+
+        if(count($this->assignedByType[$this->currentTypeId]) == 1){
+            $perms = [
+                'system access admin', 
+                 
+            ]; // set the permissions that the user must have atleast one of it 
+         
+        }
+
+             
+
+        $this->options = User::select('id','name')
+            ->with('roles:id,name')
+            ->permission($perms) // <- Spatie scope: matches direct perms OR via roles
+            ->orderBy('name')
+            ->get()
+            ->map(fn($u) => [
+                'id'    => (int) $u->id,
+                'name'  => $u->name,
+                'roles' => $u->getRoleNames()->toArray(), // ['admin','reviewer'] or []
+            ])
+            ->toArray();
+
+
          
 
         // If editing existing data, prefill $this->assignedByType[...] with rows including row_uid + order.
     }
 
     /** Add selected users N times (N = repeatByType[currentType]) */
+
+    
+    // public function addSelected(): void
+    // {
+
+    //     $this->validate([
+    //         'selectedByType' => 'required|array|min:1',
+    //         'period_unit' => 'required',
+    //         'period_value' => 'required'
+    //     ],[
+            
+    //         'period_unit.required' => 'Please select a unit',
+    //         'period_value.required' => 'Please enter a period'
+    //     ]);
+
+    //     // dd($this->all());
+
+    //     $typeId = (int) ($this->currentTypeId ?? 0);        // get the current typeId
+    //     if (!$typeId) return;       // if it is not set, return nothing
+
+    //     $selected = collect($this->selectedByType[$typeId] ?? [])
+    //         ->map(fn($id) => (int) $id)
+    //         ->filter()
+    //         ->values();
+
+    //     // dd($selected);
+    //     /**
+    //         Illuminate\Support\Collection {#1806 ▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:164
+    //             #items: array:2 [▼
+    //                 0 => 71
+    //                 1 => 32
+    //             ]
+    //             #escapeWhenCastingToString: false
+    //         }
+    //      */
+
+
+    //     if ($selected->isEmpty()) return;       // check if there is nothing selected, to stop the function and return nothing if empty
+
+    //     $repeat = max(1, (int) ($this->repeatByType[$typeId] ?? 1));        // sets how many times it will be repeatedly added to the assigned list 
+    //     $assigned = $this->assignedByType[$typeId] ?? [];       // list of assigned based on the selected current typeID
+    //     $order = empty($assigned) ? 0 : max(array_column($assigned, 'order'));      // order in which the option [user] selected will be added to the assigned array 
+
+    //     // $options = collect($this->optionsByType[$typeId] ?? []);
+    //     $options = collect($this->options ?? []);
+    //     // dd($this->options);
+
+    //     // dd($selected);
+    //     /**
+    //         Illuminate\Support\Collection {#1806 ▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:185
+    //             #items: array:2 [▼
+    //                 0 => 71
+    //                 1 => 10
+    //             ]
+    //             #escapeWhenCastingToString: false
+    //         } 
+    //      */
+
+    //     foreach ($selected as $userId) {
+    //         $user = $options->firstWhere('id', $userId);
+    //         if (!$user) continue;
+
+    //         for ($i = 0; $i < $repeat; $i++) {
+    //             $assigned[] = [
+    //                 'row_uid' => (string) Str::uuid(),   // unique slot id 
+
+    //                 'slot_type' => 'person',              // explicit: this row is a person (not open slot)
+    //                 'slot_role'      => null,    // optional: intended role for slot_type = open
+    //                 'user_id'   => (int) $user['id'],     // ✅ use user_id to match the table’s Alpine lookup
+    //                 'name'      => $user['name'],
+    //                 // optional convenience copy (ok to remove and rely on rolesFor(user_id))
+    //                 'roles'     => $user['roles'] ?? [],
+    //                 'order'     => ++$order,
+    //                 'period_value' => $this->period_value,
+    //                 'period_unit' => $this->period_unit,
+
+    //             ];
+    //         }
+    //     }
+
+    //     $this->assignedByType[$typeId] = $assigned;     // add to the master list of assigned options [users] per type 
+    //     $this->selectedByType[$typeId] = [];       // clear chips
+    //     $this->repeatByType[$typeId]   = 1;        // reset to 1 (optional)
+    //     $this->period_unit = null;
+    //     $this->period_value = 0;
+
+    //     // dd($assigned);
+    // }
+
+
+    /** Add selected users N times (N = repeatByType[currentType]) */
     public function addSelected(): void
     {
-        $typeId = (int) ($this->currentTypeId ?? 0);        // get the current typeId
-        if (!$typeId) return;       // if it is not set, return nothing
 
+        $this->period_unit = "day";
+        $this->validate([
+            'selectedByType' => 'required|array|min:1',
+            'period_unit'    => 'required',
+            'period_value' => 'required|integer|min:1',
+        ],[
+            'period_unit.required'  => 'Please select a unit',
+            'period_value.required' => 'Please enter a period',
+        ]);
+
+        $typeId = (int) ($this->currentTypeId ?? 0);
+        if (!$typeId) return;
+
+        // Selected user IDs for this type
         $selected = collect($this->selectedByType[$typeId] ?? [])
             ->map(fn($id) => (int) $id)
             ->filter()
             ->values();
 
-        // dd($selected);
-        /**
-            Illuminate\Support\Collection {#1806 ▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:164
-                #items: array:2 [▼
-                    0 => 71
-                    1 => 32
-                ]
-                #escapeWhenCastingToString: false
-            }
-         */
+        if ($selected->isEmpty()) return;
 
+        $repeat   = max(1, (int) ($this->repeatByType[$typeId] ?? 1));
+        $assigned = $this->assignedByType[$typeId] ?? [];
 
-        if ($selected->isEmpty()) return;       // check if there is nothing selected, to stop the function and return nothing if empty
+        // Current max order
+        $order = empty($assigned) ? 0 : max(array_column($assigned, 'order'));
 
-        $repeat = max(1, (int) ($this->repeatByType[$typeId] ?? 1));        // sets how many times it will be repeatedly added to the assigned list 
-        $assigned = $this->assignedByType[$typeId] ?? [];       // list of assigned based on the selected current typeID
-        $order = empty($assigned) ? 0 : max(array_column($assigned, 'order'));      // order in which the option [user] selected will be added to the assigned array 
-
-        // $options = collect($this->optionsByType[$typeId] ?? []);
+        // Options (user list)
         $options = collect($this->options ?? []);
-        // dd($this->options);
 
-        // dd($selected);
-        /**
-            Illuminate\Support\Collection {#1806 ▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:185
-                #items: array:2 [▼
-                    0 => 71
-                    1 => 10
-                ]
-                #escapeWhenCastingToString: false
-            } 
-         */
+        // Collect all new rows here first
+        $newRows = [];
 
         foreach ($selected as $userId) {
             $user = $options->firstWhere('id', $userId);
             if (!$user) continue;
 
             for ($i = 0; $i < $repeat; $i++) {
-                $assigned[] = [
-                    'row_uid' => (string) Str::uuid(),   // unique slot id 
+                $newRows[] = [
+                    'row_uid'      => (string) Str::uuid(),   // unique slot id
 
-                    'slot_type' => 'person',              // explicit: this row is a person (not open slot)
-                    'slot_role'      => null,    // optional: intended role for slot_type = open
-                    'user_id'   => (int) $user['id'],     // ✅ use user_id to match the table’s Alpine lookup
-                    'name'      => $user['name'],
-                    // optional convenience copy (ok to remove and rely on rolesFor(user_id))
-                    'roles'     => $user['roles'] ?? [],
-                    'order'     => ++$order,
-
+                    'slot_type'    => 'person',              // explicit: this row is a person (not open slot)
+                    'slot_role'    => null,
+                    'user_id'      => (int) $user['id'],
+                    'name'         => $user['name'],
+                    'roles'        => $user['roles'] ?? [],
+                    'order'        => ++$order,
+                    'period_value' => $this->period_value,
+                    'period_unit'  => $this->period_unit,
                 ];
             }
         }
 
-        $this->assignedByType[$typeId] = $assigned;     // add to the master list of assigned options [users] per type 
-        $this->selectedByType[$typeId] = [];       // clear chips
-        $this->repeatByType[$typeId]   = 1;        // reset to 1 (optional)
+        // If nothing valid was built, stop
+        if (empty($newRows)) {
+            return;
+        }
 
+        /**
+         * Insert as SECOND TO LAST if there are already 2+ items
+         * - If 0 or 1 item: just append
+         * - If 2+ items: insert before last
+         */
+        if (count($assigned) <= 1) {
+            // Nothing to protect at the end → normal append
+            $assigned = array_merge($assigned, $newRows);
+        } else {
+            // Remove the last row temporarily
+            $lastRow  = array_pop($assigned);
 
-        // dd($assigned);
+            // Append new rows
+            $assigned = array_merge($assigned, $newRows);
+
+            // Put last row back
+            $assigned[] = $lastRow;
+        }
+
+        // Save back
+        $this->assignedByType[$typeId] = $assigned;
+
+        // Reset helpers
+        $this->selectedByType[$typeId] = [];
+        $this->repeatByType[$typeId]   = 1;
+        $this->period_unit             = null;
+        $this->period_value            = 0;
     }
+
+
+
+
 
     /** Remove a single occurrence by row UID */
     public function remove(string $rowUid, int $typeId): void       // gets the rowUid and the type 
@@ -347,47 +491,176 @@ class ReviewerList extends Component
     public array $openRoleByType = [];    // [$typeId => 'admin'|'reviewer']
     public array $openRepeatByType = [];  // [$typeId => 1..20]
 
+    // public function addOpenSlots($custom_role = "reviewer"): void
+    // {
+
+    //     $this->validate([ 
+    //         'period_unit' => 'required',
+    //         'period_value' => 'required'
+    //     ],[
+            
+    //         'period_unit.required' => 'Please select a unit',
+    //         'period_value.required' => 'Please enter a period'
+    //     ]);
+
+
+    //     $typeId = (int) ($this->currentTypeId ?? 0);
+    //     if (!$typeId) return;
+
+    //     if(!empty($custom_role)){
+    //         $role   = $custom_role;
+    //     }else{
+    //         $role   = $this->openRoleByType[$typeId]  ?? 'reviewer'; 
+    //     } 
+
+    //     $repeat = max(1, (int) ($this->openRepeatByType[$typeId] ?? 1));
+
+    //     $assigned = $this->assignedByType[$typeId] ?? [];
+    //     $order = empty($assigned) ? 0 : max(array_column($assigned, 'order'));
+
+    //     for ($i = 0; $i < $repeat; $i++) {
+    //         $assigned[] = [
+    //             'row_uid'    => (string) Str::uuid(),
+    //             'slot_type'  => 'open',
+    //             'slot_role'       => $role,
+    //             'user_id'    => null,
+    //             // 'claimed_at' => null,
+    //             'order'      => ++$order,
+    //             'period_unit' => $this->period_unit,
+    //             'period_value' => $this->period_value,
+                
+    //         ];
+    //     }
+
+
+ 
+    //     $this->assignedByType[$typeId] = $assigned;
+    //     // optional reset
+    //     $this->openRepeatByType[$typeId] = 1;
+
+    //     $this->period_unit = null;
+    //     $this->period_value = 0;
+
+    // }
+
+
+
+
+
+
     public function addOpenSlots($custom_role = "reviewer"): void
     {
+        $this->period_unit = "day";
+        $this->validate([ 
+            'period_unit' => 'required',
+            'period_value' => 'required|integer|min:1',
+        ],[
+            'period_unit.required' => 'Please select a unit',
+            'period_value.required' => 'Please enter a period'
+        ]);
+
         $typeId = (int) ($this->currentTypeId ?? 0);
         if (!$typeId) return;
 
-        if(!empty($custom_role)){
-            $role   = $custom_role;
-        }else{
-            $role   = $this->openRoleByType[$typeId]  ?? 'reviewer'; 
-        } 
+        $role = !empty($custom_role)
+            ? $custom_role
+            : ($this->openRoleByType[$typeId] ?? 'reviewer');
+
+        // GET CURRENT ASSIGNED SLOTS
+        $assigned = $this->assignedByType[$typeId] ?? [];
+
+        // -----------------------------------------
+        // 🔍 CHECK THE SECOND-TO-THE-LAST ITEM
+        // -----------------------------------------
+        if (count($assigned) >= 2) {
+
+            // index of second-to-last item
+            $secondToLastIndex = count($assigned) - 2;
+            $secondToLastItem  = $assigned[$secondToLastIndex];
+
+            // 👉 INSERT YOUR CUSTOM CONDITION HERE
+            // Example:
+            if ($secondToLastItem['slot_type'] === 'open') {
+                // do something...
+                // e.g., return; or modify values
+            }
+        }
+        // -----------------------------------------
 
         $repeat = max(1, (int) ($this->openRepeatByType[$typeId] ?? 1));
-
-        $assigned = $this->assignedByType[$typeId] ?? [];
         $order = empty($assigned) ? 0 : max(array_column($assigned, 'order'));
 
+        // ADD NEW SLOTS
         for ($i = 0; $i < $repeat; $i++) {
             $assigned[] = [
-                'row_uid'    => (string) Str::uuid(),
-                'slot_type'  => 'open',
-                'slot_role'       => $role,
-                'user_id'    => null,
-                // 'claimed_at' => null,
-                'order'      => ++$order,
-
-
-
+                'row_uid'       => (string) Str::uuid(),
+                'slot_type'     => 'open',
+                'slot_role'     => $role,
+                'user_id'       => null,
+                'order'         => ++$order,
+                'period_unit'   => $this->period_unit,
+                'period_value'  => $this->period_value,
             ];
         }
 
-
-
-
-
         $this->assignedByType[$typeId] = $assigned;
-        // optional reset
+
+        // reset fields
         $this->openRepeatByType[$typeId] = 1;
+        $this->period_unit   = null;
+        $this->period_value  = 0;
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+    // updating reviewer record
+     
+    // @this.update({{ $typeId }}, targetRowId,period_value,period_unit);
+    public function update_row(int $typeId, string $rowUid, int $period_value, string $period_unit){
+
+        $typeId = (int) $typeId; // make sure typeId is an integer
     
+         
+        $typeId = (int) $typeId; 
+
+        $map = collect($this->assignedByType[$typeId] ?? [])->keyBy('row_uid');
+        $updated = [];
+        $i = 1;
+        
+        // dd("typeId: ".$typeId." || rowUid: ".$rowUid. " || period_value: ". $period_value. " || period_unit: ". $period_unit);
+        // dd($map);
+
+        // keep any rows not present in $rowUids at the end (safety)
+        foreach ($map as $uid => $row) {
+
+            if ($map->has($uid) && $row['row_uid'] == $rowUid ) {
+                $row = $map[$rowUid];
+                $row['period_value'] = $period_value;
+                $row['period_unit'] = $period_unit;
+                $updated[] = $row;
+            }else{
+
+                $updated[] = $row;
+            }
+ 
+        }
+
+         
+        $this->assignedByType[$typeId] = $updated;
+
+    }
+
+
  
     public function save()
     {
@@ -423,6 +696,10 @@ class ReviewerList extends Component
 
                             'slot_type' => $row['slot_type'] ?? 'person' ,              // explicit: this row is a person (not open slot)
                             'slot_role'      => $row['slot_role'] ?? null,    // optional: intended role for slot
+
+                            'period_value'      => $row['period_value'] ?? null,    
+                            'period_unit'      => $row['period_unit'] ?? null,    
+
 
                             'created_by' => Auth::user()->id,
                             'updated_by' => Auth::user()->id,
@@ -543,7 +820,7 @@ class ReviewerList extends Component
 
         Alert::success('Success', 'Reviewer list saved successfully');
         return redirect()->route('reviewer.index', [
-            'document_type_id' => $document_type_id,
+            'document_type_id' => $this->currentTypeId,
             // 'reviewer_type' => $reviewer_type,
         ]);
 

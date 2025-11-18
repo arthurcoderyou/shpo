@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr; 
 use App\Models\ProjectDocument;
 use Illuminate\Support\Facades\Auth;
-use RealRashid\SweetAlert\Facades\Alert;
+use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage; 
-use Illuminate\Support\Arr; 
+use RealRashid\SweetAlert\Facades\Alert;
 
 
 class ProjectDocumentController extends Controller
@@ -270,6 +271,7 @@ class ProjectDocumentController extends Controller
 
     public function review($project_id, $project_document_id){
         $project = Project::findOrFail($project_id);
+        
 
         // dd($project);
 
@@ -278,13 +280,27 @@ class ProjectDocumentController extends Controller
   
         
         $project_document = ProjectDocument::findOrFail($project_document_id); 
+        
+        $review_accepted = false;
+        $review_accepted = ProjectDocumentHelpers::verifyAndClearReviewSession($project_document->id, $user->id);
+
+
 
         $current_reviewer = $project_document->getCurrentReviewerByProjectDocument();
+
 
         if(!empty($current_reviewer)){
             // dd($current_reviewer);
             if( $current_reviewer->slot_type == "open" ){
             
+ 
+
+
+                // restriction to avoid the error for admin that has opened the review and still on the review page without actually clicking and saving himself as the current reviewer
+
+
+ 
+
                 // check if the current project reviewer is an open review
                 if(!empty($current_reviewer) && empty($current_reviewer->user_id) ){
                     // Check if the user has the role "system access global admin" OR the permission "project review"
@@ -299,11 +315,18 @@ class ProjectDocumentController extends Controller
                     } 
                     // dd("Open Review");
 
-        
-                    $current_reviewer->user_id = Auth::user()->id;
-                    $current_reviewer->updated_at = now();
-                    $current_reviewer->updated_by = Auth::user()->id;
-                    $current_reviewer->save();
+                    if($review_accepted){
+
+                        // dd("accepted");
+                         $current_reviewer->user_id = Auth::user()->id;
+                        $current_reviewer->updated_at = now();
+                        $current_reviewer->updated_by = Auth::user()->id;
+                        $current_reviewer->save();
+
+                    }else{
+                        //  dd("not accepted");
+                    }
+                   
 
         
                 }  

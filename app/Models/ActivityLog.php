@@ -53,6 +53,9 @@ class ActivityLog extends Model
         'project_review_id',
         'project_reviewer_id',
         'project_subscriber_id', 
+
+
+        're_review_requests_id',
     ];
 
     protected static function boot()

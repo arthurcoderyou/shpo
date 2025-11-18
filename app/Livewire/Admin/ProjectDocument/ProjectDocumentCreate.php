@@ -36,6 +36,12 @@ class ProjectDocumentCreate extends Component
     public string $description = '';
     public string $federal_agency = ''; 
 
+    public $applicant;
+    public $document_from;
+    public $company;
+
+
+
     public $type;
 
     public $attachments = []; // Attachments 
@@ -199,6 +205,11 @@ class ProjectDocumentCreate extends Component
 
         $this->validate([
             'document_type_id' => 'required',
+            'applicant' => ['string','required'],
+            'document_from' => ['string','required'],
+            'company' => ['string','required'],
+
+
             'attachments' => [
                 function ($attribute, $value, $fail) {
                     if (!empty($this->document_type_id)) {
@@ -210,7 +221,7 @@ class ProjectDocumentCreate extends Component
             ],
 
         ],[
-            'document_type_id.required' => 'Please select a document type',
+            'document_type_id.required' => 'Please select a document',
         ]);
 
 
@@ -293,7 +304,7 @@ class ProjectDocumentCreate extends Component
                     'project_document_id'  => $project_document->id,
                     'filesystem'           => $disk,
                     'original_name'        => $originalName,
-                    'storedName'           => $storedName,      // or 'stored_name' if that’s your column
+                    'stored_name'           => $storedName,      // or 'stored_name' if that’s your column
                     'disk'                 => $disk,
                     'path'                 => $dir,
                     'mime_type'            => $mime,

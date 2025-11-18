@@ -2,6 +2,9 @@
 
 use Livewire\Volt\Component;
 use App\Livewire\Actions\Logout;
+use App\Models\UserDeviceLog;
+use App\Models\ActivityLog;
+use RealRashid\SweetAlert\Facades\Alert;
 
 new class extends Component {
 
@@ -18,6 +21,7 @@ new class extends Component {
         'reviewerCreated' => '$refresh', 
         'reviewerUpdated' => '$refresh',
         'reviewerDeleted' => '$refresh',
+        'notifications-changed' => '$refresh',
     ];
 
     /** @var 'desktop'|'mobile' */
@@ -29,6 +33,8 @@ new class extends Component {
     /** Optional logo src override */
     public ?string $logoSrc = null;
  
+
+    public ?string $show_device_trust_section = '';
 
     /** Display name fallback */
     public ?string $displayName = null;
@@ -45,6 +51,14 @@ new class extends Component {
         $this->showNotifications = $showNotifications;
         $this->logoSrc = $logoSrc ?? asset('images/logo-ghrd.png'); 
         $this->displayName = $displayName ?? (auth()->user()->name ?? 'Guest');
+
+
+        $user_device_log = UserDeviceLog::getUserDeviceLog();
+
+        // Only show the section if the device is NOT trusted
+        $this->show_device_trust_section = !$user_device_log->trusted;
+
+
     }
 
 
@@ -76,6 +90,33 @@ new class extends Component {
     }
 
 
+    public function markDeviceAsTrusted($answer)
+    {
+        $user_device_log = UserDeviceLog::getUserDeviceLog();
+        $user_device_log->trusted = $answer === 'yes';
+        $user_device_log->save();
+
+        // Hide the section after marking the device
+        $this->show_device_trust_section = false;
+
+
+        if($answer === 'yes'){
+            ActivityLog::create([
+                'log_action' => "Deviee trusted by \"".Auth::user()->name."\" ",
+                'log_username' => Auth::user()->name,
+                'created_by' => Auth::user()->id,
+            ]);
+
+            Alert::success('Success','Device trusted successfully');
+            return redirect()->route('dashboard');
+        }
+        
+
+
+
+
+    }
+
 };
 ?>
 
@@ -105,6 +146,21 @@ new class extends Component {
         @endguest
 
         @auth
+
+            @if($show_device_trust_section == true)
+            <x-profile.button 
+                buttonLabel="Trust this device?"
+                buttonAction="markDeviceAsTrusted('yes')"
+
+                confirm="yes"
+                confirmationMessage="Are you sure you want to trust this device? "
+
+                displayTooltip="true"
+                tooltipText="Click to mark this device as trusted for easier sign-in"
+                position="bottom"
+            />
+            @endif
+
             {{-- Notifications (optional) --}}
             @if($showNotifications)
                 <button
@@ -171,4 +227,27 @@ new class extends Component {
             </div>
         @endauth
     </div>
+
+
+
+
+    <div wire:loading  wire:target="markDeviceAsTrusted"
+    
+    >
+        <div class="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center transition-opacity duration-300">
+            <div class="bg-gray-900 text-white px-6 py-5 rounded-xl shadow-xl flex items-center gap-4 animate-pulse w-[320px] max-w-full text-center">
+                <svg class="h-6 w-6 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                <div class="text-sm font-medium">
+                    Updating account...
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+
 </div>

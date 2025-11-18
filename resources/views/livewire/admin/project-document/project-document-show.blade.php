@@ -60,6 +60,7 @@
                     @if(isset($existingFiles) && count($existingFiles) > 0)
                         @php
                             $index = 1;
+                            $revision = count($existingFiles) ?? 1;    
                         @endphp
 
                         @foreach($existingFiles as $date => $project_documents)
@@ -81,7 +82,7 @@
                                         <svg class="hs-accordion-active:block hidden size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M5 12h14"></path>
                                         </svg>
-                                        {{ $date }}
+                                        Revision {{ $revision }}: <span class="text-slate-500 font-monospace">{{ $date }}</span>
                                     </button>
                         
                                     <div id="hs-basic-collapse-{{ $index }}" class="hs-accordion-content 
@@ -94,6 +95,10 @@
                                                     $downloadUrl = route('ftp.download', ['id' => $attachment['id']]);
                                                     // Use the real filename (has extension) for mime check
                                                     $filename = $attachment['attachment'];
+
+
+                                                    $local_url = asset('storage/'.$attachment['path'].'/'.$attachment['stored_name']);
+
                                                 @endphp
                                             
                                                 <div class="dz-flex dz-items-center dz-justify-between dz-gap-2 dz-border dz-rounded dz-border-gray-200 dz-w-full">
@@ -137,14 +142,26 @@
                                                         </button>
 
                                                         @endif
-
+                                                        {{-- - 
                                                         <a href="{{ $downloadUrl }}" 
-                                                        {{-- wire:navigate --}}
+                                                         
                                                         download="{{ $filename }}"
                                                         class="px-3 py-2 text-xs font-medium text-center text-white bg-gray-700 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">
                                                             
                                                             <x-svg.download  class="size-4 shrink-0" />
                                                         </a>
+                                                        --}}
+
+
+                                                        <a href="{{ $local_url }}" 
+                                                         
+                                                        download="{{ $filename }}"
+                                                        class="px-3 py-2 text-xs font-medium text-center text-white bg-gray-700 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">
+                                                            
+                                                            <x-svg.download  class="size-4 shrink-0" />
+                                                        </a>
+
+
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -153,6 +170,8 @@
                                 </div>
                             </div>
                             @php($index++)
+                            @php($revision--)
+                            
                         @endforeach
                 
                     @else

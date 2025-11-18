@@ -54,12 +54,18 @@ class ReviewList extends Component
     public $project_document;
 
     public $project_search;
+
+    public $project_document_search;
     public $next_reviewer;
+
+    public $routeIsIndex = false;
 
     public function mount($id = null, $project_document_id = null){
 
 
         if(request()->routeIs('review.index')){
+
+            $this->routeIsIndex = true;
 
             // $project_id = request()
             // $this->project_id = request()->query('project_id', ''); // Default to empty string if not set
@@ -128,7 +134,7 @@ class ReviewList extends Component
 
 
 
-    public function saerch_project($project_id){
+    public function search_project($project_id){
          
             // dd($this->selected_records);
      
@@ -137,9 +143,54 @@ class ReviewList extends Component
             // $queryParams = [];
             // $queryParams['reservation_ids'] = $reservation_ids;
     
-            return redirect()->route('review.index',['project_id' => $project_id]);
-     
+            // return redirect()->route('review.index',['project_id' => $project_id]);
+
+        
+            $project = Project::find($project_id);
+            $this->project =  $project; 
+            $this->project_id = $project_id;
+
             
+            // empty the project document temporarily
+            $this->project_document = null;
+            
+            $this->project_document_id = null;
+
+
+            // dd($this->project);
+
+            $this->routeIsIndex = true;
+            
+    }
+
+    // search for project document , this is only available when the project is selected
+    public function search_project_document($project_document_id){
+         
+            // dd($this->selected_records);
+     
+    
+            // //create the query to pass
+            // $queryParams = [];
+            // $queryParams['reservation_ids'] = $reservation_ids;
+    
+            // return redirect()->route('review.index',[
+            //     'project_id' => $project_id,
+            //     'project_document_id' => $project_document_id
+            // ]);
+     
+
+
+  
+            $project_document = ProjectDocument::find($project_document_id);
+            $this->project_document =  $project_document;
+            
+            $this->project_document_id = $this->project_document->id;
+
+            $project = Project::find($project_document->project_id);
+            $this->project =  $project; 
+            $this->project_id =  $project->id;
+ 
+            $this->routeIsIndex = true;
     }
 
     
@@ -177,8 +228,7 @@ class ReviewList extends Component
     public function delete($id){
         $review = Review::find($id);
 
-
-
+ 
 
         // if(!empty($project->attachments)){
 
@@ -406,6 +456,37 @@ class ReviewList extends Component
     }
     
 
+    public function getProjectDocumentsProperty(){
+        $query = ProjectDocument::query();
+        $search = $this->project_document_search;
+        $project_id = $this->project_id ?? null;
+        $document_type_id = $this->document_type_id ?? null;
+
+        if(!empty($this->project_document_search)){
+            $query =  $query->applySearchUsingWhereHas($this->project_document_search, $project_id, $document_type_id);
+        }
+        
+
+        if(!empty($project_id)){
+            $query = $query->where('project_id',$this->project_id);
+        }
+
+        if(!empty($document_type_id)){
+            $query = $query->where('document_type_id',$this->document_type_id);
+        }
+
+        return $query->orderBy('updated_at','DESC')
+            ->limit(10)
+            ->get();
+
+
+    }
+
+
+
+
+
+
     
     public function render()
     {
@@ -606,14 +687,17 @@ class ReviewList extends Component
 
 
         }
-        $results =  $results->limit(10)->get();
+        $results =  $results
+            ->orderBy('updated_at','desc')
+            ->limit(10)->get();
 
 
-
+        // dd($this->projectDocuments);
 
         return view('livewire.admin.review.review-list',[
             'reviews' => $reviews,
-            'results' => $results
+            'results' => $results,
+            'project_document_results' => $this->projectDocuments,
         
         ]);
     }

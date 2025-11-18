@@ -107,7 +107,7 @@
         <!-- User Panels -->
         @if (
             Auth::user()->hasPermissionTo('system access global admin') || 
-            Auth::user()->hasPermissionTo('user list view')
+            Auth::user()->hasPermissionTo('system access admin')
             )   
 
              
@@ -143,6 +143,53 @@
                     :iconColor="$iconColor"
                     :iconBg="$iconBg"
                 /> 
+
+            <!-- project documents list view --> 
+            <livewire:dashboard.dashboard-tile.project-document-tile
+                    title="Open Review Project Documents"  
+                    :icon="view('components.icons.projects-total')->render()" 
+                    :route="route('project-document.index',[
+                        'review_status' => 'open_review'
+                    ])" 
+                    reviewStatus="open_review" 
+                    :iconColor="$iconColor"
+                    :iconBg="$iconBg" 
+                />
+
+
+             <!-- project documents list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="All Project Documents"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index')" 
+                        reviewStatus="all" 
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+    
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="All Project Documents with Required Changes"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index',[
+                            'review_status' => 'changes_requested'
+                        ])" 
+                        reviewStatus="changes_requested"  
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+      
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="Pending Review"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index',[
+                            'review_status' => 'pending'
+                        ])" 
+                        reviewStatus="pending"  
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
  
         @endif
         <!-- ./ User Panels -->
@@ -199,12 +246,62 @@
             @endif
 
 
+            @if(Auth::user()->hasPermissionTo('system access reviewer'))
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-tile
+                        title="All Projects"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project.index.all.no-drafts')" 
+                        routeKey="project.index.all.no-drafts" 
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+
+                <!-- project documents list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="All Project Documents"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index')" 
+                        reviewStatus="all" 
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+    
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="All Project Documents with Required Changes"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index',[
+                            'review_status' => 'changes_requested'
+                        ])" 
+                        reviewStatus="changes_requested"  
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+      
+                <!-- project list view --> 
+                <livewire:dashboard.dashboard-tile.project-document-tile
+                        title="Pending Review"  
+                        :icon="view('components.icons.projects-total')->render()" 
+                        :route="route('project-document.index',[
+                            'review_status' => 'pending'
+                        ])" 
+                        reviewStatus="pending"  
+                        :iconColor="$iconColor"
+                        :iconBg="$iconBg" 
+                    />
+    
+    
+            @endif
+
+
 
 
 
             <!-- only one needs to be shown on this portion -->
                 <!-- project list view all  -->
-                @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view all') )    
+                @if (Auth::user()->hasPermissionTo('system access global admin') 
+                || Auth::user()->hasPermissionTo('project list view all') )    
 
                     
                     <livewire:dashboard.dashboard-tile.project-tile
@@ -220,7 +317,11 @@
                 {{-- @endif --}}
 
                 <!-- project list view all no drafts  -->
-                @elseif (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view all no drafts') )   
+                @elseif (Auth::user()->hasPermissionTo('system access global admin')  ||
+                // || Auth::user()->hasPermissionTo('project list view all no drafts') 
+                Auth::user()->hasPermissionTo('system access admin') 
+                
+                )   
 
                     
                     <livewire:dashboard.dashboard-tile.project-tile
@@ -236,9 +337,12 @@
                 @endif
             <!-- ./ only one needs to be shown on this portion -->
 
-
+            {{-- - 
             <!-- project list view update pending all  -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view update pending all') )    
+            @if (Auth::user()->hasPermissionTo('system access global admin') ||
+            Auth::user()->hasPermissionTo('system access admin') 
+            // || Auth::user()->hasPermissionTo('project list view update pending all') 
+            )    
 
                 
                 <livewire:dashboard.dashboard-tile.project-tile
@@ -254,7 +358,10 @@
             @endif
 
             <!-- project list view review pending all  -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view review pending all') )    
+            @if (Auth::user()->hasPermissionTo('system access global admin') || 
+            Auth::user()->hasPermissionTo('system access admin') 
+            //  || Auth::user()->hasPermissionTo('project list view review pending all')
+              )    
 
                 
                 <livewire:dashboard.dashboard-tile.project-tile
@@ -275,7 +382,10 @@
             
 
             <!-- project list view update pending all linked -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view update pending all linked') )    
+            @if (Auth::user()->hasPermissionTo('system access global admin') || 
+            // Auth::user()->hasPermissionTo('project list view update pending all linked') 
+            Auth::user()->hasPermissionTo('system access admin')            
+            )    
 
                 
                 <livewire:dashboard.dashboard-tile.project-tile
@@ -291,7 +401,10 @@
             @endif
 
             <!-- project list view review pending all  -->
-            @if (Auth::user()->hasPermissionTo('system access global admin') || Auth::user()->hasPermissionTo('project list view review pending all linked') )    
+            @if (Auth::user()->hasPermissionTo('system access global admin') || 
+            Auth::user()->hasPermissionTo('system access admin')
+            // Auth::user()->hasPermissionTo('project list view review pending all linked') 
+            )    
 
                 
                 <livewire:dashboard.dashboard-tile.project-tile
@@ -306,7 +419,7 @@
     
             @endif
             
-
+            --}}
         
 
         <!-- ./ Project Panels -->
@@ -317,7 +430,8 @@
     </div>
     <!-- End Grid --> 
 
-
+    @if(Auth::check() && !Auth::user()->hasPermissionTo('system access user')  )
+    
     <!-- User Report -->
     <div class="relative overflow-hidden" wire:ignore>
         <div class=" mx-auto px-4 sm:px-6 lg:px-8 py-10 ">
@@ -392,6 +506,8 @@
 
     </div>
     <!-- ./User Report -->
+
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -893,7 +1009,7 @@
     </script>
 
 
-
+    @endif
 
 
 </div>

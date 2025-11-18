@@ -12,6 +12,7 @@ class Review extends Model
     use SoftDeletes;
     protected $table = "reviews";
     protected $fillable = [
+        'iteration', // iteration
         'viewed', // true or false
         'project_review',
         'project_id',
@@ -20,12 +21,12 @@ class Review extends Model
         'project_reviewer_id', // project reviewer 
         'review_status',
         
-        # ['pending','approved','rejected','changes_requested']
+        # ['pending','approved','rejected','submitted','re_submitted','changes_requested','reviewed','re_review_requested']
         # 'submitted' is the special review status for users 
         # re_submitted for resubmission
 
         'project_document_status', 
-        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',','changes_requested'
+        # 'draft','submitted','in_review','approved','rejected','completed','cancelled',','changes_requested','reviewed', 're_review_requested'
         'next_reviewer_name',
 
         'admin_review', // means that this is a review from the admin
@@ -40,6 +41,8 @@ class Review extends Model
         'requires_project_update',
         'requires_document_update',
         'requires_attachment_update',
+
+        're_review_requests_id'
     ];
 
 
@@ -199,9 +202,17 @@ class Review extends Model
         return $this->hasMany(ReviewRequireDocumentUpdates::class, 'review_id');
     }
 
-    static public function returnReviewCount($project_reviewer_id){
+    static public function returnReviewCount($project_reviewer_id, $project_document_id = null){
 
-        return Review::where('project_reviewer_id', $project_reviewer_id)->count();
+        $query = Review::where('project_reviewer_id', $project_reviewer_id);
+        
+        if(!empty($project_document_id)){
+            $query = $query->where('project_document_id',$project_document_id);
+
+        }
+        $query = $query->count();
+
+        return $query;
     }
 
 

@@ -46,9 +46,10 @@ class Project extends Model
         'name',
         'description',
         'federal_agency', // this is shown as company
+        # 
         'type', 
-            // - federal project 
-            // - company
+            // - local
+            // - federal
 
         'status',
         # 'draft','submitted','in_review','approved','rejected','completed','cancelled', 'on_que'
@@ -87,7 +88,14 @@ class Project extends Model
         'allotted_review_time_hours',
 
 
-
+        'staff_engineering_data',
+        'staff_initials',
+        'lot_size',
+        'unit_of_size',
+        'site_area_inspection',
+        'burials_discovered_onsite',
+        'certificate_of_approval',
+        'notice_of_violation',
     ];
 
     // Automatically generate the project number
@@ -266,7 +274,25 @@ class Project extends Model
         return $this->hasMany(ProjectReviewer::class, 'project_id', 'id');
     }
 
+    /**
+     * Get all of the ProjectCompany
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function project_companies()
+    {
+        return $this->hasMany(ProjectCompany::class, 'project_id', 'id');
+    }
 
+    /**
+     * Get all of the ProjectFederalAgencies
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function project_federal_agencies()
+    {
+        return $this->hasMany(ProjectFederalAgencies::class, 'project_id', 'id');
+    }
     
 
     public function getProjectReviewersSortByOrder()

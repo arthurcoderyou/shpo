@@ -79,6 +79,26 @@ class ReviewedListener implements ShouldQueue
                 }
                 break;
 
+            case 'reviewed':
+                if ($hasNextUnapproved) {
+                    $statusLabel   = 'Reviewed — Passed to Next Reviewer';
+                    $statusMessage = sprintf(
+                        "Your **%s** on **%s** was reviewed by **%s** and has been **forwarded to the next reviewer**%s. No action is required from you yet.",
+                        $docName,
+                        $projectName,
+                        optional($project_reviewer->user)->name ?? 'Reviewer',
+                        $nextReviewer ? (" (**" . (optional($nextReviewer->user)->name ?? 'Open Reviewer') . "** next)") : ''
+                    );
+                } else {
+                    $statusLabel   = 'Reviewed — Review Complete';
+                    $statusMessage = sprintf(
+                        "Your **%s** on **%s** has been **fully reviewed**. No further action is required.",
+                        $docName,
+                        $projectName
+                    );
+                }
+                break;
+
             case 'rejected':
                 $statusLabel   = 'Rejected';
                 $statusMessage = sprintf(

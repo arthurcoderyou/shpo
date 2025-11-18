@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Admin\Project;
 
+use App\Models\ProjectCompany;
+use App\Models\ProjectFederalAgencies;
 use Carbon\Carbon;
 use App\Models\User;
 // use App\Models\Forum;
@@ -66,10 +68,28 @@ class ProjectCreate extends Component
 
     public $project;
 
+    public $staff_engineering_data;
+    public $staff_initials;
+    public $lot_size;
+    public $unit_of_size;
+    public $site_area_inspection = false;
+    public $burials_discovered_onsite = false;
+    public $certificate_of_approval = false;
+    public $notice_of_violation = false;
+
+
     public $project_types = [
-        'Local',
-        'Federal',
-        'Private'
+        'Local' => 'Local',
+        'Federal' => 'Federal', 
+    ];
+    
+    public $lot_size_unit_options = [
+        "Square meters (sqm)" => "Square meters (sqm)",
+        "Square feet (sqft)" => "Square feet (sqft)",
+        "Hectares (ha)" => "Hectares (ha)",
+        "Acres" => "Acres",
+        "Square kilometers (sqkm)" => "Square kilometers (sqkm)",
+        "Square miles" => "Square miles",
     ];
 
     // public function saveLocation()
@@ -96,6 +116,25 @@ class ProjectCreate extends Component
 
     //settings that checks if the project location is required or not 
     public $project_location_bypass;
+
+
+     /**
+     * Each row: ['name' => string]
+     * @var array<int, array{name:string}>
+     */
+    public array $companies = [
+        ['name' => '']
+    ];
+
+
+    /**
+     * Each row: ['name' => string]
+     * @var array<int, array{name:string}>
+     */
+    public array $federal_agencies = [
+        ['name' => '']
+    ];
+ 
 
     public function mount(){
 
@@ -176,6 +215,8 @@ class ProjectCreate extends Component
   
 
     }
+
+ 
 
 
     // For the Search Subscriber Functionality
@@ -261,7 +302,13 @@ class ProjectCreate extends Component
         $this->validateOnly($fields,[
             'name' => [
                 'required',
-                'string', 
+                'string',
+                Rule::unique('projects', 'name')
+                        ->where(fn ($query) => $query->where('lot_number', $this->lot_number)),
+            ],
+             'lot_number' => [
+                'required',
+                'string',
             ],
 
             // 'latitude' => 'required|numeric',
@@ -325,7 +372,8 @@ class ProjectCreate extends Component
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
             'location.required' => 'Location name must be searched and is required.',
-            'federal_agency.required' => 'Company is required'
+            'federal_agency.required' => 'Company is required',
+            'name.unique' => 'The project title is already registered to that lot number.',
         ]);
 
         $this->updateDueDate();
@@ -370,7 +418,13 @@ class ProjectCreate extends Component
         $this->validate([
             'name' => [
                 'required',
-                'string', 
+                'string',
+                Rule::unique('projects', 'name')
+                        ->where(fn ($query) => $query->where('lot_number', $this->lot_number)),
+            ],
+             'lot_number' => [
+                'required',
+                'string',
             ],
 
             // 'latitude' => 'required|numeric',
@@ -387,12 +441,12 @@ class ProjectCreate extends Component
             //     'string',
             //     Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
             // ],
-            'description' => [
-                'required'
-            ],
-            'federal_agency' => [
-                'required'
-            ],
+            // 'description' => [
+            //     'required'
+            // ],
+            // 'federal_agency' => [
+            //     'required'
+            // ],
 
             'type' => [
                 'required'
@@ -438,11 +492,12 @@ class ProjectCreate extends Component
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
             'location.required' => 'Location name must be searched and is required.', 
-            'federal_agency.required' => 'Company is required' 
+            'federal_agency.required' => 'Company is required' ,
+            'name.unique' => 'The project title is already registered to that lot number.',
         ]);
 
  
- 
+        // dd($this->all());
         //save
         $project = Project::create([
             'name' => $this->name,
@@ -468,9 +523,58 @@ class ProjectCreate extends Component
             'area' => $this->area, 
             'lot_number' => $this->lot_number,
 
+
+            'staff_engineering_data' => $this->staff_engineering_data ?? User::generateInitials(Auth::user()->name), 
+            'staff_initials' => $this->staff_initials ?? User::generateInitials(Auth::user()->name), 
+            'lot_size' => $this->lot_size,
+            'unit_of_size' => $this->unit_of_size,
+            'site_area_inspection' => $this->site_area_inspection,
+            'burials_discovered_onsite' => $this->burials_discovered_onsite,
+            'certificate_of_approval' => $this->certificate_of_approval,
+            'notice_of_violation' => $this->notice_of_violation,
+ 
+
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
         ]); 
+
+
+
+
+        // Save Project Companies 
+         if (!empty($this->companies)) {
+            foreach ($this->companies as $index => $company ) {
+                if(!empty($company['name'])){
+                    ProjectCompany::create([
+                        'project_id' => $project->id,
+                        'name' => $company['name'],
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+
+                }
+
+                
+            }
+        }
+
+        // Save Project Federal Agencies 
+         if (!empty($this->federal_agencies)) {
+            foreach ($this->federal_agencies as $index => $agency ) {
+                if(!empty($company['name'])){
+                    ProjectFederalAgencies::create([
+                        'project_id' => $project->id,
+                        'name' => $agency['name'],
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
+ 
+            }
+        }
+ 
+
+
 
         
  
@@ -485,8 +589,7 @@ class ProjectCreate extends Component
                 ]);
             }
         }
-
-
+ 
 
  
 
@@ -494,296 +597,7 @@ class ProjectCreate extends Component
         return redirect()->route('project.show',['project'=> $project->id]);
     }
 
-
-
-    /** Project Submission restriction  */
-    private function checkProjectRequirements()
-    {
-        $projectTimer = ProjectTimer::first();
-
-        // DocumentTypes that don't have any reviewers
-        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
-
-        // Check if all document types have at least one reviewer
-        $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
-
-        // Check if there are reviewers by type
-        $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
-        $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists();
-
-    
-        return [
-            'response_duration' => !$projectTimer || (
-                !$projectTimer->submitter_response_duration_type ||
-                !$projectTimer->submitter_response_duration ||
-                !$projectTimer->reviewer_response_duration ||
-                !$projectTimer->reviewer_response_duration_type
-            ),
-            'project_submission_times' => !$projectTimer || (
-                !$projectTimer->project_submission_open_time ||
-                !$projectTimer->project_submission_close_time ||
-                !$projectTimer->message_on_open_close_time
-            ),
-            'no_reviewers' => Reviewer::count() === 0,
-            'no_document_types' => DocumentType::count() === 0, // Add a new error condition
-            'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
-            'no_initial_reviewers' => !$hasInitialReviewers,
-            'no_final_reviewers' => !$hasFinalReviewers,
-        ];
-    }
-
-
-    /**Check if project is within open and close hours */
-    private function isProjectSubmissionAllowed()
-    {
-        $projectTimer = ProjectTimer::first();
-
-        if ($projectTimer->project_submission_restrict_by_time) {
-            $currentTime = now();
-            $openTime = $projectTimer->project_submission_open_time;
-            $closeTime = $projectTimer->project_submission_close_time;
-
-            if ($currentTime < $openTime || $currentTime > $closeTime) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    
-
-
-
-    public function submit_project(){
-
-
-        $errors = $this->checkProjectRequirements();
-        $errorMessages = [];
-
-        foreach ($errors as $key => $error) {
-            if ($error) {
-                switch ($key) {
-                    case 'response_duration':
-                        $errorMessages[] = 'Response duration settings are not yet configured. Please wait for the admin to set it up.';
-                        break;
-                    case 'project_submission_times':
-                        $errorMessages[] = 'Project submission times are not set. Please wait for the admin to configure them.';
-                        break;
-                    case 'no_reviewers':
-                        $errorMessages[] = 'No reviewers have been set. Please wait for the admin to assign them.';
-                        break;
-                    case 'no_document_types':
-                        $errorMessages[] = 'Document types have not been added. Please wait for the admin to set them up.';
-                        break;
-                }
-            }
-        }
-
-
-        if (!$this->isProjectSubmissionAllowed()) {
-            $openTime = ProjectTimer::first()->project_submission_open_time;
-            $closeTime = ProjectTimer::first()->project_submission_close_time;
-
-            $errorMessages[] = 'Project submission is currently restricted. Please try again between ' . $openTime->format('h:i A') . ' and ' . $closeTime->format('h:i A');
-        }
-
-
-
-        if (!empty($errorMessages)) {
-            session()->flash('error', implode(' ', $errorMessages));
-            return;
-        }
-
- 
-
-        $this->validate([
-            'name' => [
-                'required',
-                'string', 
-            ],
-
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'location' => 'required|string',
-
-            // 'project_number' => [
-            //     // 'required',
-            //     'string',
-            //     Rule::unique('projects', 'project_number'), // Ensure project_number is unique
-            // ],
-            // 'rc_number' => [
-            //     // 'required',
-            //     'string',
-            //     Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
-            // ],
-            'description' => [
-                'required'
-            ],
-            'federal_agency' => [
-                'required'
-            ],
-
-            'type' => [
-                'required'
-            ],
-
-            'submitter_response_duration' => [
-                'required',
-                'integer', 
-            ],
-            'submitter_response_duration_type' => [
-                'required',
-                'in:day,week,month'
-            ],
-            'reviewer_response_duration' => [
-                'required',
-                'integer', 
-            ],
-            'reviewer_response_duration_type' => [
-                'required',
-                'in:day,week,month'
-            ],
-            'submitter_due_date' => [
-                'required',
-                'date', 
-            ],
-            'reviewer_due_date' => [
-                'required',
-                'date', 
-            ],
-
-        ],[
-            'latitude.required' => 'Location is required.',
-            'longitude.required' => 'Location is required.',
-            'location.required' => 'Location name must be searched and is required.', 
-            'federal_agency.required' => 'Company is required' 
-        ]);
-
-
-        if (!empty($this->projectDocuments)) {
-            $this->validate([
-                'projectDocuments.*.document_type_id' => [
-                    'required', 
-                    'exists:document_types,id', 
-                    function ($attribute, $value, $fail) {
-                        $selectedTypes = array_column($this->projectDocuments, 'document_type_id');
-                        if (count(array_filter($selectedTypes)) !== count(array_unique(array_filter($selectedTypes)))) {
-                            $fail('Each document type must be unique.');
-                        }
-                    },
-                ],
-                'projectDocuments.*.attachments.*' => 'file|mimes:png,jpeg,jpg,pdf,docx,xlsx,csv,txt,zip|max:20480',
-            ], [
-                'projectDocuments.*.document_type_id.required' => 'Please select a document type.',
-                'projectDocuments.*.document_type_id.exists' => 'The selected document type is invalid.',
-                
-                'projectDocuments.*.attachments.*.file' => 'Each attachment must be a valid file.',
-                'projectDocuments.*.attachments.*.mimes' => 'Only PNG, JPEG, JPG, PDF, DOCX, XLSX, CSV, TXT, and ZIP files are allowed.',
-                'projectDocuments.*.attachments.*.max' => 'Each file must not exceed 20MB.',
-            ]);
-        }
-        
-
-        
-
-        //save
-        $project = Project::create([
-            'name' => $this->name,
-            'federal_agency' => $this->federal_agency,
-            'type' => $this->type,
-            'allow_project_submission' => true,
-            'description' => $this->description,
-
-            'project_number' => $this->project_number,
-            // 'rc_number' => $this->rc_number,
-            'submitter_response_duration_type' => $this->submitter_response_duration_type,
-            'submitter_response_duration' => $this->submitter_response_duration,
-            'submitter_due_date' => $this->submitter_due_date,
-            'reviewer_response_duration' => $this->reviewer_response_duration,
-            'reviewer_response_duration_type' => $this->reviewer_response_duration_type,
-            'reviewer_due_date' => $this->reviewer_due_date,
-
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'location' => $this->location,
-
-            'created_by' => Auth::user()->id,
-            'updated_by' => Auth::user()->id,
-        ]);
-
-        
- 
-
-
-        if (!empty($this->projectDocuments) && count($this->projectDocuments) > 0) {
-
-
-            // Save Project Documents
-            foreach ($this->projectDocuments as $doc) {
-
-                if(!empty($doc['document_type_id'])){
-
-                    $projectDocument = ProjectDocument::create([
-                        'project_id' => $project->id,
-                        'document_type_id' => $doc['document_type_id'],
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                    ]);
-
-                    // Handle Attachments (if any)
-                    if (!empty($doc['attachments'])) {
-                        foreach ($doc['attachments'] as $file) {
-                            // Store the original file name
-                            $originalFileName = $file->getClientOriginalName(); 
-
-                            // Generate a unique file name
-                            $fileName = Carbon::now()->timestamp . '-' . $project->id . '-' . $originalFileName . '.' . $file->getClientOriginalExtension();
-
-                            // Move file to storage/app/public/uploads/project_attachments
-                            $filePath = $file->storeAs('uploads/project_attachments', $fileName, 'public');
-
-
-
-                            // Save to ProjectAttachments table
-                            ProjectAttachments::create([
-                                'attachment' => $fileName,  // Stored file name 
-                                'project_id' => $project->id,
-                                'project_document_id' => $projectDocument->id, // Link to Project Document
-                                'created_by' => Auth::id(),
-                                'updated_by' => Auth::id(),
-                            ]);
-                        }
-                    }
-                
-                }
-            }
-        }
-
-        // Save Project Subscribers (if any)
-        if (!empty($this->selectedUsers)) {
-            foreach ($this->selectedUsers as $user) {
-                ProjectSubscriber::create([
-                    'project_id' => $project->id,
-                    'user_id' => $user['id'],
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
-            }
-        }
-
-
-        
-        $project = Project::find($project->id);
-         
-        ProjectHelper::submit_project($project);
-
-
-
-    }
-
-
-
+  
 
     public function render()
     {

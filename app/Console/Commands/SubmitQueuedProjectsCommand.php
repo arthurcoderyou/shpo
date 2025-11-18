@@ -7,8 +7,12 @@ use App\Models\Project;
 use App\Models\ActiveDays;
 use App\Models\ProjectTimer;
 use App\Helpers\ProjectHelper;
+use App\Models\ProjectDocument;
 use Illuminate\Console\Command; 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectDocumentHelpers;
+use App\Helpers\ProjectReviewerHelpers;
 
 class SubmitQueuedProjectsCommand extends Command
 {
@@ -54,7 +58,7 @@ class SubmitQueuedProjectsCommand extends Command
 
 
 
-            $errors = ProjectHelper::checkProjectRequirements();
+            $errors = ProjectDocumentHelpers::checkProjectDocumentRequirements();
             $errorMessages = [];
 
             foreach ($errors as $key => $error) {
@@ -72,9 +76,16 @@ class SubmitQueuedProjectsCommand extends Command
                         case 'no_document_types':
                             $errorMessages[] = 'Document types have not been added.';
                             break;
+                        case 'document_types_missing_reviewers':
+                            // $message = 'Some document types have no project reviewers assigned. Please wait for the administrator to set them up. ';
+                            $message = "Missing reviewers for document/s: ";
+                            $message .= implode(', ', $errors['documentTypesWithoutReviewers']);
+                            $errorMessages[] = $message;
+                            break; 
                     }
                 }
             }
+    
  
 
 
@@ -86,47 +97,63 @@ class SubmitQueuedProjectsCommand extends Command
                 $this->info($message);
 
             }else{
-                $queuedProjects = Project::where('status', 'on_que')->get();
+                $queuedProjectDocuments = ProjectDocument::where('status', 'on_que')->get();
 
-                foreach ($queuedProjects as $project) { 
+                foreach ($queuedProjectDocuments as $project_document) { 
+
+
+                    
+
+    
+                    $submission_type = "initial_submission";
+            
+                    // update project document
+                    ProjectDocumentHelpers::updateDocumentAndAttachments(
+                        $project_document,
+                        "submitted", 
+                        false
+                    );
+                            
+                      
+                    $project = Project::find($project_document->project_id);
                     $project->status = "submitted"; 
                     $project->updated_at = now();
                     $project->last_submitted_at = now(); 
                     $project->save();
 
+ 
 
-                    ProjectHelper::updateDocumentsAndAttachments($project);
-
-
-                    $submission_type = "submission";
-
-
-                    ProjectHelper::setProjectReviewers($project,$submission_type);
+                    // set the project document reviewers
+                    ProjectReviewerHelpers::setProjectDocumentReviewers($project_document, $submission_type);
 
 
-                    $reviewer = $project->getCurrentReviewer(); // get the current reviewer
-
-
-                    ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
-
-                    
-                    
-                    
-
-                    // if($submission_type = "submission")
                     try {
-                        event(new \App\Events\ProjectSubmitted($project, $submission_type,$project->created_by));
+                        event(new \App\Events\ProjectDocument\Submitted(
+                            $project_document->id, 
+                            Auth::user()->id ?? $project->created_by,
+                            true,
+                            true));
                     } catch (\Throwable $e) {
                         // Log the error without interrupting the flow
-                        Log::error('Failed to dispatch ProjectSubmitted event: ' . $e->getMessage(), [
+                        Log::error('Failed to dispatch Submitted event: ' . $e->getMessage(), [
                             'project_id' => $project->id,
                             'trace' => $e->getTraceAsString(),
                         ]);
                     }
 
+
+                    // set the project document reviewers
+                    ProjectReviewerHelpers::sendNotificationOnReviewerListUpdate($project_document);
+
+                    // send notification to the current reviewer
+                    ProjectReviewerHelpers::sendReviewNotificationToReviewer($project_document, $submission_type);
+
+
+                     
+
                 }
 
-                $this->info('Submitted ' . $queuedProjects->count() . ' queued project(s).');
+                $this->info('Submitted ' . $queuedProjectDocuments->count() . ' queued project(s).');
             }
 
 

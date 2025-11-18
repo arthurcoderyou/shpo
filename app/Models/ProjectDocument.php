@@ -14,11 +14,12 @@ class ProjectDocument extends Model
     protected $table = "project_documents";
 
     protected $fillable = [ 
+        
         'project_id',
         'document_type_id',
         'created_by',
         'updated_by',
-        'status', // 'draft','submitted','in_review','approved','rejected','completed','cancelled'
+        'status', // 'draft','submitted','in_review','approved','rejected','completed','cancelled', 'changes_requested','reviewed'
         'last_submitted_at',
         'last_submitted_by',
 
@@ -33,6 +34,24 @@ class ProjectDocument extends Model
         'reviewer_response_duration',
         'reviewer_response_duration_type',
         'reviewer_due_date',
+
+
+        'type',
+
+
+        'permit_number',
+        'application_type', 
+
+
+        'applicant',
+        'document_from',
+        'company',
+        'comments',
+        'findings',
+
+
+
+
     ];
      
     public static function boot()
@@ -221,6 +240,18 @@ class ProjectDocument extends Model
         return $this->hasMany(ProjectDocumentReferences::class, 'referenced_project_document_id', 'id');
     }
 
+
+    /**
+     * Get all of the referenced documents
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function re_review_requests()
+    {
+        return $this->hasMany(ReReviewRequest::class, 'project_document_id', 'id');
+    }
+
+
     // // get the current reviewer based on the project document 
     // public function getCurrentReviewer(): bool
     // { 
@@ -271,6 +302,32 @@ class ProjectDocument extends Model
     }
 
 
+    public function isLastRemainingReviewer($reviewerId)
+    {
+        // Get all reviewers ordered by their sequence or ID
+        $reviewers = $this->project_reviewers()->orderBy('id')->get();
+
+        // Find the last reviewer (highest order or last ID)
+        $lastReviewer = $reviewers->last();
+
+        if (! $lastReviewer) {
+            return false; // No reviewers assigned
+        }
+
+        // Check if this reviewer is the last reviewer
+        $isLast = $lastReviewer->user_id == $reviewerId;
+
+        // Count reviewers who haven't reviewed or approved yet
+        $remaining = $reviewers->filter(function ($r) {
+            return !in_array($r->review_status, ['reviewed', 'approved']);
+        });
+
+        // If this reviewer is the last AND the only remaining unreviewed reviewer
+        return $isLast && $remaining->count() === 1 && $remaining->first()->user_id == $reviewerId;
+    }
+
+
+
 
     static public function resetCurrentProjectDocumentReviewersByDocument($project_document_id){
 
@@ -285,7 +342,12 @@ class ProjectDocument extends Model
 
         // Activate the first eligible reviewer  
         $firstReviewer = ProjectReviewer::where('project_document_id',$project_document->id)
-            ->where('review_status', '!=', 'approved') 
+            // ->where('review_status', '!=', 'approved') 
+            ->where(function ($q){
+                $q->where('review_status','!=','approved')  
+                    ->where('review_status','!=','reviewed');
+            })
+
             ->orderBy('order')
             ->first();
 
@@ -457,6 +519,38 @@ class ProjectDocument extends Model
                         ->orderBy('project_updated_at', 'DESC');
         }
     }
+
+
+    // app/Models/ProjectDocument.php
+
+    public function scopeApplySearchUsingWhereHas(Builder $q, string $search, int $project_id = null, int $document_type_id = null): Builder
+    {
+        $q = $q->where(function ($q) use ($search) {
+                $q->withAggregate('document_type as document_type_name', 'name')
+                    ->where('document_type_name','LIKE','%'.$search.'%')
+                    ->withAggregate('project as project_name', 'name')
+                        ->orWhere('project_name','LIKE','%'.$search.'%'); 
+                        ; 
+            });
+ 
+        if(!empty($project_id)){
+
+            $q = $q->where('project_id',$project_id);
+
+        }
+
+        if(!empty($document_type_id)){
+
+            $q = $q->where('document_type_id',$document_type_id);
+
+        }
+
+
+
+        return $q;
+    }
+
+
 
 
     public function scopeApplySorting(Builder $q, string $sortBy): Builder
@@ -898,6 +992,7 @@ class ProjectDocument extends Model
         return $this->project_reviewers()
             ->where('order', '>', $current->order ?? 0)
             ->where('review_status', '!=', 'approved')
+            ->where('review_status', '!=', 'reviewed')
             ->exists();
     }
 
@@ -909,6 +1004,7 @@ class ProjectDocument extends Model
         if (!$current) {
             return $this->project_reviewers()
                 ->where('review_status', '!=', 'approved')
+                ->where('review_status', '!=', 'reviewed')
                 ->orderBy('order')
                 ->first();
         }
@@ -916,6 +1012,7 @@ class ProjectDocument extends Model
         return $this->project_reviewers()
             ->where('order', '>', $current->order ?? 0)
             ->where('review_status', '!=', 'approved')
+            ->where('review_status', '!=', 'reviewed')
             ->orderBy('order')
             ->first();
     }
@@ -1026,6 +1123,21 @@ class ProjectDocument extends Model
 
         
     }
+
+
+
+
+    
+    public function getLastReview()
+    {
+        return $this->project_reviews()
+            ->whereIn('review_status', ['approved', 'reviewed']) // ✅ filter allowed statuses
+            ->latest('created_at')                        // or 'reviewed_at' if preferred
+            ->first();
+    }
+
+
+
 
 
 }

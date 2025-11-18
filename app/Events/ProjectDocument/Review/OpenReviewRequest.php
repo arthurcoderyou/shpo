@@ -47,4 +47,10 @@ class OpenReviewRequest implements ShouldBroadcast, ShouldQueue
             new PrivateChannel('project-document'),
         ];
     }
+
+
+    public function broadcastAs(){
+        return "reviewed";
+    }
+    
 }

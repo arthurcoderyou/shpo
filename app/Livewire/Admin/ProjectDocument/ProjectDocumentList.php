@@ -115,6 +115,8 @@ class ProjectDocumentList extends Component
 
     public $count_open_review = 0;
 
+    public $count_on_que = 0;
+
 
  
     public function mount($route = 'project.index', $project_id = null, $project_document_id = null ){
@@ -226,6 +228,9 @@ class ProjectDocumentList extends Component
         $this->count_changes_requested = ProjectDocument::countBasedOnReviewStatus('changes_requested', $project_id) ?? 0;
         $this->count_pending = ProjectDocument::countBasedOnReviewStatus('pending', $project_id) ?? 0;
         $this->count_open_review = ProjectDocument::countBasedOnReviewStatus('open_review', $project_id) ?? 0; 
+        $this->count_on_que = ProjectDocument::where('status','on_que')->count();
+
+
 
 
     }
@@ -1058,7 +1063,22 @@ class ProjectDocumentList extends Component
             $docs->where('project_id', $this->project_id);
         }
 
-         
+        $search = $this->search ?? null; // or request('search');
+
+
+        $docs = $docs->when($search, function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                // Search in ProjectDocument fields
+                $q->where('rc_number', 'like', "%{$search}%") ;      // adjust column names
+                // ->orWhere('description', 'like', "%{$search}%");
+
+            // Also search in related Project fields
+            })->orWhereHas('project', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('location', 'like', "%{$search}%")
+                ->orWhere('rc_number', 'like', "%{$search}%");
+            });
+        });
 
 
         if(Auth::user()->hasPermissionTo('system access global admin')){

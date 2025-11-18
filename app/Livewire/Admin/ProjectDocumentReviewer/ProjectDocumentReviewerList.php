@@ -2,11 +2,11 @@
 
 namespace App\Livewire\Admin\ProjectDocumentReviewer;
 
-use App\Helpers\ProjectDocumentHelpers;
 use App\Models\User;
 use App\Models\Review;
 use App\Models\Project;
 use Livewire\Component;
+use App\Enums\PeriodUnit;
 use Illuminate\Support\Str;
 use App\Models\DocumentType;
 use Livewire\WithPagination;
@@ -15,6 +15,8 @@ use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectDocumentHelpers;
+use App\Helpers\ProjectReviewerHelpers;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class ProjectDocumentReviewerList extends Component
@@ -75,6 +77,17 @@ class ProjectDocumentReviewerList extends Component
     /** @var int */
     public int $project_document_id;
 
+
+    /** Array of period unit options */
+    /** @var array<int,int> */
+    public array $period_unit_options = [];         // period_unit_options [ options for the period ]
+
+    
+    public $period_unit = "day";
+    public $period_value = 0;
+
+
+
     public function mount( $project_document_id)
     {
 
@@ -92,41 +105,15 @@ class ProjectDocumentReviewerList extends Component
         //     ['id' => 3, 'name' => 'Photos'],
         // ];
 
+        $this->period_unit_options = collect(PeriodUnit::cases())
+                ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
+                ->toArray();
 
-        // get only the document_type_id values from the relation
-        $documentTypeIds[] = $this->project_document->document_type_id;
-            // ->pluck('document_type_id') 
-            // ->toArray();
-
-
-        $this->documentTypes = DocumentType::whereIn('id', $documentTypeIds)
-            ->orderBy('order','asc') // document types 
-            // ->orderBy('order','asc')
-            ->get(['id', 'name'])
-            ->toArray();
-
-        // dd($this->documentTypes);
-        /**
-         * 
-            array:3 [▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:72
-                0 => array:2 [▼
-                    "id" => 57
-                    "name" => "Final Report"
-                ]
-                1 => array:2 [▼
-                    "id" => 66
-                    "name" => "HAAB/HAER"
-                ]
-                2 => array:2 [▼
-                    "id" => 67
-                    "name" => "Inadvertant"
-                ]
-            ]
-         */
+         
 
 
         // Set default current type
-        $this->currentTypeId = $this->documentTypes[0]['id'] ?? null;       // the first document on the array will be the default current document 
+        $this->currentTypeId = $this->project_document->document_type_id ?? null;       // the first document on the array will be the default current document 
 
         // Pull users + their roles in one go (no N+1)
         $users = User::select('id','name')
@@ -163,24 +150,12 @@ class ProjectDocumentReviewerList extends Component
         // Example options (replace with DB)
         
          
-        foreach ($this->documentTypes as $t) {
-            $typeId = (int) $t['id']; 
+        if (!empty($this->project_document->document_type_id)) {
 
-            // enable this if you want to change the options [users] and make it different in every document type 
-            // Map to the structure Alpine expects
-            /** 
-            $this->optionsByType[$typeId]  = $users->map(function ($u) {
 
-                // dd($u->getRoleNames()->toArray());
+            $typeId = (int) $this->project_document->document_type_id; 
 
-                return [
-                    'id'    => $u->id,
-                    'name'  => $u->name,
-                    'roles' => $u->getRoleNames()->toArray(), // ['admin','reviewer'] or []
-                ];
-            })->toArray();
-            */
-  
+           
 
             $this->selectedByType[$typeId] = [];
             $this->assignedByType[$typeId] = [];
@@ -198,6 +173,7 @@ class ProjectDocumentReviewerList extends Component
 
             $project_reviewers = ProjectReviewer::where('project_id',$this->project->id)
                 ->where('project_document_id', $project_document->id)
+                ->orderBy('order','ASC')
                 ->get();
 
             $documentType = DocumentType::with(['reviewers.user.roles'])->find($typeId);
@@ -209,11 +185,11 @@ class ProjectDocumentReviewerList extends Component
                         // PERSON (claimed / specific user)
                         $user = $reviewer->user;
 
-                        $assigned[] = [
+                        $assigned[] = [ 
                             'row_uid'   => (string) Str::uuid(),
                             'slot_type' => 'person',                         // explicit person row
                             'user_id'   => (int) $user->id,
-                            'project_reviewer_id' => $reviewer->id,
+                            'project_reviewer_id' => $reviewer->id, // notes the project reviewer id 
                             'name'      => $user->name ?: null,
                             // ✅ Spatie role names (array of strings)
                             'roles'     => $user->getRoleNames()->values()->all(),
@@ -221,6 +197,9 @@ class ProjectDocumentReviewerList extends Component
 
                             'status'     => $reviewer->status,
                             'review_status'     => $reviewer->review_status,
+
+                            'period_value' => $reviewer->period_value,
+                            'period_unit' => $reviewer->period_unit,
 
                         ];
                     } else {
@@ -230,7 +209,7 @@ class ProjectDocumentReviewerList extends Component
                             'slot_type' => 'open',                           // explicit open slot
                             'slot_role'      => $reviewer->slot_role ?? 'reviewer',    // optional: intended role for slot
                             'user_id'   => null,
-                            'project_reviewer_id' => $reviewer->id,
+                            'project_reviewer_id' => $reviewer->id, // notes the project reviewer id 
                             'name'      => null,
                             // Open slot has no roles until claimed
                             'roles'     => [],
@@ -238,6 +217,9 @@ class ProjectDocumentReviewerList extends Component
 
                             'status'     => $reviewer->status,
                             'review_status'     => $reviewer->review_status,
+
+                            'period_value' => $reviewer->period_value,
+                            'period_unit' => $reviewer->period_unit,
 
                         ];
                     }
@@ -258,6 +240,17 @@ class ProjectDocumentReviewerList extends Component
     /** Add selected users N times (N = repeatByType[currentType]) */
     public function addSelected(): void
     {
+
+        $this->validate([
+            'selectedByType' => 'required|array|min:1',
+            'period_unit' => 'required',
+            'period_value' => 'required'
+        ],[
+            
+            'period_unit.required' => 'Please select a unit',
+            'period_value.required' => 'Please enter a period'
+        ]);
+
         $typeId = (int) ($this->currentTypeId ?? 0);        // get the current typeId
         if (!$typeId) return;       // if it is not set, return nothing
 
@@ -319,6 +312,9 @@ class ProjectDocumentReviewerList extends Component
                     'status'     => false,
                     'review_status'     => 'pending',
 
+                    'period_value' => $this->period_value,
+                    'period_unit' => $this->period_unit,
+
                 ];
             }
         }
@@ -327,7 +323,8 @@ class ProjectDocumentReviewerList extends Component
         $this->selectedByType[$typeId] = [];       // clear chips
         $this->repeatByType[$typeId]   = 1;        // reset to 1 (optional)
 
-
+        $this->period_unit = null;
+        $this->period_value = 0;
         // dd($assigned);
     }
 
@@ -424,6 +421,18 @@ class ProjectDocumentReviewerList extends Component
 
     public function addOpenSlots($custom_role = "reviewer"): void
     {
+
+
+        $this->validate([ 
+            'period_unit' => 'required',
+            'period_value' => 'required'
+        ],[
+            
+            'period_unit.required' => 'Please select a unit',
+            'period_value.required' => 'Please enter a period'
+        ]);
+
+
         $typeId = (int) ($this->currentTypeId ?? 0);
         if (!$typeId) return;
 
@@ -451,7 +460,8 @@ class ProjectDocumentReviewerList extends Component
                 'status'     => false,
                 'review_status'     => 'pending',
 
-
+                'period_unit' => $this->period_unit,
+                'period_value' => $this->period_value,
             ];
         }
 
@@ -462,103 +472,247 @@ class ProjectDocumentReviewerList extends Component
         $this->assignedByType[$typeId] = $assigned;
         // optional reset
         $this->openRepeatByType[$typeId] = 1;
+
+        $this->period_unit = null;
+        $this->period_value = 0;
+
+
     }
 
+    // @this.update({{ $typeId }}, targetRowId,period_value,period_unit);
+    public function update_row(int $typeId, string $rowUid, int $period_value, string $period_unit){
 
+        $typeId = (int) $typeId; // make sure typeId is an integer
     
+         
+        $typeId = (int) $typeId; 
+
+        $map = collect($this->assignedByType[$typeId] ?? [])->keyBy('row_uid');
+        $updated = [];
+        $i = 1;
+        
+        // dd("typeId: ".$typeId." || rowUid: ".$rowUid. " || period_value: ". $period_value. " || period_unit: ". $period_unit);
+        // dd($map);
+
+        // keep any rows not present in $rowUids at the end (safety)
+        foreach ($map as $uid => $row) {
+
+            if ($map->has($uid) && $row['row_uid'] == $rowUid ) {
+                $row = $map[$rowUid];
+                $row['period_value'] = $period_value;
+                $row['period_unit'] = $period_unit;
+                $updated[] = $row;
+            }else{
+
+                $updated[] = $row;
+            }
  
+        }
+
+         
+        $this->assignedByType[$typeId] = $updated;
+
+    }
+    
+    
     public function save()
     {
 
-        dd($this->assignedByType);
+        // dd($this->assignedByType);
         $project = Project::findOrFail($this->project_id);
 
+        // 1. Check for existing project reviewers 
+        // get project reviwers that are not approved   
+        // $project_reviewers = $project_document->project_reviewers()
+        //     ->where('review_status','!=','approved')
+        //     ->get('id')
+        //     ->;
+        $project_document = ProjectDocument::findOrFail($this->project_document_id);
+
+
+
         if(!empty($this->assignedByType)){
+
+
+            $selected_project_reviewer_ids = ProjectReviewerHelpers::extractProjectReviewerIds($this->assignedByType);
+            /**
+             * 
+             * #items: array:7 [▼
+                    0 => 914
+                    1 => 960
+                    2 => 961
+                    3 => 962
+                    4 => 963
+                    5 => 964
+                    6 => 965
+                ]
+             * 
+             */
+
+
+            $existing_project_reviewer_ids = $existingIds = $project_document
+                ->project_reviewers()      // relation to ProjectReviewer
+                ->pluck('id'); 
+                
+            /**
+                 * #items: array:12 [▼
+                    0 => 914
+                    1 => 955 to delete
+                    2 => 956 to delete
+                    3 => 957 to delete
+                    4 => 958 to delete
+                    5 => 959 to delete
+                    6 => 960
+                    7 => 961
+                    8 => 962
+                    9 => 963
+                    10 => 964
+                    11 => 965
+                ]
+             */
+
+            // $deleted_existing_project_reviewer_ids
+
+            // to check project reviewers ids for deletion, check for the difference on what is not included on the selected 
+            $to_delete = $existing_project_reviewer_ids->diff($selected_project_reviewer_ids); // in DB but not in new array 
+            /**
+             *  The table shows that our logic is correct
+             * #items: array:5 [▼
+                    1 => 955
+                    2 => 956
+                    3 => 957
+                    4 => 958
+                    5 => 959
+                ]
+             * 
+             */
+
+            // dd($to_delete);
+
+            // now, check if there are existing reviewers ids to be deleted that has reviews. Because project reviewer with reviews cannot be deleted 
+            if(!empty($to_delete) && count($to_delete) > 0 ){
+                foreach($to_delete as $key => $project_reviewer_id){
+
+                    $project_reviewer = ProjectReviewer::find($project_reviewer_id);
+                    
+                    $review_count = Review::returnReviewCount($project_reviewer->id, $project_document->id );
+                    if($review_count > 0)
+                    {
+                        Alert::error('Error', 'Project reviewer list cannot be saved because you cannot delete project reviewers that had already made reviews to the document');
+                        return redirect()->route('project.document.reviewer.index', [
+                            'project' => $this->project->id,  
+                            'project_document' => $project_document->id,
+                        ]);
+                    }
+                }
+
+
+                // if there are no, delete those project reviewers 
+                foreach($to_delete as $key => $project_reviewer_id){
+
+                    $project_reviewer = ProjectReviewer::find($project_reviewer_id);
+                    
+                    $review_count = Review::returnReviewCount($project_reviewer->id, $project_document->id );
+                    if($review_count == 0 || $review_count == null)
+                    {
+                        $project_reviewer->delete();
+                    }
+                }
+
+
+
+
+
+
+            }
+
+            
+
+
+
+
+
             foreach($this->assignedByType as $document_type_id => $assigned){
                  
  
-                $project_document = ProjectDocument::findOrFail($this->project_document_id);
+                
                 // dd($project_document);
 
-                // $reviewer = Project::getCurrentReviewerByProjectDocument($project_document->id);
-                // $reviewer = $project_document->getCurrentReviewerByProjectDocument();
-                // dd($reviewer);
-
-
-
-                $project_reviewers = $project_document->project_reviewers()
-                        ->where('review_status','!=','approved')
-                        ->get();
-                    foreach($project_reviewers as $reviewer){
-                        $review_count = Review::returnReviewCount($reviewer->id);
-                        if($review_count > 0)
-                        {
-                            continue;
-                        }
-
-                        $reviewer->delete();
-                    }
-
+                
 
                 // insert the new assigned reviewers
                 if(!empty($assigned) && empty($row['project_reviewer_id'])){
                     foreach($assigned as $row){ 
 
 
+                        // dd($row);
+
+                        // if it is an exisiting project reviewer record, find it and update its details 
+                        if(!empty($row['project_reviewer_id'])){
+                            $project_reviewer = ProjectReviewer::find($row['project_reviewer_id']);
+
+                            $project_reviewer->order = $row['order']; 
+                            $project_reviewer->user_id =  $row['user_id'] ?? null;  
+                            $project_reviewer->updated_by = Auth::user()->id;
+                            $project_reviewer->updated_at = now();
+                            $project_reviewer->period_unit = $row['period_unit']->value;
+                            $project_reviewer->period_value = $row['period_value'];  
+                            $project_reviewer->save();
+
+                        }else{
+                            // if it is not existing, create it 
+
+                            // dd( $row['slot_role']);
+                            ProjectReviewer::create([
+                                
+                                'order' => $row['order'],
+                                'status' => false,
+                                'project_id' => $this->project_id ,
+
+                                'user_id' => $row['user_id'] ?? null,
+
+                                'slot_type' => $row['slot_type'] ?? 'person' ,              // explicit: this row is a person (not open slot)
+                                'slot_role'      => $row['slot_role'] ?? null,    // optional: intended role for slot
+
+                                'project_document_id' => $project_document->id,
+
+                                'created_by' => Auth::user()->id,
+                                'updated_by' => Auth::user()->id,
+                                'document_type_id' => $document_type_id,
+                                'reviewer_type' => 'document', // initial, document, final
+                                'review_status' => 'pending',
+
+                                'period_unit' => $row['period_unit']->value,
+                                'period_value' => $row['period_value'],
+
+            
+                            ]); 
+
+                        }
                         
 
 
-                        // dd( $row['slot_role']);
-                        ProjectReviewer::create([
-                            
-                            'order' => $row['order'],
-                            'status' => false,
-                            'project_id' => $this->project_id ,
-
-                            'user_id' => $row['user_id'] ?? null,
-
-                            'slot_type' => $row['slot_type'] ?? 'person' ,              // explicit: this row is a person (not open slot)
-                            'slot_role'      => $row['slot_role'] ?? null,    // optional: intended role for slot
-
-                            'project_document_id' => $project_document->id,
-
-                            'created_by' => Auth::user()->id,
-                            'updated_by' => Auth::user()->id,
-                            'document_type_id' => $document_type_id,
-                            'reviewer_type' => 'document', // initial, document, final
-                            'review_status' => 'pending',
-                             
-           
-                        ]); 
+                        
                     } 
-
-
-                    // notify creator, project reviewers and project subscribers 
-                    // ProjectHelper::notifyRevs_Subs_on_RevUpd($project, $project_document->id, 'document');
-                    ProjectDocumentHelpers::notifyRevs_Subs_on_RevUpd($project_document->id);
-
                     
-                    // reset all reviewers on the project document type 
-                    // Project::resetCurrentProjectDocumentReviewersByDocument($document_type_id,$project->id);
-                    ProjectDocument::resetCurrentProjectDocumentReviewersByDocument($project_document->id); 
+
+                    // After seeding/ensuring rows, align the "current" reviewer pointers.
+                    // This keeps your original behavior.
+                    ProjectDocument::resetCurrentProjectDocumentReviewersByDocument($project_document->id);
+
+
+                    // set the project document reviewers
+                    ProjectReviewerHelpers::sendNotificationOnReviewerListUpdate($project_document);
+
+
+                    $submission_type = "initial_submission";
+                    // send notification to the current reviewer
+                    ProjectReviewerHelpers::sendReviewNotificationToReviewer($project_document, $submission_type);
 
                 }
 
 
-                // send a project review request to the current reviewer
-                // $reviewer = Project::getCurrentReviewerByProjectDocument($project_document->id);
-                $reviewer = $project_document->getCurrentReviewerByProjectDocument();
-                    
-                if($reviewer->slot_type == "person"){// if the current reviewer is a person
-                    $reviewer_user = User::find($reviewer->user_id); 
-                    ProjectHelper::sendForReviewersProjectReviewNotification($reviewer_user,$project, $reviewer);
-
-                }else if($reviewer->slot_type == "open"){
- 
-                    ProjectHelper::sendForReviewersOpenProjectReviewNotification($project, $reviewer);
-                    
-
-                }
+                
                 
                 
 
@@ -589,12 +743,10 @@ class ProjectDocumentReviewerList extends Component
             }
         }
 
- 
-
-
+  
 
         Alert::success('Success', 'Project reviewer list saved successfully');
-        return redirect()->route('project.reviewer.index', [
+        return redirect()->route('project.document.reviewer.index', [
             'project' => $this->project->id,  
             'project_document' => $project_document->id,
         ]);

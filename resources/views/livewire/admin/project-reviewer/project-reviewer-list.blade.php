@@ -20,58 +20,58 @@
 
 
         @if( Auth::user()->can('system access global admin') || Auth::user()->hasPermissionTo('project reviewer edit') )
-        <div x-data="{ open:false }" class="shrink-0">
-            <!-- Trigger -->
-            <button type="button"
-                    @click="open = true"
-                    class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
-                    wire:loading.attr="disabled"
-                    wire:target="save">
-                Save All
-            </button>
+          <div x-data="{ open:false }" class="shrink-0">
+              <!-- Trigger -->
+              <button type="button"
+                      @click="open = true"
+                      class="py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
+                      wire:loading.attr="disabled"
+                      wire:target="save">
+                  Save All
+              </button>
 
-            <!-- Backdrop -->
-            <div x-show="open"
-                x-transition.opacity
-                class="fixed inset-0 z-40 bg-black/40"
-                @keydown.escape.window="open = false"
-                aria-hidden="true"></div>
+              <!-- Backdrop -->
+              <div x-show="open"
+                  x-transition.opacity
+                  class="fixed inset-0 z-40 bg-black/40"
+                  @keydown.escape.window="open = false"
+                  aria-hidden="true"></div>
 
-            <!-- Modal -->
-            <div x-show="open"
-                x-transition
-                class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div @click.away="open = false"
+              <!-- Modal -->
+              <div x-show="open"
+                  x-transition
+                  class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div @click.away="open = false"
                     class="w-full max-w-md rounded-xl bg-white shadow-xl ring-1 ring-black/5">
-                <!-- Header -->
-                <div class="px-5 py-4 border-b border-slate-200">
-                    <h2 class="text-base font-semibold text-slate-800">Confirm Save</h2>
-                </div>
+                    <!-- Header -->
+                    <div class="px-5 py-4 border-b border-slate-200">
+                        <h2 class="text-base font-semibold text-slate-800">Confirm Save</h2>
+                    </div>
 
-                <!-- Body -->
-                <div class="px-5 py-4 space-y-3 text-sm text-slate-700">
-                    <p>Some reviewers cannot be removed because they are already assigned.</p>
-                    <p class="font-medium">Are you sure you want to save these records?</p>
-                </div>
+                    <!-- Body -->
+                    <div class="px-5 py-4 space-y-3 text-sm text-slate-700">
+                        <p>Some reviewers cannot be removed because they are already assigned.</p>
+                        <p class="font-medium">Are you sure you want to save these records?</p>
+                    </div>
 
-                <!-- Footer -->
-                <div class="px-5 py-4 flex items-center justify-end gap-2 border-t border-slate-200">
-                    <button type="button"
-                            @click="open = false"
-                            class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100">
-                    Cancel
-                    </button>
-                    <button type="button"
-                            @click="$wire.save(); open = false"
-                            class="px-3.5 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60"
-                            wire:loading.attr="disabled"
-                            wire:target="save">
-                    Yes, Save
-                    </button>
-                </div>
-                </div>
-            </div>
-        </div>
+                    <!-- Footer -->
+                    <div class="px-5 py-4 flex items-center justify-end gap-2 border-t border-slate-200">
+                        <button type="button"
+                                @click="open = false"
+                                class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100">
+                        Cancel
+                        </button>
+                        <button type="button"
+                                @click="$wire.save(); open = false"
+                                class="px-3.5 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60"
+                                wire:loading.attr="disabled"
+                                wire:target="save">
+                        Yes, Save
+                        </button>
+                    </div>
+                  </div>
+              </div>
+          </div>
         @endif
     </div>
     
@@ -92,7 +92,7 @@
         
         >
         <label class="inline-block text-sm font-medium text-gray-800">
-            Select reviewers ({{ $documentTypes[array_search($typeId, array_column($documentTypes,'id'))]['name'] ?? '' }})
+            Add reviewers ({{ $documentTypes[array_search($typeId, array_column($documentTypes,'id'))]['name'] ?? '' }})
         </label>
 
         <div
@@ -414,6 +414,9 @@
                     'approved': 'rounded-md px-2 py-0.5 text-[11px] font-medium bg-lime-100 text-lime-500 capitalize', 
                     'rejected': 'rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-100 text-red-500 capitalize',
                     'pending': 'rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-100 text-amber-500 capitalize',
+
+                    'changes_requested': 'rounded-md px-2 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-500 capitalize',
+                    'reviewed': 'rounded-md px-2 py-0.5 text-[11px] font-medium bg-green-100 text-green-500 capitalize',
                 },
 
             }"

@@ -31,7 +31,7 @@ window.Pusher = Pusher;
 
 
 
-/**PUSHER (uncomment if using pusher as the connection)  */
+/**PUSHER (uncomment if using pusher as the connection)   */
  
 
 window.Echo = new Echo({

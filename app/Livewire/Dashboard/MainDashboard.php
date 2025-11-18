@@ -309,7 +309,7 @@ class MainDashboard extends Component
 
         $accessColors = [
             'system access user' => ['bg' => 'bg-blue-900', 'text' => 'text-blue-100'],
-            'system access reviewer' => ['bg' => 'bg-yellow-900', 'text' => 'text-yellow-100'],
+            'system access reviewer' => ['bg' => 'bg-slate-900', 'text' => 'text-white'],
             'system access admin' => ['bg' => 'bg-purple-900', 'text' => 'text-purple-100'],
             'system access global admin' => ['bg' => 'bg-green-900', 'text' => 'text-green-100'],
         ];

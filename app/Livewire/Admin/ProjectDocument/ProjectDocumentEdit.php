@@ -583,7 +583,7 @@ class ProjectDocumentEdit extends Component
                     'project_document_id'  => $project_document->id,
                     'filesystem'           => $disk,
                     'original_name'        => $originalName,
-                    'storedName'           => $storedName,      // or 'stored_name' if that’s your column
+                    'stored_name'           => $storedName,      // or 'stored_name' if that’s your column
                     'disk'                 => $disk,
                     'path'                 => $dir,
                     'mime_type'            => $mime,

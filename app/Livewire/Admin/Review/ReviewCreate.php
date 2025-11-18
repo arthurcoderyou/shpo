@@ -15,6 +15,7 @@ use Livewire\WithFileUploads;
 use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
+use App\Models\ReReviewRequest;
 use Illuminate\Validation\Rule;
 use App\Models\ProjectReferences;
 use App\Models\ReviewAttachments;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Helpers\ProjectDocumentHelpers;
 use App\Helpers\ProjectReviewerHelpers;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Models\ProjectDocumentReferences;
 use App\Models\ReviewRequireDocumentUpdates;
 use Illuminate\Support\Facades\Notification;
 use App\Models\ReviewRequireAttachmentUpdates;
@@ -35,7 +37,7 @@ use App\Notifications\ProjectSubscribersNotification;
 class ReviewCreate extends Component
 {   
 
-
+     
     /** Actions with Password Confirmation panel */
         public $passwordConfirm = '';
         public $passwordError = null;
@@ -114,12 +116,32 @@ class ReviewCreate extends Component
     // For the Search Project Functionality
         public $query = ''; // Search input
         public $projects = []; // Search results
+        public $project_documents = [];
         public $selectedProjectDocuments = []; // Selected project references
 
 
- 
+
+
+    // for the signature
+
+        public $signableType;   // e.g., App\Models\ProjectDocument::class
+        public $signableId;
+        public $signer_name = '';
+       
+        public $signatureData = null; // data:image/png;base64,...
+
+        
     
     public function mount($id,$project_document_id){
+
+        // :signable-type="\App\Models\ProjectDocument::class" :signable-id="249"
+
+        $this->signableType = ProjectDocument::class;
+        $this->signableId   = $project_document_id;
+        $this->signer_name  = $signerName ?? Auth::user()->name;
+
+
+
         $this->project = Project::findOrFail($id);
         $this->project_document = ProjectDocument::findOrFail($project_document_id);
 
@@ -133,10 +155,7 @@ class ReviewCreate extends Component
 
         $this->rc_number = $this->project_document->rc_number;
 
-
-      
-
-
+ 
         $this->submitter_due_date = $this->project_document->submitter_due_date;
         $this->submitter_response_duration_type = $this->project_document->submitter_response_duration_type;
         $this->submitter_response_duration = $this->project_document->submitter_response_duration;
@@ -188,12 +207,78 @@ class ReviewCreate extends Component
 
         }
 
-         
+
+        
+
+        $this->loadProjectReferencesBasedOnLotNumber();
 
         // dd( $this->selectedProjectDocuments );
 
 
+        // load last review
+        $this->loadLastReview();
+
+
     }
+
+
+
+
+    public function loadProjectReferencesBasedOnLotNumber(){
+        // check for project documents that has connections to project based on lot number 
+
+        $current_reviewer = $this->project_document->getCurrentReviewerByProjectDocument();
+        $project = Project::find($this->project_document->project_id);
+        $projects = Project::where('lot_number',$project->lot_number)->get();
+
+
+        // check if it is the first in order 
+        if(!empty($current_reviewer ) && $current_reviewer->order == 1 && !empty($project ) && !empty($projects )){
+
+            foreach($projects as $proj){
+
+                foreach($proj->project_documents as $project_docs){
+
+                    if(!empty($project_docs->rc_number) && $project_docs->status !== "draft"){
+                        $this->selectedProjectDocuments[] = [
+                            'id' => $project_docs->id,
+                            'project_name' => $proj->name,
+                            'lot_number' => $proj->lot_number,
+                            'document_name' => $project_docs->document_type->name,
+                            'rc_number' => $project_docs->rc_number,
+                            'project_number' => $project_docs->project_number,
+                            'location' => $proj->location,
+                            'type' => $proj->type,
+                            'federal_agency' => $proj->federal_agency,
+                        ];
+                    }
+
+                    
+
+                }
+            }
+
+            
+
+
+
+
+        }
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     public function updated(){
@@ -248,11 +333,19 @@ class ReviewCreate extends Component
 
     
 
+    public function open_review_project_document($project_document_id){
+        ProjectDocumentHelpers::open_review_project_document($project_document_id);
+
+    }
+
+    
+
     public function update_project(){
-        
+        // dd("Here");
 
         $project_document = ProjectDocument::find($this->project_document->id);  // get the current project document 
         $project_reviewer = $project_document->getCurrentReviewerByProjectDocument(); // get the current reviewer
+
 
         // dd($project_document);
  
@@ -261,7 +354,7 @@ class ReviewCreate extends Component
             'rc_number' => [
                 'required',
                 'string',
-                Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
+                Rule::unique('project_documents', 'rc_number'), // Ensure rc_number is unique
             ]
         ],[
             'The shpo number has already been taken. Please enter other combinations of shpo number '
@@ -269,7 +362,7 @@ class ReviewCreate extends Component
 
         if(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1){
             // the review is automatically approved if the first reviewer had save and confirmed that the project is approved in the initial review
-            $this->review_status = "approved";
+            $this->review_status = "reviewed";
 
         }
 
@@ -363,7 +456,7 @@ class ReviewCreate extends Component
 
                 $project_reviewer->review_status = $this->review_status;
 
-                if($this->review_status == "approved"){
+                if($this->review_status == "reviewed"){
                     $project_reviewer->status = false; 
                 }
 
@@ -423,7 +516,7 @@ class ReviewCreate extends Component
 
                 }else{ // if it is not changes request, then it must be approved 
 
-                    $this->review_status == "approved";
+                    $this->review_status == "reviewed";
                 }
 
                 $review->review_status = $this->review_status; 
@@ -484,7 +577,7 @@ class ReviewCreate extends Component
                 
 
                 //update the next reviewer
-                if($this->review_status == "approved"){
+                if($this->review_status == "reviewed"){
                     
                     // update project document  
                     $project_document->allow_project_submission = false;
@@ -602,12 +695,20 @@ class ReviewCreate extends Component
                             $q
                             // ->where('name', 'like', "%{$search}%")
                                 ->orWhere('rc_number', 'like', "%{$search}%")
+                                ->orWhere('applicant', 'like', "%{$search}%")
+                                ->orWhere('document_from', 'like', "%{$search}%")
+                                ->orWhere('company', 'like', "%{$search}%")
+                                ->orWhere('findings', 'like', "%{$search}%")
+                                ->orWhere('comments', 'like', "%{$search}%") 
                                 ->orWhereHas('document_type', function ($dq) use ($search) {
                                     $dq->where('name', 'like', "%{$search}%");
                                 })
                                 ->orWhereHas('project', function ($dq) use ($search) {
                                     $dq->where('name', 'like', "%{$search}%")
                                         ->orWhere('federal_agency', 'like', "%{$search}%")
+                                        ->orWhere('lot_number', 'like', "%{$search}%")
+                                        ->orWhere('location', 'like', "%{$search}%")
+                                        ->orWhere('street', 'like', "%{$search}%")
                                         ->orWhere('description', 'like', "%{$search}%");
                                 }) ;
                         });
@@ -626,6 +727,9 @@ class ReviewCreate extends Component
             } else {
                 $this->project_documents = [];
             }
+
+
+            // dd($this->project_documents);
         }
 
         public function addProjectDocumentReference($projectDocumentId)
@@ -636,7 +740,7 @@ class ReviewCreate extends Component
                 $this->selectedProjectDocuments[] = [
 
 
-                     'id' => $project_document->id,
+                    'id' => $project_document->id,
                     'project_name' => $project->name,
                     'document_name' => $project_document->document_type->name,
                     'rc_number' => $project_document->rc_number,
@@ -658,7 +762,7 @@ class ReviewCreate extends Component
             }
 
             $this->query = '';
-            $this->projects = [];
+            $this->project_documents = [];
         }
 
         public function removeProjectReference($index)
@@ -669,7 +773,61 @@ class ReviewCreate extends Component
 
     // ./// For the Search Project Functionality
 
- 
+        
+
+    public function saveImage() {
+        $this->validate([
+            'signatureData' => 'required|string',
+            'signer_name'   => 'required|string|max:255',
+        ],[
+            'signatureData.required' => 'Please enter your signature'
+        ]);
+
+        // Strip prefix and decode
+        $raw = preg_replace('~^data:image/\w+;base64,~', '', $this->signatureData);
+        $bytes = base64_decode($raw, true);
+        if ($bytes === false || strlen($bytes) < 200) {
+            $this->addError('signatureData', 'Invalid signature data.');
+            return;
+        }
+
+        $uuid = (string) Str::uuid();
+        $path = "signatures/{$uuid}.png";
+        Storage::disk('public')->put($path, $bytes);
+
+        // Build tamper-evident HMAC over critical fields
+        $payload = implode('|', [
+            $this->signableType,
+            $this->signableId,
+            Auth::id(),
+            $this->signer_name,
+            $path,
+            now()->toIso8601String(),
+            request()->ip(),
+            request()->userAgent()
+        ]);
+
+        $appKey = config('app.key');
+        $key = str_starts_with($appKey, 'base64:') ? base64_decode(substr($appKey, 7)) : $appKey;
+        $hash = hash_hmac('sha256', $payload, $key);
+
+        Signature::create([
+            'signable_type' => $this->signableType,
+            'signable_id'   => $this->signableId,
+            'user_id'       => Auth::id(),
+            'signer_name'   => $this->signer_name,
+            'signature_path'=> $path,
+            'signed_at'     => now(),
+            'ua'            => request()->userAgent(),
+            'ip'            => request()->ip(),
+            'hash'          => $hash,
+            'meta'          => ['reason' => $this->reason],
+        ]);
+
+        $this->dispatch('signature:saved');
+        $this->reset('signatureData');
+    }
+
 
     // saving and submission of review 
     public function save(){
@@ -710,8 +868,20 @@ class ReviewCreate extends Component
             ],
             'required_attachment_updates.*' => ['integer'],
 
-        ]);
+            // 'signatureData' => 'required',
+            // 'signer_name'   => 'required',
 
+
+        ]
+            // ,[
+            //     'signatureData.required' => 'Please enter your signature'
+            // ]
+        
+        );
+
+
+
+        // dd($this->review_status);
 
 
         if($this->review_status == "changes_requested"){
@@ -754,8 +924,8 @@ class ReviewCreate extends Component
             // update review status 
             $current_reviewer->review_status = $this->review_status;
 
-            // if the review is approved / set the reviewer to not be the current reviewer by setting status to false 
-            if($this->review_status == "approved"){
+            // if the review is reviewed / set the reviewer to not be the current reviewer by setting status to false 
+            if($this->review_status == "reviewed" || $this->review_status == "approved"){
                 $current_reviewer->status = false; 
             }
 
@@ -874,7 +1044,7 @@ class ReviewCreate extends Component
             
 
             //update the next reviewer
-            if($this->review_status == "approved"){
+            if($this->review_status == "reviewed" || $this->review_status == "approved"){
                 
                 // update project document  
                 $project_document->allow_project_submission = false;
@@ -935,11 +1105,7 @@ class ReviewCreate extends Component
 
         // ./ notifications
 
-
-        
-
-
-
+ 
  
 
         Alert::success('Success','Project review submitted successfully');
@@ -954,18 +1120,296 @@ class ReviewCreate extends Component
     }
 
 
+    // for the signature pad 
 
+    public function clearPad() {
+        $this->dispatch('signature:clear'); // front-end will clear canvas
+    }
+
+    public function with() {
+        return [];
+    }
+
+
+    public function getSignaturesProperty(){
+
+        $query = Signature::query();
+
+
+        return $query->where('user_id',Auth::user()->id)
+            ->orderBy('created_at','DESC')
+            ->paginate(10);
+    }
+
+     // used for the table formatting tools on datetime
+    public static function returnFormattedDatetime($datetime){
+        $formatted = $datetime
+            ? ( $datetime instanceof Carbon
+                ? $datetime
+                : Carbon::parse($datetime)
+              )->format('M d, Y • H:i')
+            : null;
+
+        return $formatted;
+    }
+
+
+
+
+
+
+
+
+
+
+    // Re- Review Request
+    public bool $showRereviewModal = false; // can be kept if you want future server toggle
+     public $reason = '';
+
+
+    public array $previous_reviewers = [
+        ['id' => 1, 'name' => 'Jane Reviewer', 'iteration' => 1],
+        ['id' => 2, 'name' => 'Mark Analyst', 'iteration' => 2],
+    ];
+
+    public array $rereview = [
+        'to_reviewer_id' => null,
+        'reason' => '',
+        'issues' => [],
+    ];
+
+    public array $common_issues = ['Incomplete data', 'Wrong format', 'Missing signatures', 'Outdated info'];
+
+    public $last_review = null;
+
+    public function loadLastReview( )
+    {
+        // if (!$id) {
+        //     $this->last_review = null;
+        //     return;
+        // }
+
+        $this->last_review = $this->project_document->getLastReview();
+        // dd($last_review );
+        // $reviewer = $this->project_document->getCurrentReviewerUser();
+
+        // $this->last_review = $last_review ? [
+        //     'review_status'        => $last_review->review_status,
+        //     'reviewer_name' => $reviewer?->name,
+        //     'reviewed_at'   => optional($r->created_at ?? $last_review->created_at)->format('Y-m-d H:i'),
+        //     'iteration'     => $last_review->iteration,
+        //     // 'role'          => $last_review->role,
+        //     'review'          => $last_review->project_review,
+        //     // 'issues'        => $last_review->issues ?? [],
+        // ] : null;
 
  
+    }
+
+    public function toggleRereviewIssue($tag)
+    {
+        $i = array_search($tag, $this->rereview['issues'], true);
+        if ($i === false) {
+            $this->rereview['issues'][] = $tag;
+        } else {
+            unset($this->rereview['issues'][$i]);
+            $this->rereview['issues'] = array_values($this->rereview['issues']);
+        }
+    }
+
+    public function submitRereview()
+    {   
+        // check if there is a last review instance
+        if(empty($this->last_review)){
+            Alert::error('Error','Re-review request failed. There are no previuos reviewers');
+            return redirect()->route('project-document.review',[
+                'project' => $this->project->id,
+                'project_document' => $this->project_document->id,
+            
+            ]); 
+        }   
+
+
+
+
+
+
+        // dd($this->all());
+        $this->validate([
+            'reason' => 'required', 
+        ]);
+
+        // dd("All Goods");
+
+        // Save logic here
+        // ProjectReReviewRequest::create([...])
+
+        // $this->dispatch('toast', type:'success', message:'Re-review request sent successfully!');
+        // $this->rereview = ['to_reviewer_id' => null, 'reason' => '', 'issues' => []];
+
+        // get the requested project reviewer by the last review 
+        $reviewer_requested_to_id = $this->last_review->project_reviewer_id;
+
+        // get the current reviewer that initiated the previous reviewer re-review request 
+        $current_reviewer =     $this->project_document->getCurrentReviewerByProjectDocument();
+        $reviewer_requested_by_id = $current_reviewer->id;
+
+        $re_review_requests = ReReviewRequest::create([   
+            'reason' => $this->reason,   
+            'status' => 'submitted', // true or false
+            'response_notes' => null,
+            'requested_to' => $reviewer_requested_to_id,
+            'requested_by' => $reviewer_requested_by_id,
+            'project_id' => $this->project->id,
+            'project_document_id' => $this->project_document->id,
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+            'created_at' => now(),
+            'updated_at' => now(), 
+        ]);
+        
+
+        // create the review 
+        $review = Review::create([
+            'iteration'  => $current_reviewer->iteration++, // iteration 
+            'project_id' => $current_reviewer->project_id,
+            'project_document_id' => $current_reviewer->project_document_id,
+            'reviewer_id' => $current_reviewer->user_id, // user id of hte user that made the review
+            'project_reviewer_id' => $current_reviewer->id, // project reviewer 
+            'review_status' => 're_review_requested',
+            
+            # ['pending','approved','rejected','submitted','re_submitted','changes_requested','reviewed','re_review_requested']
+            # 'submitted' is the special review status for users 
+            # re_submitted for resubmission
+
+            'project_document_status' => 're_review_requested', 
+            # 'draft','submitted','in_review','approved','rejected','completed','cancelled',','changes_requested','reviewed', 're_review_requested' 
+ 
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+     
+
+            're_review_requests_id' => $re_review_requests->id
+        ]);  
+
+        
+
+        ProjectReviewerHelpers::sendReReviewRequest($re_review_requests);
+
+
+        Alert::success('Success','Re-review request submitted successfully');
+        return redirect()->route('project-document.review',[
+            'project' => $this->project->id,
+            'project_document' => $this->project_document->id,
+        
+        ]);
+
+
+    }
+
+
+
+    public array $eligible_reviewers = [
+        ['id' => 1, 'name' => 'Alex Cruz', 'dept' => 'Technical'],
+        ['id' => 2, 'name' => 'Maria Lopez', 'dept' => 'Legal'],
+        ['id' => 3, 'name' => 'John Tan', 'dept' => 'Environmental'],
+    ];
+
+    public array $pre = [
+        'reviewers' => [],
+        'scope' => '',
+        'due_on' => '',
+        'instructions' => '',
+        'block_my_review' => true,
+        'notify_all' => true,
+    ];
+
+    public function submitPreReview()
+    {
+        $this->validate([
+            'pre.reviewers' => 'required|array|min:1',
+            'pre.scope' => 'required|string',
+            'pre.due_on' => 'nullable|date',
+            'pre.instructions' => 'required|string|min:5',
+        ]);
+
+        // Example save logic
+        // ProjectPreReviewRequest::create([
+        //     'project_document_id' => $this->docId,
+        //     'requested_by' => auth()->id(),
+        //     'reviewers' => $this->pre['reviewers'],
+        //     'scope' => $this->pre['scope'],
+        //     'instructions' => $this->pre['instructions'],
+        //     'due_on' => $this->pre['due_on'],
+        //     'block_my_review' => $this->pre['block_my_review'],
+        //     'notify_all' => $this->pre['notify_all'],
+        // ]);
+
+        // Reset
+        $this->pre = [
+            'reviewers' => [],
+            'scope' => '',
+            'due_on' => '',
+            'instructions' => '',
+            'block_my_review' => true,
+            'notify_all' => true,
+        ];
+
+        $this->dispatch('toast', type:'success', message:'Review request sent to additional reviewers.');
+    }
+
+
+
+
+
+
+    public function checkIfProjectReviewerHasSubmittedReReview($pending_check = "re_review"){
+        $project_document = ProjectDocument::find($this->project_document->id);  // get the current project document 
+        $project_reviewer = $project_document->getCurrentReviewerByProjectDocument(); // get the current reviewer
+        $user = Auth::user();
+
+        // check if the auth user is the current project reviewer
+        if(empty($user) || empty( $project_reviewer)  ||  ( $user->id !==  $project_reviewer->user_id) ){
+
+            return false;
+        }
+
+        // check if there are existing pending re_review request by the user 
+        if($pending_check == "re_review"){
+            $has_pending_request = ReReviewRequest::checkIfProjectReviewerHasSubmittedReReview(
+                $project_reviewer->id,
+                $project_document->project_id,
+                $project_document->id,
+            );
+
+
+        }
+
+        return $has_pending_request;
+
+
+    }
+
 
 
 
 
     public function render()
-    {
+    {   
+
+
+
+
+
+        // dd($this->last_review);
+        // dd($this->project_document->getCurrentReviewerByProjectDocument());
+        
         return view('livewire.admin.review.review-create',[
- 
+            'has_pending_request' => $this->checkIfProjectReviewerHasSubmittedReReview(),
             'project_reviewer' => $this->project_document->getCurrentReviewerByProjectDocument(),
+            'last_review' => $this->last_review,
                                
 
         ]);

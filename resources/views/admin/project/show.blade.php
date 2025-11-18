@@ -47,8 +47,8 @@
 
 
 
-
-    <div id="project_logs" class="px-4 py-6 sm:px-6 lg:px-8 mx-auto  "> 
+ 
+    <div id="project_logs" class="  py-6     mx-auto  "> 
         <h2 class="text-2xl text-center font-semibold text-gray-800">Project Logs</h2>
         <p class="text-truncate text-center">{{ $project->name }}</p>
         <livewire:admin.project.project-logs :project_id="$project->id" />

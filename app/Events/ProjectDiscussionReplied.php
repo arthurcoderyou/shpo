@@ -38,7 +38,7 @@ class ProjectDiscussionReplied implements ShouldBroadcast, ShouldQueue
         $this->project_url = route('project.show', $this->project->id);
 
         if(!empty($this->project_discussion->project_document_id)){
-            $this->project_url = route('project.project_document', [
+            $this->project_url = route('project.project-document.show', [
                 'project' => $this->project->id,
                 'project_document' => $this->project_discussion->project_document_id,
             ]);

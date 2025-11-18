@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Controllers\SettingController;
-use App\Http\Controllers\TestingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RoleController;
@@ -10,6 +8,9 @@ use App\Http\Controllers\ForumController;
 use App\Http\Controllers\ArcGISController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\TestingController;
+use App\Http\Controllers\ReReviewController;
 use App\Http\Controllers\ReviewerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AttachmentController;
@@ -341,7 +342,22 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
                 Route::get('review',[ReviewController::class,'index'])
                     ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:review list view']) 
                     ->name('review.index');
+
+                Route::get('project_document_review_flow/{project_document}',[ReviewController::class,'review_flow'])
+                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:review list view']) 
+                    ->name('project_document.review.flow');
+
+
             # ./ reviews
+
+            # re-reviews 
+                Route::get('re-review',[ReReviewController::class,'index'])
+                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin']) 
+                    ->name('re-review.index');
+                Route::get('re-review/{rereview}/show',[ReReviewController::class,'show'])
+                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin']) 
+                    ->name('re-review.show');
+            # ./ re-reviews 
 
 
             # document_types 
@@ -480,6 +496,20 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
                     Route::get('test/review/list',[TestingController::class, 'test_review_list'])
                         ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
                         ->name('test.review.list'); // for users to see review list 
+
+                    Route::get('test/review/re_review',[TestingController::class, 're_review'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.review.re_review'); // for users to see review list 
+
+
+                    Route::get('test/review/digital_signature',[TestingController::class, 'digital_signature'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.review.digital_signature'); // for users to see review list 
+
+
+                    Route::get('test/review/review_list_layout',[TestingController::class, 'review_list_layout'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.review.review_list_layout'); // for users to see review list 
                 // ./ layout test routes
                     
 
@@ -530,10 +560,16 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
                             ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
                             ->name('test.attachment.create');  
 
-                       
+
 
                 // 
 
+
+                // email testing routes
+                    Route::get('test/email_preview/submitted',[TestingController::class, 'email_preview_submitted'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                            ->name('test.email_preview.submitted');  
+                // ./ email testing routes
 
 
             #./ testing links 

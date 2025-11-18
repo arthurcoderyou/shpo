@@ -98,6 +98,12 @@ class ProjectDocumentHelpers
                 $isProjectSubmissionAllowed = false;
                 $queuedForNextDay = true;
             }
+
+
+            // dd("true");
+
+
+
         }
  
         $project_document = ProjectDocument::find($project_document_id);
@@ -314,9 +320,6 @@ class ProjectDocumentHelpers
             ProjectReviewerHelpers::setProjectDocumentReviewers($project_document, $submission_type);
 
 
-
-
-            
             try {
                 event(new \App\Events\ProjectDocument\Submitted(
                     $project_document->id, 
@@ -474,7 +477,7 @@ class ProjectDocumentHelpers
         $project->allow_project_submission = $allow_project_submission; // do not allow double submission until it is reviewed 
         $project->updated_at = $now;
         $project->last_submitted_at = $now;
-        $project->last_submitted_by = Auth::user()->id;
+        $project->last_submitted_by = Auth::user()->id ?? $project->created_by;
         $project->save();
  
 
@@ -484,7 +487,7 @@ class ProjectDocumentHelpers
         $project_document->allow_project_submission = $allow_project_submission; // do not allow double submission until it is reviewed
         $project_document->updated_at = $now;
         $project_document->last_submitted_at = $now;
-        $project_document->last_submitted_by = Auth::user()->id;
+        $project_document->last_submitted_by = Auth::user()->id ?? $project->created_by;
         $project_document->save(); 
  
 
@@ -1029,19 +1032,112 @@ class ProjectDocumentHelpers
 
     }
 
-    public static function open_review_project_document($project_document_id){
+   public static function open_review_project_document(int $project_document_id, ?string $url = null)
+    {
+        // Load the project document or fail cleanly
+        $project_document = ProjectDocument::findOrFail($project_document_id);
+
+        // Get the current authenticated user
+        $userId = Auth::id();
+
+        // Create/open the review session for this user
+        ProjectDocumentHelpers::createReviewSession($project_document->id, $userId);
 
 
-        $project_document = ProjectDocument::find($project_document_id);
 
-        // dd($project_document);
 
-        return redirect()->route('project-document.review',[
-            'project' => $project_document->project_id,
-            'project_document' => $project_document_id
+
+
+
+
+
+
+        
+        // If a custom URL is provided, use it
+        if (!empty($url)) {
+            // you can use redirect()->to() if $url is a full URL
+            return redirect()->to($url);
+            // or if $url is a named route, use:
+            // return redirect()->route($url);
+        }
+
+        // Default redirect to the project document review route
+        return redirect()->route('project-document.review', [
+            'project'          => $project_document->project_id,
+            'project_document' => $project_document->id,
         ]);
-
     }
+
+
+
+
+
+    /**
+     * Create a session key for an accepted review.
+     *
+     * @param  int|string  $documentId
+     * @param  int|null    $userId
+     * @return void
+     */
+    public static function createReviewSession($documentId, $userId = null)
+    {
+        $userId = $userId ?? Auth::id();
+
+        if (!$userId) {
+            throw new Exception('User must be authenticated to create review session.');
+        }
+
+        $key = "review.accepted.$documentId";
+
+        $hash = hash('sha256', "accepted_by_{$userId}");
+
+        session([
+            $key => [
+                'user_id' => $userId,
+                'hash'    => $hash,
+                'time'    => now()->toDateTimeString(),
+            ],
+        ]);
+    }
+
+    /**
+     * Verify and clear the session for a review.
+     *
+     * @param  int|string  $documentId
+     * @param  int|null    $userId
+     * @param  int         $expiryMinutes  (optional) time validity in minutes
+     * @return bool
+     */
+    public static function verifyAndClearReviewSession($documentId, $userId = null, $expiryMinutes = 10)
+    {
+        $userId = $userId ?? Auth::id();
+        $key = "review.accepted.$documentId";
+        $data = session($key);
+
+        // Always clear after attempting to use it
+        session()->forget($key);
+
+        if (!$data) {
+            return false;
+        }
+
+        // Check expiry
+        $created = Carbon::parse($data['time']);
+        if ($created->diffInMinutes(now()) > $expiryMinutes) {
+            return false; // expired
+        }
+
+        // Validate hash
+        $expected = hash('sha256', "accepted_by_{$userId}");
+        if (!hash_equals($expected, $data['hash'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+
 
     // used for the table formatting tools on datetime
     public static function returnFormattedDatetime($datetime){
@@ -1077,6 +1173,9 @@ class ProjectDocumentHelpers
             'rejected' => ['label' => 'Rejected', 'bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'ring' => 'ring-rose-200'],
             'completed' => ['label' => 'Completed', 'bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'ring' => 'ring-indigo-200'],
             'cancelled' => ['label' => 'Cancelled', 'bg' => 'bg-gray-100', 'text' => 'text-gray-500', 'ring' => 'ring-gray-200'],
+            'reviewed' => ['label' => 'Reviewed', 'bg' => 'bg-lime-100', 'text' => 'text-lime-500', 'ring' => 'ring-lime-200'],
+            'changes_requested' => ['label' => 'Changes Requested', 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-500', 'ring' => 'ring-yellow-200'],
+            'on_que' => ['label' => 'On Queue', 'bg' => 'bg-slate-100', 'text' => 'text-slate-500', 'ring' => 'ring-slate-200'],
         ];
 
         $config = $map[$status] ?? [

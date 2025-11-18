@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Project;
 
+ 
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Review;
@@ -13,12 +14,14 @@ use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use Livewire\WithFileUploads;
 use App\Helpers\ProjectHelper;
+use App\Models\ProjectCompany;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Validation\Rule;
 use App\Models\ProjectSubscriber;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ProjectFederalAgencies;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
@@ -72,11 +75,51 @@ class ProjectEdit extends Component
 
     public $location_directions = [];
 
+
+
+    public $staff_engineering_data;
+    public $staff_initials;
+    public $lot_size;
+    public $unit_of_size;
+    public $site_area_inspection;
+    public $burials_discovered_onsite;
+    public $certificate_of_approval;
+    public $notice_of_violation;
+
+
+
     public $project_types = [
         'Local',
-        'Federal',
-        'Private'
+        'Federal', 
     ];
+
+    public $lot_size_unit_options = [
+        "Square meters (sqm)" => "Square meters (sqm)",
+        "Square feet (sqft)" => "Square feet (sqft)",
+        "Hectares (ha)" => "Hectares (ha)",
+        "Acres" => "Acres",
+        "Square kilometers (sqkm)" => "Square kilometers (sqkm)",
+        "Square miles" => "Square miles",
+    ];
+
+
+    /**
+     * Each row: ['name' => string]
+     * @var array<int, array{name:string}>
+     */
+    public array $companies = [
+        ['name' => '']
+    ];
+
+
+    /**
+     * Each row: ['name' => string]
+     * @var array<int, array{name:string}>
+     */
+    public array $federal_agencies = [
+        ['name' => '']
+    ];
+
     
 
     public $selected_document_type_id;
@@ -125,6 +168,17 @@ class ProjectEdit extends Component
         $this->street = $project->street ;
         $this->area = $project->area ;
         $this->lot_number = $project->lot_number ;
+
+
+        $this->staff_engineering_data = $project->staff_engineering_data ?? User::generateInitials(Auth::user()->name);
+        $this->staff_initials = $project->staff_initials ?? User::generateInitials(Auth::user()->name) ;
+        $this->lot_size = $project->lot_size ;
+        $this->unit_of_size = $project->unit_of_size ;
+        $this->site_area_inspection = $project->site_area_inspection ;
+        $this->burials_discovered_onsite = $project->burials_discovered_onsite ;
+        $this->certificate_of_approval = $project->certificate_of_approval ;
+        $this->notice_of_violation = $project->notice_of_violation ;
+
         
 
         $this->location_directions[] =   Project::select(
@@ -163,10 +217,53 @@ class ProjectEdit extends Component
   
         
         // dd($this->project->project_documents);
+
+        $this->loadCompanies();
+        $this->loadFederalAgencies(); 
+
     }
 
     
+    // load project companies 
+    public function loadCompanies(){
+        $this->companies = [];
+        $this->companies = $this->project->project_companies
+        ->map(fn($company) => [
+            'name' => $company->name
+        ])
+        ->toArray();
 
+
+        if(empty($this->companies) || count($this->companies) == 0){
+            $this->companies = [
+                ['name' => '']
+            ];
+            
+        }
+
+    }
+
+
+
+
+    // load project federal agencies  
+    public function loadFederalAgencies(){
+        $this->federal_agencies = [];
+        $this->federal_agencies = $this->project->project_federal_agencies
+        ->map(fn($agencies) => [
+            'name' => $agencies->name
+        ])
+        ->toArray();
+
+        if(empty($this->federal_agencies) || count($this->federal_agencies) == 0){
+            $this->federal_agencies = [
+                ['name' => '']
+            ];
+            
+        }
+
+
+    }
 
 
     // For the Search Subscriber Functionality
@@ -213,6 +310,9 @@ class ProjectEdit extends Component
         $this->validateOnly($fields,[
             'name' => [
                 'required',
+                Rule::unique('projects', 'name')
+                    ->where(fn ($query) => $query->where('lot_number', $this->lot_number))
+                    ->ignore($this->project_id),
                 'string', 
                 function ($attribute, $value, $fail) {
                     // Check if name is being changed
@@ -220,7 +320,7 @@ class ProjectEdit extends Component
                         $existingProject = Project::find($this->project_id);
                         if ($existingProject && $existingProject->name !== $value) {
                             // Only Admin can change the name
-                            if ($this->name_override == false && $existingProject->status != "draft") {
+                            if ($this->name_override == false && $existingProject->status != "draft"){
                                 $fail('Only an admin can modify the project name.');
                             }
                         }
@@ -228,6 +328,15 @@ class ProjectEdit extends Component
                 },
             ],
 
+             
+            'lot_number' => [
+                'required',
+                'string',
+            ],
+
+
+            
+    
 
             // 'latitude' => 'required|numeric',
             // 'longitude' => 'required|numeric',
@@ -247,9 +356,9 @@ class ProjectEdit extends Component
             //     ->ignore($this->project_id), // Ensure rc_number is unique
             // ],
 
-            'federal_agency' => [
-                'required'
-            ],
+            // 'federal_agency' => [
+            //     'required'
+            // ],
 
             'type' => [
                 'required'
@@ -298,6 +407,7 @@ class ProjectEdit extends Component
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
             'location.required' => 'Location name must be searched and is required.',
+            'name.unique' => 'The project title is already registered to that lot number.',
         ]);
 
         $this->updateDueDate();
@@ -389,6 +499,9 @@ class ProjectEdit extends Component
         $this->validate([
             'name' => [
                 'required',
+                Rule::unique('projects', 'name')
+                    ->where(fn ($query) => $query->where('lot_number', $this->lot_number))
+                    ->ignore($this->project_id),
                 'string', 
                 function ($attribute, $value, $fail) {
                     // Check if name is being changed
@@ -403,6 +516,13 @@ class ProjectEdit extends Component
                     }
                 },
             ],
+
+             
+             'lot_number' => [
+                'required',
+                'string',
+            ],
+
 
             // 'latitude' => 'required|numeric',
             // 'longitude' => 'required|numeric',
@@ -422,9 +542,9 @@ class ProjectEdit extends Component
             // ],
 
 
-            'federal_agency' => [
-                'required'
-            ],                                                                                                                                                                                                                                                                                                        
+            // 'federal_agency' => [
+            //     'required'
+            // ],                                                                                                                                                                                                                                                                                                        
 
             'type' => [
                 'required'
@@ -503,6 +623,15 @@ class ProjectEdit extends Component
         $project->street = $this->street ;
         $project->lot_number = $this->lot_number ;
 
+        $project->staff_engineering_data = $this->staff_engineering_data ;
+        $project->staff_initials = $this->staff_initials ;
+        $project->lot_size = $this->lot_size ;
+        $project->unit_of_size = $this->unit_of_size ;
+        $project->site_area_inspection = $this->site_area_inspection ;
+        $project->burials_discovered_onsite = $this->burials_discovered_onsite ;
+        $project->certificate_of_approval = $this->certificate_of_approval ;
+        $project->notice_of_violation = $this->notice_of_violation ;
+
         $project->updated_by = Auth::user()->id;
         $project->updated_at = now();
         $project->save();
@@ -536,6 +665,70 @@ class ProjectEdit extends Component
         }
 
 
+
+
+
+
+
+        // delete existing project companies 
+        if(!empty($project->project_companies)){
+            // delete project subscribers
+            if(!empty($project->project_companies)){
+                foreach($project->project_companies as $company){
+                    $company->delete();
+                } 
+            }
+        }
+
+
+
+        // Save Project Companies 
+         if (!empty($this->companies)) {
+            foreach ($this->companies as $index => $company ) {
+                if(!empty($company['name'])){
+                    ProjectCompany::create([
+                        'project_id' => $project->id,
+                        'name' => $company['name'],
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+
+                }
+
+                
+            }
+        }
+
+
+
+        // delete existing project federal agencies 
+        if(!empty($project->project_federal_agencies)){
+            // delete project subscribers
+            if(!empty($project->project_federal_agencies)){
+                foreach($project->project_federal_agencies as $agency){
+                    $agency->delete();
+                } 
+            }
+        }
+
+        // Save Project Federal Agencies 
+         if (!empty($this->federal_agencies)) {
+            foreach ($this->federal_agencies as $index => $agency ) {
+                if(!empty($company['name'])){
+                    ProjectFederalAgencies::create([
+                        'project_id' => $project->id,
+                        'name' => $agency['name'],
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
+ 
+            }
+        }
+
+
+
+ 
 
         ActivityLog::create([
             'log_action' => "Project \"".$this->name."\" updated ",

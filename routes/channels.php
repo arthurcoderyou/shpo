@@ -117,6 +117,13 @@ Broadcast::channel('project-document-submitted.{userId}', function ($user, $user
 });
 
 
+
+Broadcast::channel('project-document', function ($review) { 
+    
+    return Auth::check();
+
+});
+
 Broadcast::channel('attachment.{authId}', function ($user, int $authId) {
     return (int) $user->id === (int) $authId;
 });

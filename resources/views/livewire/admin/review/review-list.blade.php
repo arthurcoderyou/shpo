@@ -12,18 +12,22 @@
 
     x-data="{
         showModal: false,  
+        showDocumentModal: false,
         handleKeydown(event) {
             if (event.keyCode == 191) {
                 this.showModal = true; 
+                this.showDocumentModal = true; 
             }
             if (event.keyCode == 27) { 
                 this.showModal = false; 
+                this.showDocumentModal = false; 
                 $wire.search = '';
             }
 
         },
-        saerch_project() {
+        search_project() {
             this.showModal = false;
+            this.showDocumentModal = false; 
             {{-- $wire.search = '';  --}}
         }
     }"
@@ -62,19 +66,39 @@
                         placeholder="Search">
 
 
-                    @if( 
-                       request()->routeIs('review.index'))
-                    <button
-                        @click="showModal = true" type="button"
-                        @keydown.window="handleKeydown" 
-                        class="py-2 px-3 inline-flex min-w-12 items-center gap-x-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50   "
-                        {{-- href="{{ route('schedule.index') }}"> --}}
-                        >
-                         
-                        {{ !empty($project->name) ? $project->name : "Search Project" }} 
+                    @if( $routeIsIndex 
+                       )
+                        <button
+                            @click="showModal = true" type="button"
+                            @keydown.window="handleKeydown" 
+                            class="py-2 px-3 inline-flex min-w-12 items-center gap-x-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50   "
+                            {{-- href="{{ route('schedule.index') }}"> --}}
+                            >
+                            
+                            {{ !empty($project->name) ? $project->name : "Search Project" }} 
 
-                        <svg class="shrink-0 size-[.8em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>
-                    </button>
+                            <svg class="shrink-0 size-[.8em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>
+                        </button>
+
+
+                        @if(!empty($project))
+                            <button
+                                @click="showDocumentModal = true" type="button"
+                                @keydown.window="handleKeydown" 
+                                class="py-2 px-3 inline-flex min-w-12 items-center gap-x-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50   "
+                                {{-- href="{{ route('schedule.index') }}"> --}}
+                                >
+                                
+                                {{ !empty($project_document->document_type->name) ? $project_document->document_type->name : "Search Project Document" }} 
+
+                                <svg class="shrink-0 size-[.8em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>
+                            </button>
+                        @endif
+
+
+
+
+
                     @endif
 
 
@@ -572,6 +596,8 @@
                                                             <span class="font-bold text-amber-500">Changes Requested</span>
                                                         @elseif ($review->review_status == "approved")
                                                             <span class="font-bold text-lime-500">Approved</span>
+                                                        @elseif ($review->review_status == "reviewed")
+                                                            <span class="font-bold text-green-500">Reviewed</span>
                                                         @endif
                                                         at {{ \Carbon\Carbon::parse($review->created_at)->format('d M, h:i A') }} by {{ $review->creator ? $review->creator->name : '' }}
                                                     </p> 
@@ -842,10 +868,20 @@
 
                             </tr>
                         @endforeach
+                    @elseif(empty($project) && empty($project_document))
+                         <tr>
+                            <th scope="col" colspan="3" class="px-6 py-6 text-start">
+                                <div class="text-start">
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
+                                    Please select a project to view reviews
+                                    </span>
+                                </div>
+                            </th>
+                        </tr>
                     @else
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-start">
-                                <div class="flex items-center gap-x-2">
+                            <th scope="col" colspan="3" class="px-6 py-6 text-start">
+                                <div class="text-start">
                                     <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
                                     No records found
                                     </span>
@@ -893,9 +929,9 @@
 
 
 
-     <!-- Schedule modal-->
+    <!-- Project list modal-->
     @teleport('body')
-        <div x-show="showModal" x-trap="showModal" class="relative z-10 " aria-labelledby="modal-title" role="dialog"
+        <div x-show="showModal" x-trap="showModal" class="relative z-50 " aria-labelledby="modal-title" role="dialog"
             aria-modal="true">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
@@ -920,96 +956,93 @@
                                     placeholder="Search for project name ..." @keydown.slash.window="searchPosts" />
                                 </form>
                                 <div class="mt-2 w-full overflow-hidden rounded-md bg-white">
-
-                                    
-                                        @if(!empty($results) && count($results) > 0)
-                                            <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
-
-                                                All Projects <strong>(Click to select a project)</strong>
-
-                                            </div>
-
-                                            @foreach ($results as $result)
-                                                <div class="cursor-pointer py-2 px-3 hover:bg-slate-100 bg-white border border-gray-200 shadow-sm rounded-xl mb-1"
-                                                wire:click="saerch_project('{{  $result->id }}')"
-                                                @click="showModal = false"
-                                                >
-                                                    <p class="text-sm font-medium text-gray-600 cursor-pointer flex items-center gap-3">
-                                                        
-
-                                                        <div class="max-w-full text-wrap ">
-                                                            <div class="px-2 py-2   text-wrap">
-                                                                 
-
-
-
-
-                                                                <span class="text-sm text-gray-600 ">
-                                                                    <strong>{{ $result->name }}</strong>
-                                                                    <hr>
-                                                                    <span class="text-blue-500">{{ $result->project_reviews->count() ?? 0 }} reviews</span> 
-                                                                    <hr>
-                                                                    {{ $result->federal_agency }}
-                                                                    <hr>
-                                                                    {{ $result->location }}
-                                                                </span> 
  
-                                                                     
+                                    @if(!empty($results) && count($results) > 0)
+                                        <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
 
-                                                            </div>
+                                            All Projects <strong>(Click to select a project)</strong>
+
+                                        </div>
+
+                                        @foreach ($results as $result)
+                                            <div class="cursor-pointer py-2 px-3 hover:bg-slate-100 bg-white border border-gray-200 shadow-sm rounded-xl mb-1"
+                                            wire:click="search_project('{{  $result->id }}')"
+                                            @click="showModal = false"
+                                            >
+                                                <p class="text-sm font-medium text-gray-600 cursor-pointer flex items-center gap-3">
+                                                    
+
+                                                    <div class="max-w-full text-wrap ">
+                                                        <div class="px-2 py-2   text-wrap">
+                                                                
+
+
+
+
+                                                            <span class="text-sm text-gray-600 ">
+                                                                <strong>{{ $result->name }}</strong>
+                                                                <hr>
+                                                                <span class="text-blue-500">{{ $result->project_reviews->count() ?? 0 }} reviews</span> 
+                                                                <hr>
+                                                                {{ $result->federal_agency }}
+                                                                <hr>
+                                                                {{ $result->location }}
+                                                            </span> 
+
+                                                                    
+
                                                         </div>
-
-                                                        
-
-                                                        <div class="max-w-full size-auto whitespace-nowrap  ">
-                                                            <div class="px-2 py-2   max-h-52 text-wrap overflow-auto">
-                                                                <span class="text-sm text-gray-600  ">
-                                                                    {{ $result->description ? $result->description : '' }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                    </p>
-                                                </div>
-                                            @endforeach
-
-                                        @else
-                                            <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
-
-                                                <div class="mb-2 bg-red-50 border-s-4 border-red-500 p-4 " role="alert" tabindex="-1" aria-labelledby="hs-bordered-red-style-label">
-                                                    <div class="flex">
-                                                        <div class="shrink-0">
-                                                            <!-- Icon -->
-                                                            <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-red-100 bg-red-200 text-red-800 ">
-                                                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path d="M18 6 6 18"></path>
-                                                                    <path d="m6 6 12 12"></path>
-                                                                </svg>
-                                                            </span>
-                                                            <!-- End Icon -->
-                                                        </div>
-                                                        <div class="ms-3">
-                                                            <h3 id="hs-bordered-red-style-label" class="text-gray-800 font-semibold ">
-                                                               Project not found
-                                                            </h3>
-                                                            <p class="text-sm text-gray-700 ">
-
-                                                               Search for name, description, agency or related data
-                                                            </p>
-                                                        </div>
-
-
-
                                                     </div>
-                                                </div>
 
+                                                    
 
+                                                    <div class="max-w-full size-auto whitespace-nowrap  ">
+                                                        <div class="px-2 py-2   max-h-52 text-wrap overflow-auto">
+                                                            <span class="text-sm text-gray-600  ">
+                                                                {{ $result->description ? $result->description : '' }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
 
+                                                </p>
                                             </div>
-                                        @endif
+                                        @endforeach
 
-    
+                                    @else
+                                        <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
 
+                                            <div class="mb-2 bg-red-50 border-s-4 border-red-500 p-4 " role="alert" tabindex="-1" aria-labelledby="hs-bordered-red-style-label">
+                                                <div class="flex">
+                                                    <div class="shrink-0">
+                                                        <!-- Icon -->
+                                                        <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-red-100 bg-red-200 text-red-800 ">
+                                                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M18 6 6 18"></path>
+                                                                <path d="m6 6 12 12"></path>
+                                                            </svg>
+                                                        </span>
+                                                        <!-- End Icon -->
+                                                    </div>
+                                                    <div class="ms-3">
+                                                        <h3 id="hs-bordered-red-style-label" class="text-gray-800 font-semibold ">
+                                                            Project not found
+                                                        </h3>
+                                                        <p class="text-sm text-gray-700 ">
+
+                                                            Search for name, description, agency or related data
+                                                        </p>
+                                                    </div>
+
+
+
+                                                </div>
+                                            </div>
+
+
+
+                                        </div>
+                                    @endif
+ 
                                 </div>
                             </div>
                         </div>
@@ -1018,7 +1051,134 @@
             </div>
         </div>
     @endteleport
-    <!-- ./ Schedule modal-->
+    <!-- ./ Project list modal -->
+
+
+
+    <!-- Project document list modal-->
+    @teleport('body')
+        <div x-show="showDocumentModal" x-trap="showDocumentModal" class="relative z-50 " aria-labelledby="modal-title" role="dialog"
+            aria-modal="true">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+            <!-- <div class="fixed inset-0 z-10 w-screen overflow-y-auto py-10"> -->
+            <div class="fixed inset-0 z-10 w-screen overflow-y-auto py-10">
+                <div class="flex justify-center p-4 sm:p-0">
+                    <div
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                        <div @click.outside="showDocumentModal = false" class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                            <div class="w-full px-1 pt-1" x-data="{
+                                    (event) {
+                                    document.getElementById('searchInput').focus();
+                                    event.preventDefault();
+                                }
+                            }">
+                                <form action="" autocomplete="off">
+                                    <input
+                                    autocomplete="off"
+                                    wire:model.live.throttle.500ms="project_document_search" type="text" id="searchInput"
+                                    name="searchInput"
+                                    class="block w-full flex-1 py-2 px-3 mt-2 outline-none border-none rounded-md bg-slate-100"
+                                    placeholder="Search for project document name ..." @keydown.slash.window="searchPosts" />
+                                </form>
+                                <div class="mt-2 w-full overflow-hidden rounded-md bg-white">
+ 
+                                    @if(!empty($project_document_results) && count($project_document_results) > 0)
+                                        <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
+
+                                            All Project Documents <strong>(Click to select a project)</strong>
+
+                                        </div>
+
+                                        @foreach ($project_document_results as $result)
+                                            <div class="cursor-pointer py-2 px-3 hover:bg-slate-100 bg-white border border-gray-200 shadow-sm rounded-xl mb-1"
+                                            wire:click="search_project_document('{{  $result->id }}')"
+                                            @click="showDocumentModal = false"
+                                            >
+                                                <p class="text-sm font-medium text-gray-600 cursor-pointer flex items-center gap-3">
+                                                    
+
+                                                    <div class="max-w-full text-wrap ">
+                                                        <div class="px-2 py-2   text-wrap">
+                                                                
+
+
+
+
+                                                            <span class="text-sm text-gray-600 ">
+                                                                <strong>{{ $result->document_type->name ?? null  }}</strong>
+                                                                <hr>
+                                                                <span class="text-blue-500">{{ $result->project_reviews->count() ?? 0 }} reviews</span> 
+                                                                <hr>
+                                                                {{ $result->project->name ?? null }}
+                                                                {{--  
+                                                                <hr>
+                                                                {{ $result->location }} --}}
+                                                            </span> 
+
+                                                                    
+
+                                                        </div>
+                                                    </div>
+
+                                                    
+
+                                                    {{-- <div class="max-w-full size-auto whitespace-nowrap  ">
+                                                        <div class="px-2 py-2   max-h-52 text-wrap overflow-auto">
+                                                            <span class="text-sm text-gray-600  ">
+                                                                {{ $result->description ? $result->description : '' }}
+                                                            </span>
+                                                        </div>
+                                                    </div> --}}
+
+                                                </p>
+                                            </div>
+                                        @endforeach
+
+                                    @else
+                                        <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
+
+                                            <div class="mb-2 bg-red-50 border-s-4 border-red-500 p-4 " role="alert" tabindex="-1" aria-labelledby="hs-bordered-red-style-label">
+                                                <div class="flex">
+                                                    <div class="shrink-0">
+                                                        <!-- Icon -->
+                                                        <span class="inline-flex justify-center items-center size-8 rounded-full border-4 border-red-100 bg-red-200 text-red-800 ">
+                                                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M18 6 6 18"></path>
+                                                                <path d="m6 6 12 12"></path>
+                                                            </svg>
+                                                        </span>
+                                                        <!-- End Icon -->
+                                                    </div>
+                                                    <div class="ms-3">
+                                                        <h3 id="hs-bordered-red-style-label" class="text-gray-800 font-semibold ">
+                                                            Project document not found
+                                                        </h3>
+                                                        <p class="text-sm text-gray-700 ">
+
+                                                            Search for name of the document
+                                                        </p>
+                                                    </div>
+
+
+
+                                                </div>
+                                            </div>
+
+
+
+                                        </div>
+                                    @endif
+ 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endteleport
+    <!-- ./ Project document list modal -->
 
 
 
@@ -1027,7 +1187,7 @@
         <div wire:loading 
             class="p-0 m-0"
             style="padding: 0; margin: 0;">
-            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
+            <div class="absolute right-4 top-4 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
                 <div>   
                     <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>

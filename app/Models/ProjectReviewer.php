@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\ProjectReviewerController;
+use App\Enums\PeriodUnit;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Http\Controllers\ProjectReviewerController;
 
 class ProjectReviewer extends Model
 {
@@ -13,13 +14,14 @@ class ProjectReviewer extends Model
     use SoftDeletes;
     protected $table = "project_reviewers";
     protected $fillable  = [
+        'iteration', // iteration
         'order',
         'status', /// true or false, tells if the reviewer is the active reviewer or not
         'project_id',
         'user_id',
         'created_by',
         'updated_by',
-        'review_status', // 'pending','approved','rejected','changes_requested'
+        'review_status', // 'pending','approved','rejected','changes_requested','reviewed'
         'reviewer_type',
         'project_document_id',
 
@@ -30,9 +32,19 @@ class ProjectReviewer extends Model
         'requires_document_update',
         'requires_attachment_update',
 
+        'period_value',
+        'period_unit',
+
      
         # ['pending','approved','rejected']
     ];
+
+
+    protected $casts = [
+        'period_unit' => PeriodUnit::class,
+    ];
+
+    
 
 
     public static function boot()

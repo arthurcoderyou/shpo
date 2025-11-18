@@ -1,0 +1,772 @@
+<?php
+
+namespace App\Livewire\Admin\ReReview;
+
+use App\Models\Review;
+use App\Models\Project;
+use Livewire\Component;
+use Livewire\WithPagination;
+use Livewire\WithFileUploads;
+use App\Models\ProjectDocument;
+use App\Models\ProjectReviewer;
+use App\Models\ReReviewRequest;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ReviewAttachments;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectReviewHelpers;
+use App\Helpers\ProjectDocumentHelpers;
+use Illuminate\Support\Facades\Storage;
+use RealRashid\SweetAlert\Facades\Alert;
+
+class ReReviewList extends Component
+{   
+
+
+    use WithFileUploads;
+    use WithPagination;
+
+    protected $listeners = [
+        'projectReviewCreated' => '$refresh', 
+        // 'reviewerUpdated' => '$refresh',
+        // 'reviewerDeleted' => '$refresh',
+        
+    ];
+
+    public $search = '';
+    public $sort_by = '';
+    public $record_count = 10;
+
+    public $selected_records = [];
+    public $selectAll = false;
+
+    public $status = "submitted";
+    public $view_status;
+
+    public $count = 0;
+
+    public $file;
+
+    public $project_id;
+
+    public $project_document_id;
+
+    public $project;
+
+    public $project_document;
+
+    public $project_search;
+
+    public $project_document_search;
+    public $next_reviewer;
+
+    public $routeIsIndex = false;
+
+    public function mount($id = null, $project_document_id = null){
+
+
+        if(request()->routeIs('re-review.index')){
+
+            $this->routeIsIndex = true;
+
+            // $project_id = request()
+            // $this->project_id = request()->query('project', ''); // Default to empty string if not set
+
+
+            $this->project_id = request()->query('project', '');
+
+            if(!empty( $this->project_id)){
+                $project = Project::find($this->project_id);
+                $this->project =  $project;
+            }
+
+
+            $this->project_document_id = request()->query('project_document', '');
+
+            if(!empty( $this->project_document_id)){
+                $project_document = ProjectDocument::find($this->project_document_id);
+                $this->project_document =  $project_document;
+            }
+
+            
+            
+
+
+        }else{
+            $project = Project::find($id);
+            $this->project =  $project;
+            $this->project_id = $id;
+
+            $project_document = ProjectDocument::find($project_document_id);
+            $this->project_document =  $project_document;
+            $this->project_document_id = $project_document_id;
+            
+        }
+        
+
+        if(!empty($project)){
+            $this->next_reviewer = $project->getCurrentReviewer(); 
+
+        }
+
+        if(!empty( $project_document)){
+            
+            $project_document = ProjectDocument::find($this->project_document_id);
+             $this->next_reviewer = $project_document->getCurrentReviewerByProjectDocument(); 
+             
+        }
+
+
+        // dd($this->project);
+
+    }
+
+
+    public function mark_as_viewed($review_id){
+
+
+        $review = Review::find($review_id);
+        $review->viewed = true;
+        $review->updated_at = now();
+        $review->updated_by = Auth::user()->id;
+        $review->save();
+
+
+    }
+
+
+
+    public function search_project($project_id){
+         
+            // dd($this->selected_records);
+     
+    
+            // //create the query to pass
+            // $queryParams = [];
+            // $queryParams['reservation_ids'] = $reservation_ids;
+    
+            // return redirect()->route('review.index',['project_id' => $project_id]);
+
+        
+            $project = Project::find($project_id);
+            $this->project =  $project; 
+            $this->project_id = $project_id;
+
+            
+            // empty the project document temporarily
+            $this->project_document = null;
+            
+            $this->project_document_id = null;
+
+
+            // dd($this->project);
+
+            $this->routeIsIndex = true;
+            
+    }
+
+    // search for project document , this is only available when the project is selected
+    public function search_project_document($project_document_id){
+         
+            // dd($this->selected_records);
+     
+    
+            // //create the query to pass
+            // $queryParams = [];
+            // $queryParams['reservation_ids'] = $reservation_ids;
+    
+            // return redirect()->route('review.index',[
+            //     'project_id' => $project_id,
+            //     'project_document_id' => $project_document_id
+            // ]);
+     
+
+
+  
+            $project_document = ProjectDocument::find($project_document_id);
+            $this->project_document =  $project_document;
+            
+            $this->project_document_id = $this->project_document->id;
+
+            $project = Project::find($project_document->project_id);
+            $this->project =  $project; 
+            $this->project_id =  $project->id;
+ 
+            $this->routeIsIndex = true;
+    }
+
+    
+
+    // Method to delete selected records
+    public function deleteSelected()
+    {
+        Review::whereIn('id', $this->selected_records)->delete(); // Delete the selected records
+
+
+        $this->selected_records = []; // Clear selected records
+
+        Alert::success('Success','Selected reviews deleted successfully');
+        return redirect()->route('project.review',[]);
+    }
+
+    // This method is called automatically when selected_records is updated
+    public function updateSelectedCount()
+    {
+        // Update the count when checkboxes are checked or unchecked
+        $this->count = count($this->selected_records);
+    }
+
+    public function toggleSelectAll()
+    {
+        if ($this->selectAll) {
+            $this->selected_records = Review::pluck('id')->toArray(); // Select all records
+        } else {
+            $this->selected_records = []; // Deselect all
+        }
+
+        $this->count = count($this->selected_records);
+    }
+
+    public function delete($id){
+        $review = Review::find($id);
+
+ 
+
+        // if(!empty($project->attachments)){
+
+        //     foreach($project->attachments as $attachment){ 
+ 
+        //         // Construct the full file path
+        //         $filePath = "public/uploads/project_attachments/{$attachment->attachment}";
+
+        //         // Check if the file exists in storage and delete it
+        //         if (Storage::exists($filePath)) {
+        //             Storage::delete($filePath);
+        //         }
+
+        //         // Delete the record from the database
+        //         $attachment->delete();
+        //     }
+
+            
+
+        // }
+
+
+
+        $review->delete();
+
+ 
+
+        Alert::success('Success','Project deleted successfully');
+        return redirect()->route('project.review',['project' => $this->project_id]);
+
+    }
+
+
+    public function removeUploadedAttachment(int $id){
+
+        // dd($id, gettype($id)); // Check the actual value and type
+        // dd($id);
+        // Find the attachment record
+        $attachment = ReviewAttachments::find($id);
+
+        if (!$attachment) {
+            session()->flash('error', 'Attachment not found.');
+            return;
+        }
+
+        // Construct the full file path
+        $filePath = "public/uploads/review_attachments/{$attachment->attachment}";
+
+        // Check if the file exists in storage and delete it
+        if (Storage::exists($filePath)) {
+            Storage::delete($filePath);
+        }
+
+        // Delete the record from the database
+        $attachment->delete();
+
+
+        Alert::success('Success','Review attachment deleted successfully');
+        return redirect()->route('project.review',['project' => $attachment->project_id]);
+
+
+    }
+
+
+
+    public function generatePdf(){
+
+        // dd("PDF");
+        // dd($this->selected_records );
+
+
+ 
+        $data = [];
+
+        foreach ($this->selected_records as $id) {
+            // Fetch the player registration with related details
+            $review = Review::where('id', $id)->first();
+
+            if ($review) {
+               // Grouping registered attachments 
+                $review_attachments = [];
+
+                foreach ($review->attachments as $attachment) {
+                    if (!empty($attachment->attachment)) {
+                        $review_attachments[] = $attachment->attachment;
+                    }
+                }
+                
+                $next_reviewer = '';
+                if(!empty($review->project)){
+                    $next_reviewer = $review->project->getCurrentReviewer();  
+                }
+
+
+                $data[] = [
+                    'id' => $review->id,
+                    'project' => $review->project->name,
+                    'project_status' => $review->project->getStatusTextAttribute(),
+                    'review_status' => $review->review_status,
+                    'review_created_at' => $review->created_at, 
+                    'project_review' => $review->project_review,
+
+                    'next_reviewer' => !empty($next_reviewer->user) ? $next_reviewer->user->name : '',
+
+                    'reviewer_review' => !$review->isSubmitterReview() && $review->review_status !== "submitted", // if this is true, then reviewer view should be used
+                    'reviewer_due_date' => $review->project->reviewer_due_date ?  $review->project->reviewer_due_date : null,
+
+
+                    'admin_review' => $review->admin_review,
+                    'reviewer' => [
+                        'name' => $review->reviewer->name ?? 'N/A', 
+                        'email' => $review->reviewer->email ?? 'N/A',  
+                    ],
+                    'review_attachments' => $review_attachments, // Grouped and structured attachments  
+                ];
+            }
+        }
+
+
+ 
+ 
+        $data_array = [
+            'data' => $data
+        ];
+ 
+        // dd($data);
+        // Generate PDF using a view
+        // $pdf = Pdf::loadView('report.users', $data);
+        $pdf = Pdf::loadView('report.report', $data_array);
+
+        $pdf_title = 'SHPO_Project_Review _Report_'.date("d_m_Y h_i_A",strtotime(now())).'.pdf';
+
+        // Set metadata for the PDF document
+        $options = $pdf->getDomPDF()->getOptions();
+        $options->set('isHtml5ParserEnabled', true); // Optional: Enable HTML5 parsing
+        $options->set('isRemoteEnabled', true);      // Optional: Enable loading of external resources
+
+        // Set the document title, author, and other metadata
+        $pdf->getDomPDF()->getCanvas()->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
+
+            $pdf_title = 'SHPO_Project_Review _Report_'.date("d_m_Y h_i_A",strtotime(now())).'.pdf';
+            // Set metadata using the correct format
+            $canvas->get_cpdf()->metadata['Title'] = $pdf_title;
+            $canvas->get_cpdf()->metadata['Author'] = Auth::user()->name;
+            $canvas->get_cpdf()->metadata['Subject'] = 'SHPO_Project_Review _Report_for_'.date("d_m_Y h_i_A",strtotime(now()));
+            $canvas->get_cpdf()->metadata['Keywords'] = 'SHPO_Project_Review _Report_for_'.date("d_m_Y h_i_A",strtotime(now()));
+        });
+
+
+
+
+        // // // // Return the PDF as a download or inline view
+        // return response()->streamDownload(function () use ($pdf) {
+        //     print $pdf->stream();
+
+        // }, $pdf_title);
+
+        // Define the directory and file path
+        $storagePath = storage_path('app/public/reports/');
+        $filePath = $storagePath . $pdf_title;
+
+        // Check if the directory exists, if not, create it
+        if (!file_exists($storagePath)) {
+            mkdir($storagePath, 0755, true);  // Creates the directory with correct permissions
+        }
+
+        // Save the PDF file to the storage (in 'storage/app/public/reports/')
+        $pdf->save($filePath);
+
+        // Get the public URL to the file (using the Laravel storage link)
+        $fileUrl = asset('storage/reports/' . $pdf_title);
+
+        // Return the URL as JSON to the front-end
+        // return redirect($fileUrl);
+        // Redirect to the PDF URL in a new tab
+        // return redirect()->to($fileUrl);
+        // session()->flash('fileUrl', $fileUrl);
+
+        session()->put('pdf_url', $fileUrl);
+
+        $this->fileUrl = $fileUrl;
+        return redirect('/review');
+
+       // Dispatch browser event to open the PDF in a new tab
+        //    $this->dispatch('open-pdf', ['url' => $fileUrl]);
+
+
+
+        // Emit the file URL to the frontend to open in a new tab
+        // $this->dispatchBrowserEvent('openPdfInNewTab', ['url' => $fileUrl]);
+
+
+    }
+
+
+    public function returnStatusConfig($status){
+        return ProjectDocumentHelpers::returnStatusConfig($status);
+    }
+
+
+    public function returnSlotData(Review $review, $type){
+        return ProjectReviewHelpers::returnSlotData($review, $type); 
+    }
+
+     public function returnReviewerName(Review $review){
+        return ProjectReviewHelpers::returnReviewerName($review);
+    }
+    
+ 
+
+    public function getUserRoles($user_id)
+    {
+
+        // dd($user_id);
+        // Find the user by ID
+        $user = User::find($user_id);
+
+        // Return an empty array if not found
+        if (!$user) {
+            return [];
+        }
+
+        // Return the roles as an array (e.g. ['Admin', 'Reviewer'])
+        return $user->getRoleNames()->toArray();
+    }
+    
+
+    public function getProjectDocumentsProperty(){
+        $query = ProjectDocument::query();
+        $search = $this->project_document_search;
+        $project_id = $this->project_id ?? null;
+        $document_type_id = $this->document_type_id ?? null;
+
+        if(!empty($this->project_document_search)){
+            $query =  $query->applySearchUsingWhereHas($this->project_document_search, $project_id, $document_type_id);
+        }
+        
+
+        if(!empty($project_id)){
+            $query = $query->where('project_id',$this->project_id);
+        }
+
+        if(!empty($document_type_id)){
+            $query = $query->where('document_type_id',$this->document_type_id);
+        }
+
+        return $query->orderBy('updated_at','DESC')
+            ->limit(10)
+            ->get();
+
+
+    }
+
+    public $response_notes;
+    public $response_status;
+    public $review_id;
+    public function submitResponse(){
+        // dd($this->all());
+
+        $this->validate([
+            'response_status' => 'required',
+            'response_notes' => 'required',
+            'review_id' => 'required',
+        ]);
+
+        $review = ReReviewRequest::find($this->review_id);
+        $review->status = $this->response_status;
+        $review->response_notes = $this->response_notes;
+        $review->updated_at = now();
+        $review->updated_by = Auth::user()->id;
+        $review->save();
+
+
+        $project_document = ProjectDocument::find($review->project_document_id);
+
+        // $last_review = $project_document->getLastReview();
+
+
+        if($review->status == "approved"){
+            // update the reviewers 
+
+            $current_reviewer = ProjectReviewer::find( $review->requested_by);
+            $current_reviewer->status = false; // set as NOT current reviewer
+            $current_reviewer->review_status = "pending";
+            $current_reviewer->updated_at = now();
+            $current_reviewer->updated_by = Auth::user()->id;
+            $current_reviewer->save();
+
+
+            $previuos_reviewer = ProjectReviewer::find( $review->requested_to);
+            $previuos_reviewer->status = true; // set as CURRENT reviewer
+            $previuos_reviewer->review_status = "pending";
+            $previuos_reviewer->updated_at = now();
+            $previuos_reviewer->updated_by = Auth::user()->id;
+            $previuos_reviewer->save();
+              
+        }
+
+
+
+        // send the event 
+        
+
+
+
+
+
+        Alert::success('Success','Response submitted successfully');
+        return redirect()->route('re-review.index',[
+            'project' => $review->project_id,
+            'project_document' => $review->project_document_id,
+        
+        ]);
+
+
+
+    }
+
+
+
+    
+    public function render()
+    {
+
+        $reviews = ReReviewRequest::select('re_review_requests.*');
+
+        // if(Auth::user()->can('system access admin')){
+        //     if(!empty( $this->project_id)){
+        //         $reviews = $reviews->where('project_id' ,$this->project_id);
+        //     }
+
+        // }else{
+        //     $reviews = $reviews->where('project_id' ,$this->project_id);
+        // }
+            
+
+            // if (!empty($this->search)) {
+            //     $search = $this->search;
+            //     // dd($this->search);
+
+            //     $reviews = $reviews
+            //         ->join('users', 'users.id', '=', 'reviews.reviewer_id')
+            //         ->where(function ($query) use ($search) {
+            //             $query->where('reviews.project_review', 'LIKE', '%' . $search . '%')
+            //                 ->orWhere('users.name', 'LIKE', '%' . $search . '%');
+            //         })
+            //         ->select('reviews.*'); // Ensure you select the correct columns
+
+
+            // }
+            if (!empty($this->search)) {
+                
+                $reviews = $reviews->orWhere(function ($query) {
+                    $query->whereHas('project', function ($q) {
+                        $q->where('name', 'like', "%{$this->search}%")
+                            ->orWhere('email', 'like', "%{$this->search}%");
+                    });
+                });
+
+                $reviews = $reviews->orWhere(function ($query) {
+                    $query->whereHas('project_document', function ($q) {
+
+                        $q->whereHas('document_type', function ($que) {
+                            $que->where('name', 'like', "%{$this->search}%")
+                                ->orWhere('email', 'like', "%{$this->search}%");
+                        });
+                        
+                    });
+                });
+
+
+                $reviews = $reviews->orWhere('re_review_requests.reason' ,'LIKE','%'.$this->search.'%' );
+
+ 
+
+            }
+            if (!empty($this->status)) {
+                
+                $reviews = $reviews->where('re_review_requests.status' ,$this->status );
+            }
+ 
+
+            // // Find the role
+            // $role = Role::where('name', 'DSI God Admin')->first();
+
+            // if ($role) {
+            //     // Get user IDs only if role exists
+            //     $dsiGodAdminUserIds = $role->reviews()->pluck('id');
+            // } else {
+            //     // Set empty array if role doesn't exist
+            //     $dsiGodAdminUserIds = [];
+            // }
+
+
+            // // if(!Auth::user()->can('system access global admin')){
+            // //     $reviews =  $reviews->where('reviews.created_by','=',Auth::user()->id);
+            // // }
+
+            // // Adjust the query
+            // if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
+
+            //     $reviews = $reviews->where('reviews.created_by', '=', Auth::user()->id);
+
+            // }else
+            
+           
+            // $reviews = $reviews->whereNotIn('reviews.created_by', $dsiGodAdminUserIds);
+            // if(Auth::user()->can('system access user')){
+            //     $reviews = $reviews->where('reviews.created_by', '=', Auth::user()->id);
+            // }
+         
+
+
+        // dd($this->sort_by);
+        if(!empty($this->sort_by) && $this->sort_by != ""){
+            // dd($this->sort_by);
+            switch($this->sort_by){
+ 
+                case "Description A - Z":
+                    $reviews =  $reviews->orderBy('re_review_requests.description','ASC');
+                    break;
+ 
+                case "Description Z - A":
+                    $reviews =  $reviews->orderBy('re_review_requests.description','DESC');
+                    break;
+
+                case "Federal Agency A - Z":
+                    $reviews =  $reviews->orderBy('re_review_requests.federal_agency','ASC');
+                    break;
+    
+                case "Federal Agency Z - A":
+                    $reviews =  $reviews->orderBy('re_review_requests.federal_agency','DESC');
+                    break;
+    
+
+                /**
+                 * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
+                 * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
+                 */
+
+                case "Latest Added":
+                    $reviews =  $reviews->orderBy('re_review_requests.created_at','DESC');
+                    break;
+
+                case "Oldest Added":
+                    $reviews =  $reviews->orderBy('re_review_requests.created_at','ASC');
+                    break;
+
+                case "Latest Updated":
+                    $reviews =  $reviews->orderBy('re_review_requests.updated_at','DESC');
+                    break;
+
+                case "Oldest Updated":
+                    $reviews =  $reviews->orderBy('re_review_requests.updated_at','ASC');
+                    break;
+                default:
+                    $reviews =  $reviews->orderBy('re_review_requests.updated_at','DESC');
+                    break;
+
+            }
+
+
+        }else{
+            $reviews =  $reviews->orderBy('re_review_requests.created_at','DESC');
+            
+        }
+
+
+
+
+        if(!empty( $this->project_id)){
+            // dd($this->project_id);
+            $reviews = $reviews->where('re_review_requests.project_id' ,$this->project_id);
+        }
+
+
+        if(!empty( $this->project_document_id)){
+            $reviews = $reviews->where('re_review_requests.project_document_id' ,$this->project_document_id);
+        }
+
+
+
+        $this->selected_records = $reviews->pluck('id')->toArray();
+
+
+        $reviews = $reviews->paginate($this->record_count);
+
+
+        // dd($reviews);
+
+        // $this->project_search 
+        
+        $results = Project::select('projects.*');
+        if (!empty($this->project_search) && strlen($this->project_search) > 0) {
+            $search = $this->project_search;
+
+            // $results = $results->where(function ($query) use ($search) {
+            //     $query->where('projects.name', 'LIKE', '%' . $search . '%')
+            //     ->where('projects.name', 'LIKE', '%' . $search . '%')
+            //         ;
+            // });
+
+
+            $results = $results->where(function($query) use ($search) {
+                $query->where('projects.name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('projects.federal_agency', 'LIKE', '%' . $search . '%')
+                    ->orWhere('projects.description', 'LIKE', '%' . $search . '%')
+                    // ->orWhereHas('creator', function ($query) use ($search) {
+                    //     $query->where('users.name', 'LIKE', '%' . $search . '%')
+                    //         ->where('users.email', 'LIKE', '%' . $search . '%');
+                    // })
+                    // ->orWhereHas('updator', function ($query) use ($search) {
+                    //     $query->where('users.name', 'LIKE', '%' . $search . '%')
+                    //         ->where('users.email', 'LIKE', '%' . $search . '%');
+                    // })
+                    ->orWhereHas('project_reviewers.user', function ($query) use ($search) {
+                        $query->where('users.name', 'LIKE', '%' . $search . '%')
+                        ->where('users.email', 'LIKE', '%' . $search . '%');
+                    });
+            });
+
+
+        }
+        $results =  $results
+            ->orderBy('updated_at','desc')
+            ->limit(10)->get();
+
+
+        // dd($this->projectDocuments);
+
+        return view('livewire.admin.re-review.re-review-list',[
+            'reviews' => $reviews,
+            'results' => $results,
+            'project_document_results' => $this->projectDocuments,
+        
+        ]);
+    }
+
+ 
+}

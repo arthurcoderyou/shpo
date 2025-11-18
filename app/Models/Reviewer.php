@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PeriodUnit;
 use App\Events\ReviewerCreated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,13 @@ class Reviewer extends Model
 {
 
 
+
+     
+    protected $casts = [
+        'period_unit' => PeriodUnit::class,
+    ];
+
+ 
     
     protected $table ="reviewers";
     /**
@@ -30,6 +38,9 @@ class Reviewer extends Model
         // initial reviews the project before approved
         // document reviews the project documents
         // final reviews the project after all documents are approved
+
+        'period_unit',
+        'period_value',
    ];
 
 

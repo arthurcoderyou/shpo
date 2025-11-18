@@ -69,41 +69,48 @@ class UserRoleEdit extends Component
 
 
 
-     private function hasConnectedRecords(User $user): bool
+     private function hasConnectedRecords(User $user, $role_to_check = "user"): bool
     {
-        // Check if the user has created any projects
-        $projects = Project::where('created_by', $user->id);
 
-        // If the user has any related projects, we check if any of those have connected child records
-        foreach ($projects->get() as $project) {
-            if (
-                $project->project_subscribers()->exists() ||
-                $project->project_documents()->exists() ||
-                $project->attachments()->exists() ||
-                $project->project_reviewers()->exists() ||
-                $project->project_reviews()->exists()
-            ) {
+        if($role_to_check == "user"){
+            // Check if the user has created any projects
+            $projects = Project::where('created_by', $user->id);
+
+            // If the user has any related projects, we check if any of those have connected child records
+            foreach ($projects->get() as $project) {
+                if (
+                    $project->project_subscribers()->exists() ||
+                    $project->project_documents()->exists() ||
+                    $project->attachments()->exists() ||
+                    $project->project_reviewers()->exists() ||
+                    $project->project_reviews()->exists()
+                ) {
+                    return true;
+                }
+            }
+        }
+        
+        if($role_to_check == "reviewer"){
+            // If the user is a saved document reviewer
+            if (count($user->document_reviewers) > 0 ) {
+                return true;
+            }
+
+
+            // If the user is a saved project document reviewer
+            if (count($user->reviewed_projects) > 0 ) {
                 return true;
             }
         }
 
-        // If the user is a saved document reviewer
-        if (count($user->document_reviewers) > 0 ) {
-            return true;
+
+        if($role_to_check == "user"){
+            // If the user has at least one project, that's a connection too
+            if ($projects->exists()) {
+                return true;
+            }
         }
-
-
-        // If the user is a saved project document reviewer
-        if (count($user->reviewed_projects) > 0 ) {
-            return true;
-        }
-
-
-
-        // If the user has at least one project, that's a connection too
-        if ($projects->exists()) {
-            return true;
-        }
+        
 
         // Check notifications (optional, based on your usage)
         // if ($user->notifications()->exists()) {
@@ -183,7 +190,7 @@ class UserRoleEdit extends Component
 
         // If reviewer permission is being removed, check for connections
         if ($hadReviewerPermission && !$hasReviewerPermissionAfter) {
-            if ($this->hasConnectedRecords($user)) {
+            if ($this->hasConnectedRecords($user,'reviewer')) {
                 Alert::error('Error', 'Cannot remove reviewer role. This user is connected to existing records.');
                 return redirect()->route('user.index');
             }
@@ -191,7 +198,7 @@ class UserRoleEdit extends Component
 
         // If user permission is being removed, check for connections
         if ($hadUserPermission && !$hasUserPermissionAfter) {
-            if ($this->hasConnectedRecords($user)) {
+            if ($this->hasConnectedRecords($user,'user')) {
                 Alert::error('Error', 'Cannot remove user role. This user is connected to existing records.');
                 return redirect()->route('user.index');
             }
@@ -199,7 +206,7 @@ class UserRoleEdit extends Component
 
         // If admin permission is being removed, check for connections
         if ($hadAdminPermission && !$hasAdminPermissionAfter) {
-            if ($this->hasConnectedRecords($user)) {
+            if ($this->hasConnectedRecords($user,'admin')) {
                 Alert::error('Error', 'Cannot remove admin role. This user is connected to existing records.');
                 return redirect()->route('user.index');
             }

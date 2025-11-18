@@ -30,10 +30,19 @@
             @case('test/review/list')
                     <livewire:admin.test.test-review-list />
                 @break
+            @case('test/review/re_review')
+                    <livewire:admin.test.test-re-review />
+                @break
+ 
+            @case('test/review/digital_signature')
+                <livewire:admin.test.signature-test :signable-type="\App\Models\ProjectDocument::class" :signable-id="249" />
+                @break;
 
-
+            @case('test/review/review_list_layout')
+                <livewire:admin.test.test-review-list-layout  />
+                @break;
                 
-        
+            
             @default
                 
         @endswitch

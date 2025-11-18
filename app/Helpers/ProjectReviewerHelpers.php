@@ -1,5 +1,6 @@
 <?php 
 namespace App\Helpers;
+use App\Events\ProjectDocument\ReReview\ReReviewRequest;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Review;
@@ -34,8 +35,8 @@ use App\Notifications\ProjectReviewFollowupNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
 use App\Events\ProjectDocument\Review\FollowupReviewRequest;
 use App\Notifications\ProjectDocumentCompleteApprovalNotification;
-
-
+ 
+use Illuminate\Support\Collection;
 
 class ProjectReviewerHelpers
 {
@@ -49,6 +50,8 @@ class ProjectReviewerHelpers
      */
     public static function setProjectDocumentReviewers(ProjectDocument $project_document, string $submission_type = 'initial_submission'): void
     {
+
+        $auth_user_id = Auth::id() ?? $project_document->created_by;
         // Normalize submission type
         $submission_type = $submission_type === 'supplemental_submission'
             ? 'supplemental_submission'
@@ -72,7 +75,7 @@ class ProjectReviewerHelpers
             return;
         }
 
-        DB::transaction(function () use ($reviewers, $project_document, $submission_type) {
+        DB::transaction(function () use ($reviewers, $project_document, $submission_type,$auth_user_id) {
             foreach ($reviewers as $reviewer) {
                 // Keys that must be unique
                 $unique = [
@@ -88,8 +91,10 @@ class ProjectReviewerHelpers
                     'reviewer_type'  => 'document',
                     'slot_type'      => $reviewer->slot_type ?? null,
                     'slot_role'      => $reviewer->slot_role ?? null,
-                    'created_by'     => Auth::id(),
-                    'updated_by'     => Auth::id(),
+                    'period_value'      => $reviewer->period_value ?? null,
+                    'period_unit'      => $reviewer->period_unit ?? null,
+                    'created_by'     => Auth::id() ?? $auth_user_id,
+                    'updated_by'     => Auth::id() ?? $auth_user_id,
                 ];
 
                 // Values to update (only for supplemental or if the row already exists)
@@ -99,7 +104,9 @@ class ProjectReviewerHelpers
                     'user_id'    => $reviewer->user_id ?? null,
                     'slot_type'  => $reviewer->slot_type ?? null,
                     'slot_role'  => $reviewer->slot_role ?? null,
-                    'updated_by' => Auth::id(),
+                    'period_value'      => $reviewer->period_value ?? null,
+                    'period_unit'      => $reviewer->period_unit ?? null,
+                    'updated_by' => Auth::id() ?? $auth_user_id,
                 ];
 
                 if ($submission_type === 'initial_submission') {
@@ -138,6 +145,8 @@ class ProjectReviewerHelpers
         // get the current reviewer of the document 
         $current_reviewer =     $project_document->getCurrentReviewerByProjectDocument();
 
+        $auth_user_id = Auth::user()->id ?? $project_document->created_by;
+
 
         // check if there are still project reviewers 
         if( !empty($current_reviewer) ){
@@ -152,7 +161,7 @@ class ProjectReviewerHelpers
                     case "person":  
 
                         try {
-                        event(new ReviewRequest( $current_reviewer->id, Auth::user()->id, true, true));
+                        event(new ReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
                         } catch (\Throwable $e) {
                             // Log the error without interrupting the flow
                             Log::error('Failed to dispatch ReviewRequest event: ' . $e->getMessage(), [
@@ -189,7 +198,7 @@ class ProjectReviewerHelpers
                                     event(new OpenReviewRequest(
                                         $current_reviewer->id, // project_reviewer_id
                                         $userId,               // recipient user id
-                                        Auth::user()->id,
+                                        $auth_user_id,
                                         true,                  // send email
                                         true                   // send broadcast
                                     ));
@@ -214,7 +223,7 @@ class ProjectReviewerHelpers
             }else{ // string $submission_type = 'suplemental_submission'
                 
                 try {
-                event(new FollowupReviewRequest( $current_reviewer->id, Auth::user()->id, true, true));
+                event(new FollowupReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
                 } catch (\Throwable $e) {
                     // Log the error without interrupting the flow
                     Log::error('Failed to dispatch FollowupReviewRequest event: ' . $e->getMessage(), [
@@ -254,6 +263,9 @@ class ProjectReviewerHelpers
         // Make sure reviewers are loaded efficiently
         $project_document->loadMissing('project_reviewers:id,project_document_id,user_id');
 
+
+        $id = Auth::id() ?? $project_document->created_by;
+
         // 1) Build the full recipient list (helper + assigned reviewers)
         $recipientIds = collect(
                 ProjectReviewerHelpers::getNotificationRecipientUserIds(
@@ -265,7 +277,7 @@ class ProjectReviewerHelpers
             ->merge($project_document->project_reviewers->pluck('user_id'))
             ->filter() // remove nulls/empties
             ->unique()
-            ->reject(fn ($id) => (int) $id === (int) Auth::id()) // don't notify the actor
+            ->reject(fn ($id) => (int) $id === (int) $id) // don't notify the actor
             ->values();
 
         // 2) Nothing to do? Bail early.
@@ -282,7 +294,7 @@ class ProjectReviewerHelpers
                 event(new \App\Events\ProjectDocument\ProjectReviewer\Updated(
                     $project_document->id,
                     (int) $recipientId,           // recipient user id
-                    (int) Auth::id(),             // actor
+                    (int) $id,             // actor
                     true,                         // send email
                     true                          // send broadcast
                 ));
@@ -291,7 +303,7 @@ class ProjectReviewerHelpers
                     'error'                 => $e->getMessage(),
                     'project_document_id'   => $project_document->id,
                     'recipient_user_id'     => $recipientId,
-                    'actor_user_id'         => Auth::id(),
+                    'actor_user_id'         => $id,
                     'trace'                 => $e->getTraceAsString(),
                 ]);
                 // continue loop
@@ -305,12 +317,73 @@ class ProjectReviewerHelpers
 
 
 
+    public static function sendReReviewRequest(\App\Models\ReReviewRequest $re_review_request){
+ 
+
+        $project_document = ProjectDocument::find($re_review_request->project_document_id);
+        $last_review =  $project_document->getLastReview(); 
+        
+
+        // check if there is a last review instance
+        if(empty($last_review)){
+            Alert::error('Error','Re-review request failed. There are no previuos reviewers');
+            return redirect()->route('project-document.review',[
+                'project' => $$project_document->project_id,
+                'project_document' => $project_document->id,
+            
+            ]); 
+        }   
+
+        // get the admin ids
+        $adminIds = User::permission('system access admin')->pluck('id');
+        // dd($adminIds);
+
+        // dd($re_review_request);
+
+        // 2) Nothing to do? Bail early.
+        if ($adminIds->isEmpty()) {
+            Log::info('No recipients for ProjectReviewer Updated event.', [ 
+            ]);
+            // return; // optional
+        }
+
+        // 3) Dispatch per recipient; keep going even if one fails.
+        foreach ($adminIds as $key => $recipientId) {
+            try {
+                event(new \App\Events\ProjectDocument\ReReview\ReReviewRequest(
+                    $re_review_request->id,
+                    (int) $last_review->id,           // recipient user id
+                    $recipientId,  // user to notify
+                    (int) Auth::id(),             // actor
+                    true,                         // send email
+                    true                          // send broadcast
+                ));
+            } catch (\Throwable $e) {
+                Log::error('Failed to dispatch ProjectReviewer Updated event.', [
+                    'error'                 => $e->getMessage(),
+                    're_review_request_id'   => $re_review_request->id, 
+                    'recipient_user_id'     => $recipientId,
+                    'actor_user_id'         => Auth::id(),
+                    'trace'                 => $e->getTraceAsString(),
+                ]);
+                // continue loop
+            }
+        }
+
+
+    }
+
+
+
      
     // ['submitter', 'reviewers', 'admins', 'subscribers']
     public static function getNotificationRecipientUserIds($recipient = 'all', int $project_document_id): array
     {
 
         $project_document = ProjectDocument::find($project_document_id);
+
+
+        
 
         /**
          * Accepted types:
@@ -381,9 +454,23 @@ class ProjectReviewerHelpers
             ->unique()
             ->values()
             ->all();
+
+            
     }
 
-
+      
+    // this is used for the project reviewer list page to extract project reviewer ids 
+    public static function extractProjectReviewerIds(array $matrix): Collection
+    {
+        // If the shape is [typeId => [rows...]], flatten once, then pluck
+        return collect($matrix)
+            ->flatten(1) // collapse to [rows...]
+            ->pluck('project_reviewer_id')
+            ->filter(fn ($v) => !is_null($v)) // drop nulls
+            ->map(fn ($v) => (int) $v)        // normalize type
+            ->unique()
+            ->values();
+    }
 
 
 

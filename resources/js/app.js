@@ -18,3 +18,10 @@ document.addEventListener('livewire:navigated', () => {
 
 
 import './echo';
+
+
+
+//  document.addEventListener('alpine:init', () => {
+
+ 
+    

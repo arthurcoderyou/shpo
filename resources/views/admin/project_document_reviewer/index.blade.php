@@ -36,6 +36,8 @@
     <!-- Header Card -->
     <livewire:partials.projects.page-header :project="$project" :project_document="$project_document"/>
 
+ 
+ 
     
     <livewire:admin.project-document-reviewer.project-document-reviewer-list :project_document_id="$project_document->id" />
 

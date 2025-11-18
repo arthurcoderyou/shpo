@@ -2,19 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\ProjectDocument\Review\ReviewSubmitted;
 use App\Models\Review;
+use App\Models\Project;
 use Illuminate\Http\Request;
+use App\Models\ProjectDocument;
 use App\Events\ProjectDocumentSubmitted;
 use App\Events\ProjectDocument\Submitted;
+use App\Mail\ProjectDocument\SubmittedMail;
 use App\Events\ProjectDocument\Review\Reviewed;
 use App\Events\ProjectDocument\Review\ReviewRequest;
+use App\Events\ProjectDocument\Review\ReviewSubmitted;
 use App\Events\ProjectDocument\ProjectReviewer\Updated;
 use App\Events\ProjectDocument\Review\OpenReviewRequest;
 use App\Events\ProjectDocument\Review\FollowupReviewRequest;
 
 class TestingController extends Controller
 {
+
+
+     //====================//
+    //  test the views
+    //====================//
 
     /** @abstract
      *  Notes
@@ -124,10 +132,53 @@ class TestingController extends Controller
         ]);
     }
 
+    // test/review/re_review
+    public function re_review(){
+
+
+        $test_route = "test/review/re_review";
+        $page_label = "Re-Review ";
+
+        return view('admin.test.test',[
+            'test_route' => $test_route,
+            'page_label' => $page_label,
+        ]);
+
+
+    }
+
+    // test/review/digital_signature
+    public function digital_signature(){
+
+
+        $test_route = "test/review/digital_signature";
+        $page_label = "Project Document Review Digital Signature";
+
+        return view('admin.test.test',[
+            'test_route' => $test_route,
+            'page_label' => $page_label,
+        ]);
+
+
+    }
+
+    // test/review/review_list_layout
+    public function review_list_layout(){
+        $test_route = "test/review/review_list_layout";
+        $page_label = "Review List Layout";
+
+        return view('admin.test.test',[
+            'test_route' => $test_route,
+            'page_label' => $page_label,
+        ]);
+    }
 
 
 
-    // test the events
+    //====================//
+    //  test the events
+    //====================//
+
     public function testEventProjectDocumentSubmitted(){
 
         // ProjectDocumentSubmitted TEST
@@ -250,6 +301,45 @@ class TestingController extends Controller
         event(new ReviewSubmitted(422,39, 73, true, true));
         return 'ReviewSubmitted fired!';
  
+    }
+    
+
+    //====================//
+    //  test the email previews
+    //====================//
+
+    public function email_preview_submitted(){
+
+        /**
+         * Test email submission on the listener
+         * 
+         *  event(new Submitted(217, 73, true, true));
+         * 
+         *  try {
+                Mail::to($user->email)->queue(
+                    new SubmittedMail($project, $project_document)
+                );
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch SubmittedMail mail: ' . $e->getMessage(), [
+                    'project_document_id' => $project_document->id,
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+         */
+
+        $project_document_id = 217;
+
+        $project_document = ProjectDocument::find($project_document_id); 
+        $project = Project::find($project_document->project_id);
+        // $user = User::find($event->authId);
+
+        return new SubmittedMail($project,  $project_document);
+
+
+
     }
 
 
