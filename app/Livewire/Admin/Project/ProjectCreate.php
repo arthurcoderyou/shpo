@@ -2,21 +2,20 @@
 
 namespace App\Livewire\Admin\Project;
 
-use App\Models\ProjectCompany;
-use App\Models\ProjectFederalAgencies;
 use Carbon\Carbon;
 use App\Models\User;
-// use App\Models\Forum;
 use App\Models\Review;
 use App\Models\Project;
 use App\Models\Setting;
 use Livewire\Component;
+// use App\Models\Forum;
 use App\Models\Reviewer;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use Livewire\WithFileUploads;
 use App\Helpers\ProjectHelper;
+use App\Models\ProjectCompany;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Validation\Rule;
@@ -24,14 +23,19 @@ use App\Models\ProjectSubscriber;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ProjectFederalAgencies;
 use Illuminate\Support\Facades\Storage;
+use App\Events\Project\ProjectLogEvent; 
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
+use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
 class ProjectCreate extends Component
 {
@@ -39,7 +43,7 @@ class ProjectCreate extends Component
     use WithFileUploads;
     public string $name = '';
     public string $description = '';
-    public string $federal_agency = ''; 
+    public string $agency = ''; 
     public $type;
 
     public $document_type_id;
@@ -79,8 +83,9 @@ class ProjectCreate extends Component
 
 
     public $project_types = [
-        'Local' => 'Local',
-        'Federal' => 'Federal', 
+        'Local Government' => 'Local Government',
+        'Federal Government' => 'Federal Government', 
+        'Private' => 'Private', 
     ];
     
     public $lot_size_unit_options = [
@@ -135,6 +140,26 @@ class ProjectCreate extends Component
         ['name' => '']
     ];
  
+
+
+    /**
+     * Warnings
+     */
+
+    public array $warnings = [];   // 👈 plain array
+
+    // Optional: helper methods
+    protected function addWarning(string $field, string $message): void
+    {
+        $this->warnings[$field][] = $message;
+    }
+
+    protected function clearWarning(string $field): void
+    {
+        unset($this->warnings[$field]);
+    }
+
+
 
     public function mount(){
 
@@ -219,6 +244,82 @@ class ProjectCreate extends Component
  
 
 
+    // Project name relative data 
+
+        public $projects = [];
+
+        public function updatedName(){
+            // dd($this->name);
+            $search = $this->name;
+
+            if (empty($search)) {
+                $this->projects = null;
+                return;
+            }
+
+            $user = Auth::user();
+
+            // If somehow no authenticated user, return empty results safely
+            if (!$user) {
+                $this->projects = [];
+                return;
+            }
+
+            // Extract selected project IDs to exclude from results
+            // $excludedIds = array_column($this->selectedProjects, 'id');
+
+            
+
+            $query = Project::query()
+                ->select('id', 'name', 'lot_number', 'location', 'rc_number')
+                ->whereNotNull('rc_number');
+                // ->whereNotNull('project_number')
+                // ->when(!empty($excludedIds), function ($q) use ($excludedIds) {
+                //     $q->whereNotIn('id', $excludedIds);
+                // });
+
+            // Optional: access control
+            if (
+                !$user->can('system access global admin')
+                && !$user->can('system access admin')
+            ) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('created_by', $user->id);
+                    // Add more rules if needed, e.g. shared projects, assignments, etc.
+                });
+            }
+
+            // Search conditions
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('agency', 'like', "%{$search}%")
+                    ->orWhere('lot_number', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('street', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('rc_number', 'like', "%{$search}%");
+            });
+
+            $this->projects = $query
+                ->limit(10)
+                ->get()
+                ->toArray();
+
+
+
+
+
+        }
+
+
+    // ./ Project name relative data 
+
+
+
+
+
+
+
     // For the Search Subscriber Functionality
         public $query = ''; // Search input
         public $users = []; // Search results
@@ -227,27 +328,43 @@ class ProjectCreate extends Component
         public function updatedQuery()
         {
             if (!empty($this->query)) {
-                $user = Auth::user();
+                $user  = Auth::user();
+                $term  = '%' . $this->query . '%';
 
-                $this->users = User::where(function ($mainQuery) use ($user) {
-                    $mainQuery->where('name', 'like', '%' . $this->query . '%');
+                $this->users = User::query()
+                // 🔍 Group all search columns together
+                ->where(function ($search) use ($term) {
+                    $search->where('name', 'like', $term)
+                        ->orWhere('email', 'like', $term)
+                        ->orWhere('address', 'like', $term)
+                        ->orWhere('company', 'like', $term)
+                        ->orWhere('phone_number', 'like', $term);
+                })
 
-                    // Only apply filters if NOT global admin or admin
-                    if (!$user->can('system access global admin') && !$user->can('system access admin')) {
-
-                        $mainQuery->where(function ($q) use ($user) {
+                // 🔐 Apply access restrictions only if NOT global admin or admin
+                ->when(
+                    ! $user->can('system access global admin') && ! $user->can('system access admin'),
+                    function ($query) use ($user) {
+                        $query->where(function ($q) use ($user) {
 
                             if ($user->can('system access reviewer')) {
                                 // Reviewers can see users with 'system access user' or 'system access reviewer'
                                 $q->where(function ($inner) {
                                     $inner->whereHas('permissions', function ($permQuery) {
-                                        $permQuery->whereIn('name', ['system access user', 'system access reviewer']);
+                                        $permQuery->whereIn('name', [
+                                            'system access user',
+                                            'system access reviewer',
+                                        ]);
                                     })->orWhereHas('roles.permissions', function ($permQuery) {
-                                        $permQuery->whereIn('name', ['system access user', 'system access reviewer']);
+                                        $permQuery->whereIn('name', [
+                                            'system access user',
+                                            'system access reviewer',
+                                        ]);
                                     });
                                 });
+
                             } elseif ($user->can('system access user')) {
-                                // Users can only see users with 'system access user'
+                                // Normal users can only see users with 'system access user'
                                 $q->where(function ($inner) {
                                     $inner->whereHas('permissions', function ($permQuery) {
                                         $permQuery->where('name', 'system access user');
@@ -258,9 +375,9 @@ class ProjectCreate extends Component
                             }
 
                         });
-
                     }
-                })
+                )
+                ->where('id',"!=",$user->id) // do not include the current creator of the project 
                 ->limit(10)
                 ->get();
 
@@ -278,7 +395,11 @@ class ProjectCreate extends Component
             // Prevent duplicate selection
             if (!in_array($userId, array_column($this->selectedUsers, 'id'))) {
                 $user = User::find($userId);
-                $this->selectedUsers[] = ['id' => $user->id, 'name' => $user->name];
+                $this->selectedUsers[] = [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'company' => $user->company
+                ];
             }
 
             // Clear search results
@@ -294,20 +415,73 @@ class ProjectCreate extends Component
     // ./// For the Search Subscriber Functionality
 
 
-     
- 
+    /**
+     * Function to check duplicate name (and lot number if filled)
+     * @return void
+     */
+    protected function checkDuplicateProjectWarning()
+    {
+        // Clear previous warnings for this field
+        $this->clearWarning('name');
 
+        // If both are empty, nothing to check
+        if (! $this->name && ! $this->lot_number) {
+            return;
+        }
+
+        $query = Project::query();
+
+        // If user is a submitter, only check their own projects
+        if (Auth::user()->can('system access user')) {
+            $query->where('created_by', Auth::id());
+        }
+
+        $message = null;
+
+        if ($this->name && $this->lot_number) {
+            // Check by BOTH name and lot_number
+            $query->where('name', $this->name)
+                ->where('lot_number', $this->lot_number);
+
+            $message = 'Warning: A project with the same title and lot number already exists. Please review before saving to avoid duplicate records.';
+        } elseif ($this->name) {
+            // Check by NAME only
+            $query->where('name', $this->name);
+
+            $message = 'Warning: One or more projects with the same title already exist. Please verify that this is not a duplicate project.';
+        } else {
+            // Optional: if you also want pure lot-only checks, you can enable this
+            // $query->where('lot_number', $this->lot_number);
+            // $message = 'Warning: A project with the same lot number already exists. Please verify before saving.';
+            return; // for now, do nothing if only lot_number is present
+        }
+
+        // Ignore the current project when editing
+        // if ($this->project_id) {
+        //     $query->where('id', '!=', $this->project_id);
+        // }
+
+        if ($query->exists() && $message) {
+            $this->addWarning('name', $message);
+        }
+    }
 
     public function updated($fields){
         $this->validateOnly($fields,[
-            'name' => [
-                'required',
-                'string',
-                Rule::unique('projects', 'name')
-                        ->where(fn ($query) => $query->where('lot_number', $this->lot_number)),
-            ],
+            // 'name' => [
+            //     'required',
+            //     'string',
+            //     // Rule::unique('projects', 'name')
+            //     //         ->where(fn ($query) => $query->where('lot_number', $this->lot_number)),
+            //     // Rule::unique('projects')
+            //     //     ->where(fn ($query) => $query
+            //     //         ->where('name', $this->name)
+            //     //         ->where('lot_number', $this->lot_number)
+            //     //         ->where('rc_number', $this->rc_number)
+            //     //     ),
+            // ],
              'lot_number' => [
-                'required',
+                // 'required',
                 'string',
             ],
 
@@ -326,8 +500,8 @@ class ProjectCreate extends Component
             //     Rule::unique('projects', 'rc_number'), // Ensure rc_number is unique
             // ],
 
-            'federal_agency' => [
-                'required'
+            'agency' => [
+                'nullable', 'string', 'required_if:type,Local Government,Federal Government',
             ],
 
             'type' => [
@@ -372,9 +546,15 @@ class ProjectCreate extends Component
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
             'location.required' => 'Location name must be searched and is required.',
-            'federal_agency.required' => 'Company is required',
+            'agency.required' => 'Company is required',
             'name.unique' => 'The project title is already registered to that lot number.',
         ]);
+
+
+        if (in_array($fields, ['name', 'lot_number'])) {
+            $this->checkDuplicateProjectWarning();
+        }
+
 
         $this->updateDueDate();
 
@@ -419,11 +599,18 @@ class ProjectCreate extends Component
             'name' => [
                 'required',
                 'string',
-                Rule::unique('projects', 'name')
-                        ->where(fn ($query) => $query->where('lot_number', $this->lot_number)),
+                // Rule::unique('projects', 'name')
+                //         ->where(fn ($query) => $query->where('lot_number', $this->lot_number)),
+                // Rule::unique('projects')
+                //     ->where(fn ($query) => $query
+                //         ->where('name', $this->name)
+                //         ->where('lot_number', $this->lot_number)
+                //         ->where('rc_number', $this->rc_number)
+                //     ), 
+
             ],
-             'lot_number' => [
-                'required',
+            'lot_number' => [
+                // 'required',
                 'string',
             ],
 
@@ -444,9 +631,9 @@ class ProjectCreate extends Component
             // 'description' => [
             //     'required'
             // ],
-            // 'federal_agency' => [
-            //     'required'
-            // ],
+            'agency' => [
+                'nullable', 'string', 'required_if:type,Local Government,Federal Government',
+            ],
 
             'type' => [
                 'required'
@@ -492,7 +679,7 @@ class ProjectCreate extends Component
             'latitude.required' => 'Location is required.',
             'longitude.required' => 'Location is required.',
             'location.required' => 'Location name must be searched and is required.', 
-            'federal_agency.required' => 'Company is required' ,
+            'agency.required' => 'Company is required' ,
             'name.unique' => 'The project title is already registered to that lot number.',
         ]);
 
@@ -501,7 +688,7 @@ class ProjectCreate extends Component
         //save
         $project = Project::create([
             'name' => $this->name,
-            'federal_agency' => $this->federal_agency,
+            'agency' => $this->type !== "Private" ? $this->agency : '',
             'type' => $this->type,
             'allow_project_submission' => true,
             'description' => $this->description,
@@ -538,47 +725,39 @@ class ProjectCreate extends Component
             'updated_by' => Auth::user()->id,
         ]); 
 
+  
 
+           
 
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
 
-        // Save Project Companies 
-         if (!empty($this->companies)) {
-            foreach ($this->companies as $index => $company ) {
-                if(!empty($company['name'])){
-                    ProjectCompany::create([
-                        'project_id' => $project->id,
-                        'name' => $company['name'],
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                    ]);
+            // get the message from the helper 
+            $message = ProjectLogHelper::getActivityMessage('created', $project->id, $authId);
 
-                }
+            // get the route
+            $route = ProjectLogHelper::getRoute('created', $project->id);
 
+            // log the event 
+            event(new ProjectLogEvent(
+                $message ,
+                $authId, 
+                $project->id,
+
+            ));
+    
+            /** send system notifications to users */
                 
-            }
-        }
+                ProjectNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
 
-        // Save Project Federal Agencies 
-         if (!empty($this->federal_agencies)) {
-            foreach ($this->federal_agencies as $index => $agency ) {
-                if(!empty($company['name'])){
-                    ProjectFederalAgencies::create([
-                        'project_id' => $project->id,
-                        'name' => $agency['name'],
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                    ]);
-                }
- 
-            }
-        }
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
  
 
-
-
-        
- 
-        // Save Project Subscribers (if any)
+         // Save Project Subscribers (if any)
         if (!empty($this->selectedUsers)) {
             foreach ($this->selectedUsers as $index => $user ) {
                 ProjectSubscriber::create([
@@ -587,14 +766,22 @@ class ProjectCreate extends Component
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
                 ]);
+ 
+
             }
         }
- 
 
- 
 
-        Alert::success('Success','Project created successfully');
-        return redirect()->route('project.show',['project'=> $project->id]);
+
+
+
+
+        // Alert::success('Success','Project created successfully');
+        return 
+        // redirect()->route('project.show',['project'=> $project->id])
+            redirect($route )
+            ->with('alert.success',$message)
+            ;
     }
 
   

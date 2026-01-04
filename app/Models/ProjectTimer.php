@@ -52,35 +52,35 @@ class ProjectTimer extends Model
 
         parent::boot();
 
-        static::created(function ($projectTimer) {
-            // event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        // static::created(function ($projectTimer) {
+        //     // event(new \App\Events\ProjectTimerUpdated($projectTimer));
 
-            try {
-                event(new \App\Events\ProjectTimerUpdated($projectTimer));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [
-                    'projectTimer_id' => $projectTimer->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        //     try {
+        //         event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [
+        //             'projectTimer_id' => $projectTimer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
 
-        });
+        // });
     
-        static::updated(function ($projectTimer) {
-            // event(new \App\Events\ProjectTimerUpdated($projectTimer));
+        // static::updated(function ($projectTimer) {
+        //     // event(new \App\Events\ProjectTimerUpdated($projectTimer));
 
-            try {
-                event(new \App\Events\ProjectTimerUpdated($projectTimer, auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [
-                    'projectTimer_id' => $projectTimer->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        //     try {
+        //         event(new \App\Events\ProjectTimerUpdated($projectTimer, auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectTimerUpdated event: ' . $e->getMessage(), [
+        //             'projectTimer_id' => $projectTimer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
             
-        });
+        // });
     }
 
 

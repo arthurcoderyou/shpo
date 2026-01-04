@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Admin\User;
 
-use App\Models\Review;
 use App\Models\User;
+use App\Models\Review;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
@@ -12,13 +12,17 @@ use Livewire\WithFileUploads;
 use App\Services\CacheService;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
-use App\Models\ProjectSubscriber;
+use App\Events\User\UserLogEvent;
 use App\Models\ProjectAttachments;
+use App\Models\ProjectSubscriber; 
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth; 
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Livewire\Admin\Project\ProjectReview;
+use App\Helpers\ActivityLogHelpers\UserLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\SystemNotificationHelpers\UserNotificationHelper;
 
 class UserList extends Component
 {
@@ -28,9 +32,14 @@ class UserList extends Component
     use WithPagination;
 
     protected $listeners =[
-        'userCreated' => '$refresh',
-        'userUpdated' => '$refresh',
-        'userDeleted' => '$refresh',
+
+        'userEvent' => '$refresh',
+
+        // 'userCreated' => '$refresh',
+        // 'userUpdated' => '$refresh',
+        // 'userDeleted' => '$refresh',
+
+        // 'systemEvent' => '$refresh',
     ];
 
     public $search = '';
@@ -53,7 +62,32 @@ class UserList extends Component
 
     public $user_status_filter = 'active'; // options: active, deactivated, all
 
+    public array $role_options = [];
 
+    public array $role_request_options = [
+        "" => "Sort Request",
+        "user" => "User Request",
+        "reviewer" => "Reviewer Request" 
+    ];
+
+    public array $user_status_filter_options = [
+        "all" => "All Users",
+        "active" => "Active Users",
+        "deactivated" => "Deactivated Users"   
+    ];
+
+
+    public array $sorting_options = [
+        "" => "Sort by",
+        "Name A - Z" => "Name A - Z",
+        "Name Z - A" => "Name Z - A",
+        "Email A - Z" => "Email A - Z",
+        "Email Z - A" => "Email Z - A",
+        "Latest Added" => "Latest Added",
+        "Oldest Added" => "Oldest Added",
+        "Latest Updated" => "Latest Updated",
+        "Oldest Updated" => "Oldest Updated", 
+    ];
 
 
     public function mount(){
@@ -73,6 +107,13 @@ class UserList extends Component
         $this->roles = $roles->get();
 
 
+        foreach($this->roles as $role){
+
+            $this->role_options[$role->id] =  $role->name;
+
+        }
+
+        // dd($this->role_options);
 
         // update the cache
         CacheService::updateUserStats();
@@ -130,17 +171,20 @@ class UserList extends Component
     public function delete($id){
         $user = User::find($id);
 
+
+
+
         if(!Auth::user()->can('system access global admin')){ // the God Admin can override this 
 
             if ($this->hasConnectedRecords($user)) { 
 
-                Alert::error('Error', 'User cannot be deleted because they are connected to existing records.');
-                return redirect()->route('user.index');
+                // Alert::error('Error', 'User cannot be deleted because they are connected to existing records.');
+                return redirect()->route('user.index')
+                    ->with('alert.error','User cannot be deleted because they are connected to existing records.');
             }
 
         }
-
-        
+ 
 
         // dd("All Goods");
 
@@ -169,11 +213,50 @@ class UserList extends Component
             $activity_log->delete();
         }
 
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = UserLogHelper::getActivityMessage('deleted', $user->id, $authId);
+
+            // get the route
+            $route = UserLogHelper::getRoute('deleted', $user->id);
+
+            // log the event 
+            event(new UserLogEvent(
+                $message ,
+                $authId, 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                UserNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
         $user->delete();    
         $user->notifications()->delete();
 
-        Alert::success('Success','User deleted successfully');
-        return redirect()->route('user.index');
+ 
+
+       
+
+
+
+
+
+
+        // Alert::success('Success','User deleted successfully');
+        return redirect()->route('user.index')
+            ->with('alert.success',$message);
+            ;
 
     }
 
@@ -450,7 +533,8 @@ class UserList extends Component
 
     public function render()
     {
- 
+        
+        // dd($this->users);
         return view('livewire.admin.user.user-list',[
             'users' => $this->users
         ]);

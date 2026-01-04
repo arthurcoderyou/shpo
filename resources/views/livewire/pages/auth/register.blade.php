@@ -14,9 +14,16 @@ new #[Layout('layouts.guest')] class extends Component
 {
     public string $name = '';
     public string $email = '';
+    public string $address = '';
+    public string $company = '';
+    public string $phone_number = '';
+
+
     public string $password = '';
     public string $password_confirmation = '';
     public string $role_request = 'user'; 
+
+    public array $companies = [];
 
     public function mount(){
 
@@ -30,7 +37,51 @@ new #[Layout('layouts.guest')] class extends Component
 
         $this->role_request = $role_request;
 
+
+
+        $limit = (int) 20;
+        $this->companies = User::query()
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->select('company')
+            ->groupBy('company')
+            ->orderBy('company')
+            ->limit($limit)
+            ->pluck('company')
+            ->toArray();
+
+
+
     }
+
+
+    public function updatedCompany(){
+
+        $q = $this->company;
+        $limit = (int) 20;
+
+        // $limit = max(5, min($limit, 50)); // safety clamp
+
+        $query = User::query()
+            ->select('company')
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->groupBy('company')
+            ->orderBy('company');
+
+        if ($this->company !== '') {
+            // For index usage, prefix search is better:
+            $query = $query->where('company', 'like', $q . '%');
+            // If you prefer contains: '%' . $q . '%', but index benefit is less.
+        }
+ 
+
+        $this->companies = $query->limit($limit)->pluck('company')->toArray();
+
+
+    }
+
+
 
     /**
      * Handle an incoming registration request.
@@ -43,6 +94,9 @@ new #[Layout('layouts.guest')] class extends Component
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'address' => ['required', 'string', 'max:255'],
+            'company' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:255'], 
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
             'role_request' => ['required']
         ]);
@@ -88,11 +142,11 @@ new #[Layout('layouts.guest')] class extends Component
 
                 <div class="mt-4 space-y-4">
                     <div class="flex items-center gap-3">
-                        <input wire:model="role_request" id="role_user" name="role_request" type="radio" value="user"
+                        <input wire:model.live="role_request" id="role_user" name="role_request" type="radio" value="user"
                             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-600"
                         >
                         <label for="role_user" class="block text-sm font-medium text-gray-900">
-                            <span class="font-semibold">User</span> — Create and manage projects
+                            <span class="font-semibold">Submitter</span> — Create and manage projects
                         </label>
                     </div>
 
@@ -126,6 +180,42 @@ new #[Layout('layouts.guest')] class extends Component
             <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
+
+        <div class="mt-4">
+            {{-- <x-input-label for="company" :value="__('Company')" />
+            <x-text-input wire:model="company" id="company" name="company" type="text" class="mt-1 block w-full" required   autocomplete="company" />
+            <x-input-error class="mt-2" :messages="$errors->get('company')" /> --}}
+
+             <x-inputs.text-dropdown
+                name="company"
+                label="Company"
+                :value="$company"
+                {{-- placeholder="Search or select company..." --}}
+                :options="$companies"    
+                wire:model.live="company"       
+            />
+
+            <x-input-error class="mt-2" :messages="$errors->get('company')" />
+
+        </div>
+
+
+        <!-- Address -->
+        <div class="mt-4">
+            <x-input-label for="address" :value="__('Address')" />
+            <x-text-input wire:model="address" id="address" class="block mt-1 w-full" type="text" name="address" required autocomplete="address" />
+            <x-input-error :messages="$errors->get('address')" class="mt-2" />
+        </div>
+
+
+        <!-- Phone Number -->
+        <div class="mt-4">
+            <x-input-label for="phone_number" :value="__('Phone number')" />
+            <x-text-input wire:model="phone_number" id="phone_number" class="block mt-1 w-full" type="text" name="phone_number" required autocomplete="phone_number" />
+            <x-input-error :messages="$errors->get('phone_number')" class="mt-2" />
+        </div>
+
+
 
         <!-- Password -->
         <div class="mt-4" x-data="{ show: false }">

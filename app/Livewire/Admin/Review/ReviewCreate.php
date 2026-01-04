@@ -32,12 +32,26 @@ use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ReviewerReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ReviewerReviewNotificationDB;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Notifications\ProjectSubscribersNotification;
+use App\Events\ProjectDocument\ProjectDocumentLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
 
 class ReviewCreate extends Component
 {   
 
-     
+     protected $listeners = [
+        'systemEvent' => '$refresh',  
+
+        'projectEvent' => '$refresh',
+        'projectDocumentEvent' => '$refresh',
+
+        // 'projectReviewCreated' => '$refresh', 
+        // 'reviewerUpdated' => '$refresh',
+        // 'reviewerDeleted' => '$refresh',
+        
+    ];
     /** Actions with Password Confirmation panel */
         public $passwordConfirm = '';
         public $passwordError = null;
@@ -199,7 +213,7 @@ class ReviewCreate extends Component
                     'project_number' => $project_document->project_number,
                     'location' => $project->location,
                     'type' => $project->type,
-                    'federal_agency' => $project->federal_agency,
+                    'agency' => $project->agency,
                 ];
 
             }
@@ -249,7 +263,7 @@ class ReviewCreate extends Component
                             'project_number' => $project_docs->project_number,
                             'location' => $proj->location,
                             'type' => $proj->type,
-                            'federal_agency' => $proj->federal_agency,
+                            'agency' => $proj->agency,
                         ];
                     }
 
@@ -342,8 +356,10 @@ class ReviewCreate extends Component
 
     public function update_project(){
         // dd("Here");
+        $project = Project::find($this->project->id);
 
         $project_document = ProjectDocument::find($this->project_document->id);  // get the current project document 
+        
         $project_reviewer = $project_document->getCurrentReviewerByProjectDocument(); // get the current reviewer
 
 
@@ -357,7 +373,7 @@ class ReviewCreate extends Component
                 Rule::unique('project_documents', 'rc_number'), // Ensure rc_number is unique
             ]
         ],[
-            'The shpo number has already been taken. Please enter other combinations of shpo number '
+            'The rc number has already been taken. Please enter other combinations of shpo number '
         ]);
 
         if(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1){
@@ -373,7 +389,10 @@ class ReviewCreate extends Component
 
         $project_document->rc_number = $this->rc_number;
         // $project_document->allotted_review_time_hours = $this->allotted_review_time_hours;
-        
+
+
+        $project->rc_number = $this->rc_number;
+        $project->save();
 
 
         $project_timer = ProjectTimer::first();
@@ -705,7 +724,7 @@ class ReviewCreate extends Component
                                 })
                                 ->orWhereHas('project', function ($dq) use ($search) {
                                     $dq->where('name', 'like', "%{$search}%")
-                                        ->orWhere('federal_agency', 'like', "%{$search}%")
+                                        ->orWhere('agency', 'like', "%{$search}%")
                                         ->orWhere('lot_number', 'like', "%{$search}%")
                                         ->orWhere('location', 'like', "%{$search}%")
                                         ->orWhere('street', 'like', "%{$search}%")
@@ -747,7 +766,7 @@ class ReviewCreate extends Component
                     'project_number' => $project_document->project_number,
                     'location' => $project->location,
                     'type' => $project->type,
-                    'federal_agency' => $project->federal_agency,
+                    'agency' => $project->agency,
 
 
 
@@ -757,7 +776,7 @@ class ReviewCreate extends Component
                     // 'project_number' => $project->project_number,
                     // 'location' => $project->location,
                     // 'type' => $project->type,
-                    // 'federal_agency' => $project->federal_agency,
+                    // 'agency' => $project->agency,
                 ];
             }
 
@@ -906,12 +925,15 @@ class ReviewCreate extends Component
          
         // check if the current user is the current reviewer
         if(empty($current_reviewer) && $current_reviewer->user_id == Auth::user()->id){
-            Alert::error('Error','You are not the current reviewer for the project');
+            $message = 'You are not the current reviewer for the project';
+            // Alert::error('Error','You are not the current reviewer for the project');
             return redirect()->route('project-document.review',[
                 'project' => $this->project->id,
                 'project_document' => $this->project_document->id,
             
-            ]);
+            ])
+            ->with('alert.error' , $message );
+            ;
 
         }
 
@@ -1106,14 +1128,49 @@ class ReviewCreate extends Component
         // ./ notifications
 
  
+
+        $authId = Auth::id() ?? null;
+        $project = Project::find($project_document->id);
+
+        // Success message from the activity log project helper 
+        $message =  ProjectDocumentLogHelper::getActivityMessage('reviewed',$project_document->id,$authId);
+ 
+        // get the route 
+        $route = ProjectDocumentLogHelper::getRoute('reviewed', $project_document->id);
+        
+
+        // // log the event 
+        event(new ProjectDocumentLogEvent(
+            $message ,
+            $authId, 
+            $project->id,
+            $project_document->id,
+
+        ));
+
+           
+
+        /** send system notifications to users */
+                
+            ProjectDocumentNotificationHelper::sendSystemNotification(
+                message: $message,
+                route: $route 
+            );
+
+        /** ./ send system notifications to users */
+
+
+
  
 
-        Alert::success('Success','Project review submitted successfully');
+        // Alert::success('Success','Project review submitted successfully');
         return redirect()->route('project-document.review',[
             'project' => $this->project->id,
             'project_document' => $this->project_document->id,
         
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
 
 
 

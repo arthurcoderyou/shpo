@@ -12,12 +12,32 @@
             window.currentUser = {
                 id: {{ Auth::id()  ?? 0 }} ,
                 roles: {!! json_encode(Auth::user()?->getRoleNames() ?? []) !!},
-                permissions: {!! json_encode(Auth::user()?->getAllPermissions()->pluck('name') ?? []) !!}
-            };
+                permissions: {!! json_encode(Auth::user()?->getAllPermissions()->pluck('name') ?? []) !!} ,
+                reviewerOfProjects: {!! json_encode(Auth::user()?->reviewed_projects->pluck('id') ?? []) !!},
+                myCreatedProjects: {!! json_encode(Auth::user()?->created_projects->pluck('id') ?? []) !!},
+                // reviewerOfProjects: @json(auth()->user()->reviewed_projects->pluck('id')), // assuming relation exists
+                // myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
+
+                
+
+            }; 
+            // console.log('created_projects : ' + window.currentUser.myCreatedProjects);
 
 
-            // console.log('roles : ' + window.currentUser.roles);
+            // getting page model id information
+                // // Only set this if the current route has a {project} parameter
+                // window.pageProjectId = @json(optional(request()->route('project'))->id ?? request()->route('project') ?? null);
+                // // console.log('pageProjectId : ' + pageProjectId);
 
+                // // permission
+                // window.pagePermissionId = @json(optional(request()->route('permission'))->id ?? request()->route('permission') ?? null);
+                // // console.log(window.pagePermissionId); // uncomment to know the value of the id 
+                // // // user
+                // window.pageUserId = @json(optional(request()->route('user'))->id ?? request()->route('user') ?? null);
+                // console.log(window.pageUserId);
+
+                
+            // ./ getting page model id information
         </script>
         
          
@@ -98,941 +118,33 @@
         <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js" defer></script>
         {{-- ./Open layer --}}
 
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+        
+
+        {{-- Tailwind keyframes (use any of: @layer utilities in a CSS file, or add to your Tailwind config) --}}
+        <style> 
+            @keyframes progress { 0%{transform:translateX(-100%)} 50%{transform:translateX(60%)} 100%{transform:translateX(180%)} }
+            @keyframes spin-slow { to { transform: rotate(360deg) } }
+        </style>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @filepondScripts
 
-        @yield('script')
-        @auth
-        <!-- Discussion Listeners -->
-        <script type="module">
-
-            const pageProjectId = document.getElementById('project-wrapper')?.dataset.projectId;
 
 
 
-            function showNewDiscussionAlert(message, link, linkText) {
-                const alertElement = document.getElementById('discussion-alert');
-                const messageElement = alertElement.querySelector('h3');
-                messageElement.innerHTML = `${message}`;
-
-                const linkElement = alertElement.querySelector('a');
-                linkElement.href = link;
-                linkElement.innerHTML = linkText;
-                
-                alertElement.classList.remove('hidden');
-                alertElement.classList.add('opacity-100');
-
-                setTimeout(() => {
-                    alertElement.classList.add('hidden');
-                }, 10000);
-            }
-
-
-            function showAlert(message) {
-                const alertElement = document.getElementById('dismiss-alert');
-                const messageElement = alertElement.querySelector('h3');
-                messageElement.innerHTML = message;
-                alertElement.classList.remove('hidden');
-                alertElement.classList.add('opacity-100');
-
-                setTimeout(() => {
-                    alertElement.classList.add('hidden');
-                }, 10000);
-
-                        
-            }
-
-
-
-            const currentUser = {
-                id: @json(auth()->user()->id),
-                roles: @json(auth()->user()->getRoleNames()), // returns ['Admin', ...]
-                permissions: @json(auth()->user()->getAllPermissions()->pluck('name')),
-                reviewerOfProjects: @json(auth()->user()->reviewed_projects->pluck('id')), // assuming relation exists
-                myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
-                  
-            };
-            
-            /** notifications */
-            window.Echo
-                .private('notifications')
-                    .listen('.created', (e) => {
-                        console.log(e.message);
-                        Livewire.dispatch('notificationsCreated');
-                        // showAlert(e.message); // Assuming showAlert() is a global function
-                    })
-                    .listen('.updated', (e) => {
-                        console.log(e.message);
-                        Livewire.dispatch('notificationsUpdated');
-                        // showAlert(e.message); // Assuming showAlert() is a global function
-                    })
-                    .listen('.deleted', (e) => {
-                        console.log(e.message);
-                        Livewire.dispatch('notificationsDeleted');
-                        // showAlert(e.message); // Assuming showAlert() is a global function
-                    });
-
-            /** users */
-            window.Echo.private('users')
-                .listen('.created', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('userCreated');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('user list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-
-  
-
-                }).listen('.updated', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('userUpdated');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('user list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-
-
-                }).listen('.deleted', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('userDeleted');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('user list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-                });
-
-            /** ./ users */
-
-            /** roles */
-            window.Echo.private('roles')
-                .listen('.created', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('roleCreated');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('role list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-
-  
-
-                }).listen('.updated', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('roleUpdated');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('role list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-
-
-                }).listen('.deleted', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('roleDeleted');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('role list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-                });
-
-            /** ./ roles */
-
-
-            /** permissions */
-            window.Echo.private('permissions')
-                .listen('.created', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('permissionCreated');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('permission list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-
-  
-
-                }).listen('.updated', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('permissionUpdated');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('permission list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-
-
-                }).listen('.deleted', (e) => {
-                    console.log(e.message);
-                    Livewire.dispatch('permissionDeleted');
-
-                    const shouldNotify =  currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin') || currentUser.permissions.includes('permission list view') ;
-
-                    if (shouldNotify) {
-                        showAlert(e.message);
-                    }
-                });
-
-            /** ./ permissions */
 
 
         
-            /** project.discussions.global */
-                window.Echo.private("project.discussions.global")
-                    .listen('.create', (e) => {
-
-                        console.log(e.message);
-
-                        Livewire.dispatch('projectDiscussionAdded');
-
-
-                        const projectId = e.project_id;
-                        const is_private = e.is_private;
-
-                        
-                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
-
-                        if (shouldNotify) {
-                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                        }
-                    }).listen('.edited', (e) => {
-
-                        console.log(e.message);
-
-                        const projectId = e.project_id;
-
-                        // Prevent running logic if on a project-specific page with a mismatched projectId
-                        if (pageProjectId && projectId != pageProjectId) return;
-
-
-
-                        Livewire.dispatch('projectDiscussionEdited');
-
- 
-                        const is_private = e.is_private;
-
-
-                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
-
-                        if (shouldNotify) {
-                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                        }
-                    }).listen('.deleted', (e) => {
-
-                        console.log(e.message);
-                        const projectId = e.project_id;
-
-                        // Prevent running logic if on a project-specific page with a mismatched projectId
-                        if (pageProjectId && projectId != pageProjectId) return;
-
-
-                        Livewire.dispatch('projectDiscussionDeleted');
-
- 
-                        const is_private = e.is_private;
-
-
-                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
-
-                        if (shouldNotify) {
-                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                        }
-                    }).listen('.reply', (e) => {
-
-                        console.log(e.message);
-
-                        const projectId = e.project_id;
-
-                        // Prevent running logic if on a project-specific page with a mismatched projectId
-                        if (pageProjectId && projectId != pageProjectId) return;
-
-
-                        Livewire.dispatch('projectDiscussionReplied');
- 
-                        const is_private = e.is_private;
-
-                        const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                        const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                        const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                        const shouldNotify = is_private ? (isAdmin || isReviewer) : (isAdmin || isReviewer || isCreator);
-
-                        if (shouldNotify) {
-                            showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                        }
-                    });
-            /** ./ project.discussions.global */
-
-            window.Echo.private("project.timer")
-                .listen('.updated', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('projectTimerUpdated');
-
- 
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_timer_url, "View Project Timer");
-                    }
-                });
-
-
-                
-            window.Echo.private("document.type")
-                .listen('.created', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('documentTypeCreated');
-
-  
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
-                    }
-                }).listen('.updated', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('documentTypeUpdated');
-
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
-                    }
-                }).listen('.deleted', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('documentTypeDeleted');
-
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.document_type_url, "View Document Types");
-                    }
-                });
-
-
-            window.Echo.private("reviewer")
-                .listen('.created', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('reviewerCreated');
-
-  
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
-                    }
-                }).listen('.updated', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('reviewerUpdated');
-
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
-                    }
-                }).listen('.deleted', (e) => {
-
-                    console.log(e.message);
-
-                    Livewire.dispatch('reviewerDeleted');
-
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin'); 
-
-                    const shouldNotify =  (isAdmin || isReviewer) ;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Reviewers");
-                    }
-                });
-
-            window.Echo.private("project")
-                .listen('.created', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-
-                    Livewire.dispatch('projectCreated');
-
-   
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                }).listen('.updated', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectUpdated');
-
- 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                }).listen('.deleted', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectDeleted');
-
- 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Projects");
-                    }
-                }).listen('.submitted', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectSubmitted');
-
- 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isReviewer = currentUser.roles.includes('Reviewer');
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Projects");
-                    }
-                }).listen('.queued', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectQueued');
-
-
-                    // const projectId = e.project_id; 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Projects");
-                    }
-                });
-
-            window.Echo.private("project_document")
-                .listen('.created', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectDocumentCreated');
-
-   
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project Document");
-                    }
-                }).listen('.updated', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectDocumentUpdated');
-
-
-                    // const projectId = e.project_id; 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project Document");
-                    }
-                }).listen('.deleted', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectDocumentDeleted');
-
-
-                    // const projectId = e.project_id; 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.project_url, "View Project");
-                    }
-                });
-
-            // for project document updates without actual notifications shown
-            window.Echo.private('project-document')
-                .listen('.reviewed',(e) => {
-                    Livewire.dispatch('projectDocumentUpdated');
-                });
-
-
-
-            window.Echo.private("project_reviewer")
-                .listen('.created', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectReviewerCreated');
-
-   
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isReviewer = currentUser.roles.includes('Reviewer');
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                    }
-                }).listen('.updated', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectReviewerUpdated');
-
- 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isReviewer = currentUser.roles.includes('Reviewer');
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                    }
-                }).listen('.deleted', (e) => {
-
-                    console.log(e.message);
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-
-                    Livewire.dispatch('projectReviewerDeleted');
-
- 
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isReviewer = currentUser.roles.includes('Reviewer');
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                    }
-                });
-
-
-             window.Echo.private("review")
-                .listen('.created', (e) => {
-
-                    console.log(e.message); 
-
-                    const projectId = e.project_id;
-
-                    // Prevent running logic if on a project-specific page with a mismatched projectId
-                    if (pageProjectId && projectId != pageProjectId) return;
-
-                    Livewire.dispatch('projectReviewCreated');
-
-   
-
-                    const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                    // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                    const isReviewer = currentUser.roles.includes('Reviewer');
-                    const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                    const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                    }
-                })
-                // .listen('.updated', (e) => {
-
-                //     console.log(e.message);
-
-                //     Livewire.dispatch('projectReviewerUpdated');
-
-
-                //     const projectId = e.project_id; 
-
-                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                //     const isReviewer = currentUser.roles.includes('Reviewer');
-                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-                //     if (shouldNotify) {
-                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                //     }
-                // }).listen('.deleted', (e) => {
-
-                //     console.log(e.message);
-
-                //     Livewire.dispatch('projectReviewerDeleted');
-
-
-                //     const projectId = e.project_id; 
-
-                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                //     const isReviewer = currentUser.roles.includes('Reviewer');
-                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                //     if (shouldNotify) {
-                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                //     }
-                // })
-                ;
-
-
-            window.Echo.private("attachments")
-                .listen('.created', (e) => {
-
-                    console.log(e.message); 
-
-                    const attachment_id = e.attachment_id;
- 
-                    Livewire.dispatch('attachmentCreated');
- 
-                    const isCreator = currentUser.id == e.auth_id;
-
-                    const shouldNotify =  isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.url, "View Attachments");
-                    }
-                })
-                .listen('.deleted', (e) => {
-
-                    console.log(e.message); 
- 
- 
-                    Livewire.dispatch('attachmentDeleted');
- 
-                    const isCreator = currentUser.id == e.auth_id;
-
-                    const shouldNotify =  isCreator;
-
-                    if (shouldNotify) {
-                        showNewDiscussionAlert(e.message, e.url, "View Attachments");
-                    }
-                })
-                // .listen('.updated', (e) => {
-
-                //     console.log(e.message);
-
-                //     Livewire.dispatch('projectReviewerUpdated');
-
-
-                //     const projectId = e.project_id; 
-
-                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                //     const isReviewer = currentUser.roles.includes('Reviewer');
-                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-                //     if (shouldNotify) {
-                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                //     }
-                // }).listen('.deleted', (e) => {
-
-                //     console.log(e.message);
-
-                //     Livewire.dispatch('projectReviewerDeleted');
-
-
-                //     const projectId = e.project_id; 
-
-                //     const isAdmin = currentUser.permissions.includes('system access admin') || currentUser.permissions.includes('system access global admin');
-                //     // const isReviewer = currentUser.reviewerOfProjects.includes(projectId);
-                //     const isReviewer = currentUser.roles.includes('Reviewer');
-                //     const isCreator = currentUser.myCreatedProjects.includes(projectId);
-
-                //     const shouldNotify =  (isAdmin || isReviewer) || isCreator;
-
-                //     if (shouldNotify) {
-                //         showNewDiscussionAlert(e.message, e.reviewer_url, "View Project Reviewers");
-                //     }
-                // })
-                ;
-
-            // console.log(currentUser.id);
-        </script>   
-        <!-- ./ Discussion Listeners -->
-        @endauth
-         
-         <script>
-            // Simple toggle for mobile sidebar
-            function toggleSidebar(open) {
-                const sidebar = document.getElementById('mobile-drawer');
-                const backdrop = document.getElementById('backdrop');
-                if (open) {
-                    sidebar.classList.remove('translate-x-[-100%]');
-                    backdrop.classList.remove('hidden');
-                    document.body.classList.add('overflow-hidden');
-                } else {
-                    sidebar.classList.add('translate-x-[-100%]');
-                    backdrop.classList.add('hidden');
-                    document.body.classList.remove('overflow-hidden');
-                }
-            }
-
-            function toggleOffcanvas(open) {
-                const panel = document.getElementById('notif-offcanvas');
-                const backdrop = document.getElementById('offcanvas-backdrop');
-                if (open) {
-                panel.classList.remove('translate-x-full');
-                backdrop.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden');
-                } else {
-                panel.classList.add('translate-x-full');
-                backdrop.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-                }
-            }
-
-
-            function toggleProfileLg(){
-                const dd = document.getElementById('profile-dd-lg');
-                dd.classList.toggle('hidden');
-
-                const dd_mobile = document.getElementById('profile-dd-lg-mobile');
-                dd_mobile.classList.toggle('hidden');
-
-            }
-
- 
-
-        </script>
-        <script>
-
-            function closeSidebarDetails() {
-                document
-                .querySelectorAll('#desktop-sidebar details[open]')
-                .forEach(d => d.open = false); // or d.removeAttribute('open')
-            }
-
-            function setSidebarCollapsed(state){
-                const aside = document.getElementById('desktop-sidebar');
-                const iconCollapse = document.getElementById('icon-collapse');
-                const iconExpand = document.getElementById('icon-expand');
-                if(!aside) return;
-
-                // Attribute for Tailwind data-variants
-                aside.setAttribute('data-collapsed', state ? 'true' : 'false');
-
-                // Fallback width classes (in case data-variant isn’t picked up)
-                aside.classList.toggle('w-72', !state);
-                aside.classList.toggle('w-20', !!state);
-
-                // Hide text labels when collapsed (elements with .label)
-                document.querySelectorAll('#desktop-sidebar .label').forEach(el=>{
-                    el.classList.toggle('hidden', !!state);
-                });
-
-                // Flip icons
-                if(iconCollapse && iconExpand){
-                    if(state){ // collapsed
-                    iconCollapse.classList.add('hidden');
-                    iconExpand.classList.remove('hidden');
-                    } else {   // expanded
-                    iconCollapse.classList.remove('hidden');
-                    iconExpand.classList.add('hidden');
-                    }
-                }
-
-                // NEW: when collapsing, close all <details>
-                // if (state) closeSidebarDetails();
-
-                try { localStorage.setItem('sidebar-collapsed', state ? '1' : '0'); } catch(e){}
-            }
-
-            function toggleSidebarCollapsed(){
-                const aside = document.getElementById('desktop-sidebar');
-                const isCollapsed = aside?.getAttribute('data-collapsed') === 'true';
-                setSidebarCollapsed(!isCollapsed);
-            }
-
-            document.addEventListener('DOMContentLoaded', ()=>{
-                const saved = (typeof localStorage !== 'undefined' && localStorage.getItem('sidebar-collapsed') === '1');
-                setSidebarCollapsed(saved);
-            });
-
-            // Listen for Livewire `navigate` events
-            document.addEventListener('livewire:navigated', () => {
-                const saved = (typeof localStorage !== 'undefined' && localStorage.getItem('sidebar-collapsed') === '1');
-                setSidebarCollapsed(saved);
-
-            });
-
-
-            
-        </script>
 
         <!-- Inside the <head> -->
         @livewireStyles
     </head>
     <body  class="font-sans antialiased bg-white overflow-y-auto scroll-smooth" 
-     @if(isset($project)) data-project-id="{{ $project->id }}" @endif 
+        @if(isset($project)) data-project-id="{{ $project->id }}" @endif 
         >
   
         <!-- Notification Alert -->
@@ -1148,102 +260,85 @@
     </div> 
 
 
+    <div x-data="{ sidebarOpen: false }" class="flex " x-cloak> 
 
-    <!-- Mobile top bar -->
-    <livewire:admin.layout.navigation.topbar.mobile-top-bar />
+        {{-- @auth --}}
+        <!-- Sidebar -->
+        <div 
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            class="fixed inset-y-0 left-0 z-30 w-64 bg-blue-500 text-white transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0"
+        >
+            <div class="flex items-center justify-between px-4 py-4 border-b border-r border-opacity-10 border-blue-700 bg-white">
+                {{-- <h1 class="text-xl font-semibold">🎾 SHPO</h1> --}}
+                <h1 class="text-xl font-semibold ">
+                    <img src="{{ asset('images/logo-ghrd.png') }}" alt="SHPO Logo">
+                </h1>
+                <button @click="sidebarOpen = false" class="md:hidden">
+                    <svg class="w-6 h-6 text-blue-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
 
-    <!-- Layout wrapper -->
-    <div class="flex" >
-        <!-- Static sidebar (desktop) -->
-        <livewire:admin.layout.navigation.desktop-side-bar />
+            <livewire:layout.nav />
+        </div>
+        {{-- @endauth --}}
 
-        <!-- Mobile drawer -->
-        <livewire:admin.layout.navigation.mobile-drawer />
 
         <!-- Main content -->
-        <main class="flex-1 min-w-0">
+        <div class="flex-1 flex flex-col overflow-hidden">
+ 
+            <!-- Top Nav -->
+            <header class="flex items-center justify-between bg-white shadow px-4 py-3">
+                <div class="flex items-center gap-3">
 
-            <!-- Desktop top bar -->
-            <livewire:admin.layout.navigation.topbar.desktop-top-bar />
+                    @auth
+                    <!-- Minimize nav button on mobile screen-->
+                    <button @click="sidebarOpen = true" class="md:hidden">
+                        <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    @endauth
+                    
+                    
+                    <h2 class="text-lg font-semibold text-gray-800 sm:flex sm:space-x-2 sm:items-center">
 
-            {{ $slot }}
+                        <img src="{{ asset('images/GEPA_LOGO.png') }}" class="size-10" alt="SHPO Logo">
+                        <span class="hidden sm:block text-blue-600">
+                            SHPO
+                        </span>
+                    </h2>
+                </div>
 
-        </main>
+
+                <livewire:layout.profile-nav />
+                
+            </header>
+
+
+            <!-- Main content -->
+            <main class="flex-1 min-w-0">
+                <div class="max-w-full mx-auto min-h-[87vh]"> 
+                    {{ $slot }}
+                </div>
+
+                {{-- {{ $slot }} --}}
+
+                {{-- @auth
+                    <livewire:components.help-widget />
+                @endauth --}}
+            </main>
+             
+
+        </div>
+
+ 
     </div>
 
-
-
-
-
-
-
-    {{-- <!-- Offcanvas Notifications -->
-    <div id="offcanvas-backdrop" class="hidden fixed inset-0 bg-black/40 z-50" onclick="toggleOffcanvas(false)"></div>
-         
-    </div> --}}
-
     <livewire:admin.layout.navigation.topbar.notification-bar />
-
-
-
-        {{--
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                if (window.Livewire) {
-                    window.Livewire.restart();
-                }
-            });
-        </script>
-  --}}
+ 
         @include('sweetalert::alert')
-
-        <!-- There is something wrong with the scripts that disrupts the map -->
-        {{-- <script>
-            let inactivityTime = function () {
-                let inactivityTimeout, alertTimeout;
-                const inactivityLimit = 600000; // 1 hour
-                // const inactivityLimit = 60000; // 1 minutes
-
-                const warningTime = 30000; // 30 seconds before logout
-
-                const startTimers = () => {
-                    clearTimeout(inactivityTimeout);
-                    clearTimeout(alertTimeout);
-
-                    alertTimeout = setTimeout(() => {
-                        const confirmLogout = confirm(
-                            "You've been inactive for a while.\nWould you like to stay logged in?"
-                        );
-                        if (!confirmLogout) {
-                            // window.Livewire.emit('autoLogout');
-
-                            Livewire.dispatch('autoLogout');
-
-                        } else {
-                            startTimers(); // Restart timers if user cancels logout
-                        }
-                    }, inactivityLimit - warningTime);
-
-                    inactivityTimeout = setTimeout(() => {
-                        // window.Livewire.emit('autoLogout');
-
-                        Livewire.dispatch('autoLogout');
-
-                    }, inactivityLimit);
-                };
-
-                // Reset timers on user interaction
-                ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'].forEach(evt =>
-                    document.addEventListener(evt, startTimers)
-                );
-
-                startTimers(); // Start on page load
-            };
-
-            window.onload = inactivityTime;
-        </script>   --}}
-
-
  
 
         <!-- Push custom scripts from views -->
@@ -1280,12 +375,7 @@
 
 
         </script>
-
-
-
-
-
-
+ 
 
         <!-- Before the closing </body> tag -->
         @livewireScripts
@@ -1359,9 +449,97 @@
                 if (typeof el.select === 'function') el.select();
                 }
             });
-        </script>   
+        </script> 
+         
 
- 
+
+        {{-- Session notifications --}}
+        <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+        
+        <script> 
+
+            const session_notyf = new Notyf({
+                duration: 1000,
+                position: {
+                    x: 'right',
+                    y: 'top',
+                },
+                types: [
+                    {
+                        type: 'success',
+                        background: 'green',
+                        duration: 50000,
+                        dismissible: true
+                    },
+                    {
+                        type: 'warning',
+                        background: 'orange', 
+                        icon: { 
+                            tagName: 'i',
+                            text: 'warning',
+                            className: 'notyf-icon material-icons', // add your own class + material icon class
+                        },
+                        duration: 50000,
+                        dismissible: true
+                    },
+                    {
+                        type: 'error',
+                        background: 'indianred',
+                        icon: { 
+                            tagName: 'i',
+                            text: 'error',
+                            className: 'notyf-icon material-icons', // add your own class + material icon class
+                        },
+                        duration: 50000,
+                        dismissible: true
+                    },
+                    {
+                        type: 'info',
+                        background: '#6366F1',
+                        icon: { 
+                            tagName: 'i',
+                            text: 'info',
+                            className: 'notyf-icon material-icons', // add your own class + material icon class
+                        },
+                        duration: 50000,
+                        dismissible: true
+                    }
+                ]
+            });
+
+            @if(session('alert.error'))
+                session_notyf.open({
+                    type: 'error',
+                    message: '{{ session('alert.error') }}'
+                });
+            @elseif(session('alert.success'))
+                session_notyf.open({
+                    type: 'success',
+                    message: '{{ session('alert.success') }}'
+                });
+            @elseif(session('alert.warning'))
+                session_notyf.open({
+                    type: 'warning',
+                    message: '{{ session('alert.warning') }}'
+                });
+            @elseif(session('alert.info'))
+                session_notyf.open({
+                    type: 'info',
+                    message: '{{ session('alert.info') }}'
+                });
+            @endif
+
+            // event listener of the event : notify
+            document.addEventListener('livewire:init', () => {
+                Livewire.on('notify', ({ type, message }) => {
+                    session_notyf.open({ type, message });
+                });
+            });
+
+        </script>
+
+        {{-- ./ Session notifications --}}
+
 
     </body>
 

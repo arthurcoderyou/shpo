@@ -63,8 +63,48 @@
             </div>
           @endif
         </div>
+      @else
+        <label for="{{ $id }}" class="{{ $labelClass }}">{{ $label }} @if($required)<span class="text-red-600">*</span>@endif</label> 
+        @if($displayTooltip)
+          <div x-data="{ open:false }" class="relative">
+            <button type="button"
+                    @mouseenter="open = true" @mouseleave="open = false"
+                    @focus="open = true" @blur="open = false"
+                    @keydown.escape.window="open = false"
+                    class="inline-flex items-center rounded-md border px-2 py-1 text-xs">
+              ?
+              <span class="sr-only">Help</span>
+            </button>
+            <div x-show="open" x-cloak role="tooltip"
+                 class="absolute z-50 w-56 text-xs bg-slate-900 text-white rounded-md px-3 py-2 shadow-lg pointer-events-none {{ $posClass }}"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 translate-y-1">
+              {{ $tooltipText }}
+              <div class="my-2 space-y-1 text-xs">
+                @foreach($tooltipLabelTextArrMsg as $msgKey => $msgText)
+                    <div class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-lime-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M5 13l4 4L19 7" />
+                        </svg>
+
+                        <div>
+                            <span class="font-semibold text-white">{{ $msgKey }}:</span>
+                            <span class="text-slate-300">{{ $msgText }}</span>
+                        </div>
+                    </div>
+                @endforeach
+              </div>
+            </div>
+          </div>
+        @endif
       @endif
-      <label for="{{ $id }}" class="{{ $labelClass }}">{{ $label }} @if($required)<span class="text-red-600">*</span>@endif</label>
+      
     </div>
   @endif
 

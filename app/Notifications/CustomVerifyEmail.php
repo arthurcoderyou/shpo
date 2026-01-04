@@ -58,11 +58,17 @@ implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Verify Your Email Address')
+            ->replyTo('support@yourdomain.com', 'Support')
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Thank you for registering! Please verify your email address by clicking the button below.')
+            ->line('Thank you for registering! Please verify your email address.')
             ->action('Verify Email', $this->verificationUrl($notifiable))
             ->line('If you did not create an account, no further action is required.')
-            ->salutation('Best Regards, ' . config('app.name'));
+            ->salutation('Regards, ' . config('app.name'))
+            ->withSymfonyMessage(function ($message) {
+                $headers = $message->getHeaders();
+                $headers->addTextHeader('X-Mail-Type', 'email-verification');
+                $headers->addTextHeader('X-Application', config('app.name'));
+            });
     }
 
 

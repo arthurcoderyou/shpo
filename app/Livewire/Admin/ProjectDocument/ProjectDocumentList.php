@@ -40,14 +40,20 @@ class ProjectDocumentList extends Component
     use WithPagination;
 
     protected $listeners = [
-        'projectCreated' => '$refresh',
-        'projectUpdated' => '$refresh',
-        'projectDeleted' => '$refresh',
-        'projectSubmitted' => '$refresh',
-        'projectQueued' => '$refresh',
-        'projectDocumentCreated' => '$refresh',
-        'projectDocumentUpdated' => '$refresh',
-        'projectDocumentDeleted' => '$refresh',
+        'systemEvent' => '$refresh',  
+
+        'projectEvent' => '$refresh',
+        'projectDocumentEvent' => '$refresh',
+
+
+        // 'projectCreated' => '$refresh',
+        // 'projectUpdated' => '$refresh',
+        // 'projectDeleted' => '$refresh',
+        // 'projectSubmitted' => '$refresh',
+        // 'projectQueued' => '$refresh',
+        // 'projectDocumentCreated' => '$refresh',
+        // 'projectDocumentUpdated' => '$refresh',
+        // 'projectDocumentDeleted' => '$refresh',
     ];
 
 
@@ -1131,11 +1137,12 @@ class ProjectDocumentList extends Component
 
 
 
-        if (!empty($this->uploaded_from) && !empty($this->uploaded_to)) {
-            $docs->whereBetween('created_at', [$this->uploaded_from, $this->uploaded_to]);
-        }
+        // if (!empty($this->uploaded_from) && !empty($this->uploaded_to)) {
+        //     $docs->whereBetween('created_at', [$this->uploaded_from, $this->uploaded_to]);
+        // }
 
         if(!empty($this->sort_by)){
+            // dd("Here")
             $docs = $docs->applySortingUsingWhereHas($this->sort_by)  // sorrting with aggregate to other model relationships
                 ->applySorting($this->sort_by); // sorrting directly to the project document model
         }else{

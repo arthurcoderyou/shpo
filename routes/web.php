@@ -116,85 +116,94 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
 
 
                 # project own
-                    Route::get('project',[ProjectController::class, 'index'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view'])  
-                        ->name('project.index');
 
-                    Route::get('project/update_pending',[ProjectController::class, 'index_update_pending'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view update pending'])  
-                        ->name('project.index.update-pending');
+                    Route::middleware(['complete_profile_info_required'])->group(function(){ 
 
-                     Route::get('project/review_pending',[ProjectController::class, 'index_review_pending'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view review pending'])  
-                        ->name('project.index.review-pending');
+                        Route::get('project',[ProjectController::class, 'index'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view'])  
+                            ->name('project.index');
+
+                        Route::get('project/update_pending',[ProjectController::class, 'index_update_pending'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view update pending'])  
+                            ->name('project.index.update-pending');
+
+                        Route::get('project/review_pending',[ProjectController::class, 'index_review_pending'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view review pending'])  
+                            ->name('project.index.review-pending');
 
 
 
 
 
-                    Route::get('project/create',[ProjectController::class, 'create'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project create']) 
-                        ->name('project.create');
+                        Route::get('project/create',[ProjectController::class, 'create'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project create']) 
+                            ->name('project.create');
 
-                    Route::get('project/{project}/edit',[ProjectController::class, 'edit'])
-                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project edit']) 
-                            ->name('project.edit');
-                            
-                    Route::get('project/{project}/show',[ProjectController::class, 'show'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project view']) 
-                        ->name('project.show');    
-                    
-
-                    # project - project document section (strictly connected to a project )
-                        // show the project documents  
-                        Route::get('project/{project}/show/project_documents', [ProjectController::class, 'project_documents'])
-                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project list view,permission:system access reviewer']) 
-                            ->name('project.project-document.index');
-
+                        Route::get('project/{project}/edit',[ProjectController::class, 'edit'])
+                                ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project edit']) 
+                                ->name('project.edit');
+                                
+                        Route::get('project/{project}/show',[ProjectController::class, 'show'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project view']) 
+                            ->name('project.show');    
                         
 
-                        // // show the project document attachments 
-                        // Route::get('project/{project}/project_document/{project_document}/show',[ProjectDocumentController::class, 'show'])
-                        //     ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document list view']) 
-                        //     ->name('project.project-document.show'); // for users to see projects pending updates and resubmission
+                        # project - project document section (strictly connected to a project )
+                            // show the project documents  
+                            Route::get('project/{project}/show/project_documents', [ProjectController::class, 'project_documents'])
+                                ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project list view,permission:system access reviewer']) 
+                                ->name('project.project-document.index');
+
+                            
+
+                            // // show the project document attachments 
+                            // Route::get('project/{project}/project_document/{project_document}/show',[ProjectDocumentController::class, 'show'])
+                            //     ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document list view']) 
+                            //     ->name('project.project-document.show'); // for users to see projects pending updates and resubmission
 
 
 
 
-                    # ./ project - project document section (strictly connected to a project )
-
+                        # ./ project - project document section (strictly connected to a project )
+                    });
                 # ./ own
 
 
                 # all
-                    Route::get('project/all',[ProjectController::class, 'index_all'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view all'])  
-                        ->name('project.index.all');
 
-                    Route::get('project/all/no_drafts',[ProjectController::class, 'index_all_no_drafts'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view all no drafts'])  
-                        ->name('project.index.all.no-drafts');
+                    Route::middleware(['complete_profile_info_required'])->group(function(){ 
 
-                    Route::get('project/update_pending/all/linked',[ProjectController::class, 'index_update_pending_all_linked'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view update pending all linked'])  
-                        ->name('project.index.update-pending.all-linked');
+                    
+                        Route::get('project/all',[ProjectController::class, 'index_all'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view all'])  
+                            ->name('project.index.all');
 
-                    Route::get('project/review_pending/all/linked',[ProjectController::class, 'index_review_pending_all_linked'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view review pending all linked'])  
-                        ->name('project.index.review-pending.all-linked');
+                        Route::get('project/all/no_drafts',[ProjectController::class, 'index_all_no_drafts'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view all no drafts'])  
+                            ->name('project.index.all.no-drafts');
+
+                        Route::get('project/update_pending/all/linked',[ProjectController::class, 'index_update_pending_all_linked'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view update pending all linked'])  
+                            ->name('project.index.update-pending.all-linked');
+
+                        Route::get('project/review_pending/all/linked',[ProjectController::class, 'index_review_pending_all_linked'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view review pending all linked'])  
+                            ->name('project.index.review-pending.all-linked');
 
 
-                    Route::get('project/update_pending/all',[ProjectController::class, 'index_update_pending_all'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view update pending all'])  
-                        ->name('project.index.update-pending.all');
+                        Route::get('project/update_pending/all',[ProjectController::class, 'index_update_pending_all'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view update pending all'])  
+                            ->name('project.index.update-pending.all');
 
-                    Route::get('project/review_pending/all',[ProjectController::class, 'index_review_pending_all'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view review pending all'])  
-                        ->name('project.index.review-pending.all');
+                        Route::get('project/review_pending/all',[ProjectController::class, 'index_review_pending_all'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view review pending all'])  
+                            ->name('project.index.review-pending.all');
 
-                    Route::get('project/open_review',[ProjectController::class, 'index_open_review'])
-                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view open review'])  
-                        ->name('project.index.open-review');
+                        Route::get('project/open_review',[ProjectController::class, 'index_open_review'])
+                            ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project list view open review'])  
+                            ->name('project.index.open-review');
+
+                    });
 
                 # ./ all 
 
@@ -217,96 +226,100 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
 
                 
                 
+                Route::middleware(['complete_profile_info_required'])->group(function(){ 
+                    // WILL BE NOT USED 
+                    Route::get('project/{project}/review',[ProjectController::class, 'review'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project review create']) 
+                        ->name('project.review');
 
-                // WILL BE NOT USED 
-                Route::get('project/{project}/review',[ProjectController::class, 'review'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project review create']) 
-                    ->name('project.review');
-
-                
-
-
+                    
 
 
-                // show the project documents - with and without a project 
-                Route::get('project_documents/{project?}', [ProjectController::class, 'project_documents'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project list view,permission:system access reviewer']) 
-                    ->name('project.project_documents');
 
 
-                // show the project documents - that are on open review
-                Route::get('project_documents_open/{project?}', [ProjectController::class, 'project_documents_open'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project list view,permission:system access reviewer']) 
-                    ->name('project.project_documents.open');
+                    // show the project documents - with and without a project 
+                    Route::get('project_documents/{project?}', [ProjectController::class, 'project_documents'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project list view,permission:system access reviewer']) 
+                        ->name('project.project_documents');
 
-                // review project document
-                Route::get('project_document/{project_document}/review', [ProjectController::class, 'project_document_review'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project review create']) 
-                    ->name('project.project_document_review');
+
+                    // show the project documents - that are on open review
+                    Route::get('project_documents_open/{project?}', [ProjectController::class, 'project_documents_open'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project list view,permission:system access reviewer']) 
+                        ->name('project.project_documents.open');
+
+                    // review project document
+                    Route::get('project_document/{project_document}/review', [ProjectController::class, 'project_document_review'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project review create']) 
+                        ->name('project.project_document_review');
+
+                });
                 
 
 
             # ./ project
 
             # project document
+                Route::middleware(['rc_number_required'])->group(function(){
 
-                // list of project documents with or without project
-                Route::get('project_document/{project?}/{project_document?}',[ProjectDocumentController::class, 'index'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
-                    ->name('project-document.index'); // for users to see projects pending updates and resubmission
+                
+                    // list of project documents with or without project
+                    Route::get('project_document/{project?}/{project_document?}',[ProjectDocumentController::class, 'index'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
+                        ->name('project-document.index'); // for users to see projects pending updates and resubmission
 
-                // list of open project documents with or without project
-                Route::get('project_document_open_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_open_review'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project document create']) 
-                    ->name('project-document.index.open-review'); // for users to see projects pending updates and resubmission
+                    // list of open project documents with or without project
+                    Route::get('project_document_open_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_open_review'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:project document create']) 
+                        ->name('project-document.index.open-review'); // for users to see projects pending updates and resubmission
 
 
-                // list of review pending project documents with or without project
-                Route::get('project_document_review_pending/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_review_pending'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
-                    ->name('project-document.index.review-pending'); // for users to see projects pending updates and resubmission
+                    // list of review pending project documents with or without project
+                    Route::get('project_document_review_pending/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_review_pending'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
+                        ->name('project-document.index.review-pending'); // for users to see projects pending updates and resubmission
 
-                // submitter
-                // list of  project documents with changes requested with or without project
-                Route::get('project_document_changes_requested/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_changes_requested'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
-                    ->name('project-document.index.changes-requested'); // for users to see projects pending updates and resubmission
+                    // submitter
+                    // list of  project documents with changes requested with or without project
+                    Route::get('project_document_changes_requested/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_changes_requested'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
+                        ->name('project-document.index.changes-requested'); // for users to see projects pending updates and resubmission
 
-                // submitter
-                // list of  project documents with changes requested with or without project
-                Route::get('project_document_pending_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_pending_review'])
-                    // ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
-                    ->middleware(['role.permission.alert:role:,permission:system access user']) 
-                    ->name('project-document.index.pending-review'); // for users to see projects pending updates and resubmission
+                    // submitter
+                    // list of  project documents with changes requested with or without project
+                    Route::get('project_document_pending_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_pending_review'])
+                        // ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
+                        ->middleware(['role.permission.alert:role:,permission:system access user']) 
+                        ->name('project-document.index.pending-review'); // for users to see projects pending updates and resubmission
+
+                        
+
+
+                    // review project document
+                    Route::get('project_document_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'review'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
+                        ->name('project-document.review'); // for users to see projects pending updates and resubmission
+
+
+                    // create new project document and attachments 
+                    Route::get('project/{project}/project_document_create',[ProjectDocumentController::class, 'create'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document create']) 
+                        ->name('project.project-document.create'); // for users to see projects pending updates and resubmission
 
                     
 
+                    // show the project - project document attachments 
+                    Route::get('project/{project}/project_document/{project_document}/show',[ProjectDocumentController::class, 'show'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document list view']) 
+                        ->name('project.project-document.show'); // for users to see projects pending updates and resubmission
 
-                // review project document
-                Route::get('project_document_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'review'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
-                    ->name('project-document.review'); // for users to see projects pending updates and resubmission
+                    
 
-
-                // create new project document and attachments 
-                Route::get('project/{project}/project_document_create',[ProjectDocumentController::class, 'create'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document create']) 
-                    ->name('project.project-document.create'); // for users to see projects pending updates and resubmission
-
-                
-
-                // show the project - project document attachments 
-                Route::get('project/{project}/project_document/{project_document}/show',[ProjectDocumentController::class, 'show'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document list view']) 
-                    ->name('project.project-document.show'); // for users to see projects pending updates and resubmission
-
-                
-
-                // update new project - project document and add new attachments 
-                Route::get('project/{project}/project_document_edit_attachments/{project_document}/',[ProjectDocumentController::class, 'edit'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document edit']) 
-                    ->name('project.project_document.edit_attachments'); // for users to see projects pending updates and resubmission
-
+                    // update new project - project document and add new attachments 
+                    Route::get('project/{project}/project_document_edit_attachments/{project_document}/',[ProjectDocumentController::class, 'edit'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document edit']) 
+                        ->name('project.project_document.edit_attachments'); // for users to see projects pending updates and resubmission
+                });
             # ./ project document 
  
             # reviewer
@@ -323,40 +336,46 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
 
             # ./ reviewer
 
-            # project_timer
-                Route::get('project_timer',[ProjectTimerController::class,'index'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:timer list view']) 
-                    ->name('project_timer.index'); 
+            # project_timer 
+                Route::middleware(['complete_profile_info_required'])->group(function(){ 
+                    Route::get('project_timer',[ProjectTimerController::class,'index'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:timer list view']) 
+                        ->name('project_timer.index'); 
+                });
             # ./ project_timer
             
             # reviewer
-                Route::get('reviewer',[ReviewerController::class,'index'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:reviewer list view']) 
-                    ->name('reviewer.index');
-                // Route::get('reviewer/create',[ReviewerController::class, 'create'])->name('reviewer.create');
-                // Route::get('reviewer/{reviewer}/edit',[ReviewerController::class, 'edit'])->name('reviewer.edit');
+                Route::middleware(['complete_profile_info_required'])->group(function(){ 
+                    Route::get('reviewer',[ReviewerController::class,'index'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:reviewer list view']) 
+                        ->name('reviewer.index');
+                    // Route::get('reviewer/create',[ReviewerController::class, 'create'])->name('reviewer.create');
+                    // Route::get('reviewer/{reviewer}/edit',[ReviewerController::class, 'edit'])->name('reviewer.edit');
+                });
             # ./ reviewer
 
 
             # reviews 
-                Route::get('review',[ReviewController::class,'index'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:review list view']) 
-                    ->name('review.index');
+                Route::middleware(['complete_profile_info_required'])->group(function(){ 
+                    Route::get('review',[ReviewController::class,'index'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:review list view']) 
+                        ->name('review.index');
 
-                Route::get('project_document_review_flow/{project_document}',[ReviewController::class,'review_flow'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:review list view']) 
-                    ->name('project_document.review.flow');
-
-
+                    Route::get('project_document_review_flow/{project_document}',[ReviewController::class,'review_flow'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:review list view']) 
+                        ->name('project_document.review.flow');
+                }); 
             # ./ reviews
 
             # re-reviews 
-                Route::get('re-review',[ReReviewController::class,'index'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin']) 
-                    ->name('re-review.index');
-                Route::get('re-review/{rereview}/show',[ReReviewController::class,'show'])
-                    ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin']) 
-                    ->name('re-review.show');
+                Route::middleware(['complete_profile_info_required'])->group(function(){ 
+                    Route::get('re-review',[ReReviewController::class,'index'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin']) 
+                        ->name('re-review.index');
+                    Route::get('re-review/{rereview}/show',[ReReviewController::class,'show'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin']) 
+                        ->name('re-review.show');
+                });
             # ./ re-reviews 
 
 
@@ -552,7 +571,28 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
                         ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
                         ->name('test.testReviewSubmittedNotification'); // for users to see projects pending updates and resubmission
 
-                            
+
+                    Route::get('test/event/project-event-submitted',[TestingController::class, 'textProjectEventSubmitted'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.textProjectEventSubmitted'); // for users to see projects pending updates and resubmission
+
+                     Route::get('test/event/project-event-review-request',[TestingController::class, 'textProjectEventReviewRequest'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.textProjectEventReviewRequest'); // for users to see projects pending updates and resubmission
+                    Route::get('test/event/project-event-open-review-request',[TestingController::class, 'textProjectEventOpenReviewRequest'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.textProjectEventOpenReviewRequest'); // for users to see projects pending updates and resubmission
+
+                    Route::get('test/event/project-rc-reviewed',[TestingController::class, 'testProjectRCReviewed'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.testProjectRCReviewed'); // for users to see projects pending updates and resubmission
+
+
+                    Route::get('test/event/project-timer-updated-event',[TestingController::class, 'textProjectTimerUpdateEvent'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
+                        ->name('test.textProjectTimerUpdateEvent'); // for users to see projects pending updates and resubmission
+
+                    
 
                 // ./ event temporary routes
 
@@ -568,7 +608,7 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
                 // email testing routes
                     Route::get('test/email_preview/submitted',[TestingController::class, 'email_preview_submitted'])
                             ->middleware(['role.permission.alert:role:,permission:system access global admin']) 
-                            ->name('test.email_preview.submitted');  
+                            ->name('test.email_preview.submitted');   
                 // ./ email testing routes
 
 

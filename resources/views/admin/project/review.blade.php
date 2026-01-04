@@ -39,18 +39,15 @@
         ['label' => 'Review Project', 'url' => '#'],
     ]" />
 
-
-
  
-
-    <livewire:admin.project.project-show :id="$project->id" /> 
+    <livewire:partials.projects.page-header :project="$project"  /> 
 
 
 
     <!-- Check if the current auth user is the active reviewer-->
 
     {{-- @if($project->getCurrentReviewer()->user_id == auth()->user()->id) --}}
-        <livewire:admin.review.review-create :id="$project->id" /> 
+        <livewire:admin.review.project.review-create :id="$project->id" /> 
     {{-- @endif --}}
 
     

@@ -2,20 +2,27 @@
 
 namespace App\Livewire\Admin\Role;
 
-use App\Events\RoleDeleted;
+use App\Helpers\SystemNotificationHelpers\RoleNotificationHelper;
 use Livewire\Component;
+use App\Events\RoleDeleted;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Events\Role\RoleLogEvent;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Helpers\ActivityLogHelpers\RoleLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 
 class RoleList extends Component
 {
      protected $listeners = [ 
-        'roleCreated' => '$refresh',
-        'roleUpdated' => '$refresh',
-        'roleDeleted' => '$refresh',
+        // 'roleCreated' => '$refresh',
+        // 'roleUpdated' => '$refresh',
+        // 'roleDeleted' => '$refresh',
+        // 'systemEvent' => '$refresh',
+
+        'roleEvent' => '$refresh',
     ];
 
     use WithFileUploads;
@@ -23,6 +30,16 @@ class RoleList extends Component
 
     public $search = '';
     public $sort_by = '';
+
+    public array $sorting_options = [
+        "" => "Sort by",
+        "Name A - Z" => "Name A - Z",
+        "Name Z - A" => "Name Z - A",
+        "Latest Added" => "Latest Added",
+        "Oldest Added" => "Oldest Added",
+        "Latest Updated" => "Latest Updated",
+        "Oldest Updated" => "Oldest Updated", 
+    ];
     public $record_count = 10;
 
     public $selected_records = [];
@@ -31,6 +48,8 @@ class RoleList extends Component
     public $count = 0;
 
     public $file;
+
+    public $role_count;
 
     // Method to delete selected records
     public function deleteSelected()
@@ -68,11 +87,42 @@ class RoleList extends Component
         $role = Role::find($id);
 
 
-        $role->delete();
-        event(new RoleDeleted($role, auth()->user()->id));
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
 
-        Alert::success('Success','Role deleted successfully');
-        return redirect()->route('role.index');
+            // get the message from the helper 
+            $message = RoleLogHelper::getActivityMessage('deleted', $role->id, $authId);
+
+            // get the route
+            $route = RoleLogHelper::getRoute('deleted', $role->id);
+
+            // log the event 
+            event(new RoleLogEvent(
+                $message ,
+                $authId, 
+                $role->id, // add this modelId connected to the current model instance for the listener to reload the same page same model instance record 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                RoleNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+
+        $role->delete(); 
+
+        // Alert::success('Success','Role deleted successfully');
+        return redirect()->route('role.index')
+            ->with('alert.success',$message)
+        ;
 
     }
 
@@ -161,7 +211,7 @@ class RoleList extends Component
         }
 
 
-
+        $this->role_count = $roles->count();
 
 
         $roles = $roles->paginate($this->record_count);

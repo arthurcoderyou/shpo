@@ -17,6 +17,7 @@ use App\Helpers\ProjectHelper;
 use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Support\Facades\Route;
+use App\Events\Project\ProjectLogEvent;
 use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert; 
@@ -24,9 +25,12 @@ use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ReviewerReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
+use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
 class ProjectList extends Component
 {
@@ -35,14 +39,17 @@ class ProjectList extends Component
     use WithPagination;
 
     protected $listeners = [
-        'projectCreated' => '$refresh',
-        'projectUpdated' => '$refresh',
-        'projectDeleted' => '$refresh',
-        'projectSubmitted' => '$refresh',
-        'projectQueued' => '$refresh',
-        'projectDocumentCreated' => '$refresh',
-        'projectDocumentUpdated' => '$refresh',
-        'projectDocumentDeleted' => '$refresh',
+        'systemEvent' => '$refresh',
+
+        'projectEvent' => '$refresh',
+        // 'projectCreated' => '$refresh',
+        // 'projectUpdated' => '$refresh',
+        // 'projectDeleted' => '$refresh',
+        // 'projectSubmitted' => '$refresh',
+        // 'projectQueued' => '$refresh',
+        // 'projectDocumentCreated' => '$refresh',
+        // 'projectDocumentUpdated' => '$refresh',
+        // 'projectDocumentDeleted' => '$refresh',
     ];
 
 
@@ -96,6 +103,20 @@ class ProjectList extends Component
     public $myProjects;
 
     public $home_route;
+
+    
+    /**Count */
+    public $count_all;
+    public $count_on_que;
+    public $count_open_review;
+    public $count_changes_requested;
+    public $count_pending;
+    public $count_pending_rc_number;
+     
+
+    public $pending_rc_number = false; 
+
+
  
     public function mount($route = 'project.index' ){
         // dd($route);
@@ -133,6 +154,10 @@ class ProjectList extends Component
         $this->project_status = request()->query('project_status', ''); // Default to empty string if not set
 
         $this->review_status = request()->query('review_status', ''); // Default to empty string if not set
+
+       $this->pending_rc_number = request()->query('pending_rc_number') == '1';
+
+
         
         $this->projects_count = 0;
  
@@ -140,9 +165,39 @@ class ProjectList extends Component
 
         // dd($this->home_route);
 
+        $this->setCountForReviewStatus();
+
+        // dd($this->review_status);
+
+    }
+
+
+
+     public function setCountForReviewStatus( ){
+
+         
+
+        $this->count_all = Project::countBasedOnReviewStatus('all', $this->pending_rc_number) ?? 0;
+        $this->count_changes_requested = Project::countBasedOnReviewStatus('changes_requested', $this->pending_rc_number) ?? 0;
+        $this->count_pending = Project::countBasedOnReviewStatus('pending', $this->pending_rc_number) ?? 0;
+        $this->count_open_review = Project::countBasedOnReviewStatus('open_review', $this->pending_rc_number) ?? 0; 
+        $this->count_on_que = Project::where('status','on_que')->count();
+        $this->count_pending_rc_number = Project::whereNull('rc_number')
+            ->whereNot('status','draft')
+            ->where(function ($q) {
+                $q->doesntHave('project_documents');
+            })
+            ->count();
+
 
 
     }
+
+
+    public function updatedPendingRcNumber(){
+        $this->setCountForReviewStatus();
+    }
+
 
 
     // public function setHomeRoute(){
@@ -284,225 +339,12 @@ class ProjectList extends Component
                 break;
         }
     }
-
-
-
-
-    public function deleteSelected()
-    {
-        // Get selected projects before deleting
-        $projects = Project::whereIn('id', $this->selected_records)->get(); 
-
-        // Delete the selected records
-        // Project::whereIn('id', $this->selected_records)->delete();
-
  
 
-        // Log each deleted project
-        foreach ($projects as $project) {
-
-
-            // check if project is not created by the user or the project is not draft
-            /**Identify the records to disply by roles  */
-            if(Auth::user()->can('system access user')){
-                 
-                if($project->created_by !== Auth::id()){
-                    Alert::error('Error', 'Selected projects are not yours');
-                    return redirect()->route('project.index');
-                }
-
-                if($project->status !== "draft"){
-                    Alert::error('Error', 'Selected projects are not drafts');
-                    return redirect()->route('project.index');
-                }
-                
-
-
-            }elseif(Auth::user()->can('system access reviewer')){
-                if($project->created_by !== Auth::id()){
-                    Alert::error('Error', 'Selected projects are not yours');
-                    return redirect()->route('project.index');
-                }
-
-                if($project->status !== "draft"){
-                    Alert::error('Error', 'Selected projects are not drafts');
-                    return redirect()->route('project.index');
-                }
-
-
-            }elseif(Auth::user()->can('system access admin')){
-
-            }
 
 
 
 
-            ActivityLog::create([
-                'log_action' => "Project \"{$project->name}\" deleted",
-                'log_username' => Auth::user()->name,
-                'created_by' => Auth::user()->id,
-            ]);
-
-
-            // delete project connected records 
-        
-                //delete project reviewers 
-                if(!empty($project->project_reviewers)){
-                    foreach($project->project_reviewers as $reviewer){
-                        $reviewer->delete();
-                    } 
-                }
-
-                //delete project reviews 
-                if(!empty($project->project_reviews)){
-                    foreach($project->project_reviews as $review){
-                        $review->delete();
-                    } 
-                }
-
-                //delete project documents 
-                if(!empty($project->project_documents)){
-                    foreach($project->project_documents as $document){
-
-                        // delete project attachments for each project document 
-                        if(!empty($document->project_attachments)){
-                            foreach($document->project_attachments as $attachment){
-                                // Construct the full file path
-                                $filePath = "public/uploads/project_attachments/{$attachment->attachment}";
-
-                                // Check if the file exists in storage and delete it
-                                if (Storage::exists($filePath)) {
-                                    Storage::delete($filePath);
-                                }
-
-                                // Delete the record from the database
-                                $attachment->delete();
-                            }
-
-
-                        }
-
-
-
-                        $document->delete();
-                    } 
-                }
-
-                // delete project subscribers
-                if(!empty($project->project_subscribers)){
-                    foreach($project->project_subscribers as $subcriber){
-                        $subcriber->delete();
-                    } 
-                }
-            
-            // ./ delete project connected records 
-
-
-
-            $project->delete();
-
-
-
-        }
-
-        // Clear selected records
-        $this->selected_records = [];
-
-        Alert::success('Success', 'Selected projects deleted successfully');
-
-        // if($project->created_by == auth()->user()->id){
-        //     return redirect()->route('project.index');
-
-        // }else{
-
-        $route = ProjectHelper::returnHomeProjectRoute($project);
-
-        return redirect($route); 
-        // }
-
-        
-    }
-
-    // This method is called automatically when selected_records is updated
-    public function updateSelectedCount()
-    {
-        // Update the count when checkboxes are checked or unchecked
-        $this->count = count($this->selected_records);
-    }
-
-    public function toggleSelectAll()
-    {
-        if ($this->selectAll) {
-            $this->selected_records = Project::select('projects.*'); // Select all records
-
-
-            /**Identify the records to disply by roles  */
-            if(Auth::user()->can('system access user')){
-                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
-            
-
-                /**Identify the records to display based on the current route */
-                /** User route for pending project updates for resubmission */
-                if($this->routeIsPendingProject){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                        ->whereNot('status','draft')
-                        ->where('allow_project_submission',true)
-                        
-                        ->where('created_by',Auth::user()->id);
-                } 
-
-                // for other routes, user will display all of his projects
-                $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
-
-
-            }elseif(Auth::user()->can('system access reviewer')){
-                // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
-                
-                if($this->routeIsReview){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved')->whereNot('status','draft')
-                        ->whereHas('project_reviewers', function ($query) {
-                            $query->where('user_id', Auth::id())
-                                ->where('status', true)
-                                ; // Filter by the logged-in user's ID
-                        });
-
-                }
-
-                // do not show drafts to reviewers
-                $this->selected_records = $this->selected_records->whereNot('status','draft');
-
-
-            }elseif(Auth::user()->can('system access admin') || Auth::user()->can('system access global admin')){
-                // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
-                
-                if($this->routeIsReview){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved')->whereNot('status','draft')
-                        ->whereHas('project_reviewers', function ($query) {
-                            $query->where('status', true)
-                                ; // Filter by the logged-in user's ID
-                        })
-                        ->where('allow_project_submission',false);
-
-                }elseif($this->routeIsPendingProject){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                        ->whereNot('status','draft')
-                        ->where('allow_project_submission',true);
-                        
-                        // ->where('created_by',Auth::user()->id);
-                } 
-
-                // do not show drafts to reviewers
-                $this->selected_records = $this->selected_records->whereNot('status','draft');
-            }
-         
-            $this->selected_records = $this->selected_records->pluck('id')->toArray();
-
-        } else {
-            $this->selected_records = []; // Deselect all
-        }
-
-        $this->count = count($this->selected_records);
-    }
 
     public function delete($id){
         $project = Project::find($id);
@@ -582,6 +424,38 @@ class ProjectList extends Component
         // ./ delete project connected records 
 
 
+ 
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = ProjectLogHelper::getActivityMessage('deleted', $project->id, $authId);
+
+            // get the route
+            $route = ProjectLogHelper::getRoute('deleted', $project->id);
+
+            // log the event 
+            event(new ProjectLogEvent(
+                $message ,
+                $authId, 
+                $project->id ?? null,
+
+            ));
+    
+            /** send system notifications to users */
+                
+                ProjectNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+
 
         $project->delete();
 
@@ -595,7 +469,7 @@ class ProjectList extends Component
 
 
 
-        Alert::success('Success','Project deleted successfully');
+        // Alert::success('Success','Project deleted successfully');
         // return redirect()->route('project.index');
 
         // if($project->created_by == auth()->user()->id){
@@ -604,12 +478,18 @@ class ProjectList extends Component
         // }else{
 
         //     return redirect()->route('project.index');
-        // }
+        // }'
+
+        
+
+
 
         // return ProjectHelper::returnHomeRouteBasedOnProject($project);
         $route = ProjectHelper::returnHomeProjectRoute($project);
 
-        return redirect($route); 
+        return redirect($route)
+            ->with('alert.success',$message)
+            ; 
 
 
 
@@ -618,9 +498,10 @@ class ProjectList extends Component
 
     
 
-    public function submit_project($project_id){
-
-        ProjectHelper::submit_project($project_id);
+    public function submit_project_for_rc_evaluation($project_id){ 
+        
+        // dd($project_id);
+        ProjectHelper::submit_project_for_rc_evaluation($project_id);
 
     }
 
@@ -637,7 +518,9 @@ class ProjectList extends Component
 
     }
     
-
+    public function force_submit_project_for_rc_evaluation($id){
+        ProjectHelper::submit_project_for_rc_evaluation($id,true);
+    }
 
  
     public function restart_review_project($project_id){
@@ -819,7 +702,11 @@ class ProjectList extends Component
         return ProjectDocumentHelpers::returnFormattedLabel($status);
     }
 
+    public function updateReviewStatus(){
 
+        
+
+    }
     
 
 
@@ -1005,7 +892,22 @@ class ProjectList extends Component
         }
 
         if (!empty($this->review_status)) {
-            $query->withReviewStatus($this->review_status);
+            // $query->withReviewStatus($this->review_status);
+
+            $query = $query->applyReviewStatusBasedFilters($this->review_status);
+
+        }
+
+
+
+        if($this->pending_rc_number == true){
+            // dd($this->pending_rc_number);
+            $query->whereNull('rc_number')
+                ->where(function ($q) {
+                    $q->doesntHave('project_documents');
+                })
+                ->whereNot('status','draft');
+
         }
 
         // Add your sorting logic here (moved to another method for clarity if needed)

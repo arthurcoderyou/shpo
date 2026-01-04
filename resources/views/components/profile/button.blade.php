@@ -51,8 +51,10 @@
             <svg class="w-6 h-6 text-slate-600"  xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 11.25V6a3 3 0 10-6 0m6 5.25H9a2.25 2.25 0 00-2.25 2.25v6A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25v-6A2.25 2.25 0 0015 11.25z" />
             </svg>
-
-            {{ $buttonLabel }}
+            <span class="hidden sm:block">
+                {{ $buttonLabel }}
+            </span> 
+            
             
         </button>
     
@@ -73,7 +75,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 11.25V6a3 3 0 10-6 0m6 5.25H9a2.25 2.25 0 00-2.25 2.25v6A2.25 2.25 0 009 21.75h6a2.25 2.25 0 002.25-2.25v-6A2.25 2.25 0 0015 11.25z" />
             </svg>
 
-            {{ $buttonLabel }}
+            <span class="hidden sm:block">
+                {{ $buttonLabel }}
+            </span> 
             
         </button>
 

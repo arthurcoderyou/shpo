@@ -8,7 +8,9 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 new class extends Component {
 
-     protected $listeners = [ 
+    protected $listeners = [ 
+        'systemEvent' => '$refresh',
+
         'notificationsCreated' => '$refresh',
         'notificationsDeleted' => '$refresh',
         'notificationsUpdated' => '$refresh',

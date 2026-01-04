@@ -1,5 +1,5 @@
 <!-- Table Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
     {{-- <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
         <div></div>
@@ -30,11 +30,17 @@
                 <div class="inline-flex gap-x-2 text-nowrap">
 
 
-                    <input type="text" wire:model.live="search"
-                        class=" py-2 px-3 inline-flex items-center gap-x-2 border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
-                        placeholder="Search">
+                    <div class="min-w-32  inline-flex items-center  max-w-52">   
+                        <x-ui.input 
+                            id="search"
+                            name="search"
+                            type="text"
+                            wire:model.live="search"     
+                            placeholder="Search"   
+                        />
+                    </div>
 
-                    <div class="inline-flex items-center gap-x-2">
+                    {{-- <div class="inline-flex items-center gap-x-2">
 
                         <select wire:model.live="selected_role" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500   ">
                             <option value="">Sort Role</option>
@@ -47,9 +53,23 @@
                             
                              
                         </select>
+
+                        
+                        
+                    </div> --}}
+
+                    <div class="inline-flex items-center gap-x-2  max-w-52"> 
+                        <x-ui.select 
+                            id="selected_role"
+                            name="selected_role" 
+                            wire:model.live="selected_role"     
+                            :options="$role_options"
+                        />
+
                     </div>
 
-                    <div class="inline-flex items-center gap-x-2">
+
+                    {{-- <div class="inline-flex items-center gap-x-2">
 
                         <select wire:model.live="role_request" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500   ">
                             <option value="">Sort Request</option>
@@ -57,10 +77,22 @@
                             <option value="reviewer">Reviewer Request</option>
                              
                         </select>
+                    </div> --}}
+
+                    <div class="inline-flex items-center gap-x-2  max-w-52"> 
+                        <x-ui.select 
+                            id="role_request"
+                            name="role_request" 
+                            wire:model.live="role_request"     
+                            :options="$role_request_options"
+                        />
+
                     </div>
 
+
+
                     @can(['system access global admin'])
-                        <div class="inline-flex items-center gap-x-2">
+                        {{-- <div class="inline-flex items-center gap-x-2">
 
                             <select wire:model.live="user_status_filter" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500   ">
                                 <option value="all">All Users</option>
@@ -68,24 +100,30 @@
                                 <option value="deactivated">Deactivated Users</option>
                                 
                             </select>
+                        </div> --}}
+
+                        <div class="inline-flex items-center gap-x-2  max-w-52"> 
+                            <x-ui.select 
+                                id="user_status_filter"
+                                name="user_status_filter" 
+                                wire:model.live="user_status_filter"     
+                                :options="$user_status_filter_options"
+                            />
+
                         </div>
+                        
                     @endcan
 
+                        
 
+                    <div class="inline-flex items-center gap-x-2  max-w-52"> 
+                        <x-ui.select 
+                            id="sort_by"
+                            name="sort_by" 
+                            wire:model.live="sort_by"     
+                            :options="$sorting_options"
+                        />
 
-                    <div class="inline-flex items-center gap-x-2">
-
-                        <select wire:model.live="sort_by" class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500   ">
-                            <option value="">Sort By</option>
-                            <option>Name A - Z</option>
-                            <option>Name Z - A</option>
-                            <option>Email A - Z</option>
-                            <option>Email Z - A</option>
-                            <option>Latest Added</option>
-                            <option>Oldest Added</option>
-                            <option>Latest Updated</option>
-                            <option>Oldest Updated</option>
-                        </select>
                     </div>
 
                     {{-- @if(Auth::user()->can('system access global admin')  || Auth::user()->can('user delete'))
@@ -100,11 +138,20 @@
                     @endif --}}
 
                     @if(Auth::user()->can('system access global admin')  || Auth::user()->can('user create'))
-                    <a href="{{ route('user.create') }}"
-                    wire:navigate
-                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-yellow-500 text-white shadow-sm hover:bg-yellow-50 hover:text-yellow-600   hover:border-yellow-500 focus:outline-yellow-500 focus:text-yellow-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none   " >
-                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg>
-                    </a>
+                    <x-ui.button 
+                            id="create-user" 
+                            
+                            sr="Create new user" 
+                            :linkHref="route('user.create')" {{-- to make it as a link --}}
+
+                            class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-yellow-500 text-white hover:bg-yellow-800 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none"
+
+                            displayTooltip
+                            tooltipText="Create new user"
+                            position="left"
+                        >
+                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg>
+                        </x-ui.button>
                     @endif
                 </div>
                 </div>
@@ -127,6 +174,8 @@
                             <span class="sr-only">Checkbox</span>
                         </label>
                     </th> --}}
+
+                    <th scope="col" class="px-2 py-3 text-start"></th>
 
                     <th scope="col" class="px-2 py-3 text-start">
                         <div class="flex items-center gap-x-2">
@@ -190,6 +239,56 @@
                                         </label>
                                     </div>
                                 </td> --}}
+
+                                <td class="px-3 py-2 text-left">
+                                    @php
+                                        $options = [
+ 
+                                            [
+                                                'type'  => 'link',
+                                                'label' => 'Edit Role',
+                                                'href'  =>  route('user.edit_role', ['user' => $user->id]),
+                                                'icon'  => 'role_edit', // you can tweak
+                                                'attrs' => [
+                                                    'wire:navigate' => true,
+                                                ],
+                                            ],
+
+                                            [
+                                                'type'  => 'link',
+                                                'label' => 'Edit',
+                                                'href'  => route('user.edit', ['user' => $user->id]),
+                                                'icon'  => 'edit', // you can tweak
+                                                'attrs' => [
+                                                    'wire:navigate' => true,
+                                                ],      
+                                            ],
+                                            [
+                                                'type'  => 'buttonConfirm',
+                                                'label' => 'Delete',
+                                                'confirm_btn_title' => 'Confirm Delete',
+                                                'confirm_btn_label' => 'Delete',
+                                                'confirm_btn_message' => 'Are you sure you want to delete this record?',
+
+                                                'icon'  => 'delete',
+                                                
+                                                'class' => '  text-black hover:bg-red-700 rounded-none border-0',
+                                                'confirm_btn_action' => 'delete('.$user->id.')',
+                                                // 'attrs' => [
+                                                //     // 'onclick'            => "confirm('Are you sure, you want to delete this record? This cannot be undone') || event.stopImmediatePropagation()",
+                                                //     // 'wire:click.prevent' => "delete({$row->id})",
+                                                //     'wire:click' => '"delete({$row->id})',
+                                                // ],
+                                            ],
+                                        ];
+                                    @endphp
+
+
+                                    <x-ui.table.actions-dropdown :options="$options" :width="220" />
+
+
+                                </td>
+
 
 
                                 <td class="size-auto whitespace-nowrap">
@@ -258,7 +357,7 @@
 
 
 
-                                <td class="w-4 whitespace-nowrap">
+                                {{-- <td class="w-4 whitespace-nowrap">
                                     <div class="px-2 py-2">
 
                                         @if(empty($user->deleted_at))
@@ -285,14 +384,14 @@
 
                                             @if(Auth::user()->can('system access global admin')  || Auth::user()->can('user delete'))
                                                 <!-- delete -->
-                                                {{-- @if( Auth::user()->can('user delete')  ||  Auth::user()->can('system access global admin')) --}}
+                                                  @if( Auth::user()->can('user delete')  ||  Auth::user()->can('system access global admin')) 
                                                 <button
                                                 onclick="confirm('Are you sure, you want to delete this record? This cannot be undone') || event.stopImmediatePropagation()"
                                                 wire:click.prevent="delete({{ $user->id }})"
                                                 type="button" class="py-2 px-3 inline-flex items-center gap-x-2  text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
                                                     <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.7 23.7 0 0 0 -21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0 -16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"/></svg>
                                                 </button>
-                                                {{-- @endif --}}
+                                                  @endif  
                                             @endif
                                         @else
 
@@ -329,7 +428,7 @@
 
 
                                     </div>
-                                </td>
+                                </td> --}}
 
 
 
@@ -543,20 +642,42 @@
 
 
     <!--  Loaders -->
-         {{-- wire:target="table"   --}}
-        <div wire:loading 
-            class="p-0 m-0"
-            style="padding: 0; margin: 0;">
-            <div class="absolute right-4 top-4 z-10 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
-                <div>   
-                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
+        <!-- Floating Loading Notification -->
+        <div 
+        wire:loading    
+        class="fixed top-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]
+                rounded-2xl border border-slate-200 bg-white shadow-lg"
+        role="status"
+        aria-live="polite"
+        >
+            <div class="flex items-start gap-3 p-4">
+                <!-- Spinner -->
+                <svg class="h-5 w-5 mt-0.5 animate-spin text-slate-600 shrink-0"
+                    viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10"
+                        stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z" />
+                </svg>
+
+                <!-- Text + Progress -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-slate-900">
+                        Loading data…
+                    </div>
+                    <div class="mt-0.5 text-xs text-slate-600">
+                        Fetching the latest records. Please wait.
+                    </div>
+
+                    <!-- Indeterminate Progress Bar -->
+                    <div class="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                        class="absolute inset-y-0 left-0 w-1/3 rounded-full bg-slate-400"
+                        style="animation: indeterminate-bar 1.2s ease-in-out infinite;"
+                        ></div> 
+
+                    </div>
                 </div>
-                <div>
-                    Loading lists, please wait...
-                </div> 
             </div>
         </div>
 

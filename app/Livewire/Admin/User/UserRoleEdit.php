@@ -7,16 +7,40 @@ use App\Models\Project;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Illuminate\Validation\Rules;
+use App\Events\User\UserLogEvent;
 use Spatie\Permission\Models\Role;
+use App\Events\User\NewUserVerified;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use RealRashid\SweetAlert\Facades\Alert;  
 use Illuminate\Support\Facades\Notification;
+use App\Helpers\ActivityLogHelpers\UserLogHelper;
 use App\Notifications\UserRoleUpdatedNotification;
 use App\Notifications\UserRoleUpdatedNotificationDB;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\SystemNotificationHelpers\UserNotificationHelper;
 
 class UserRoleEdit extends Component
 {
+
+
+    // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+
+            // 'userEvent' => 'loadData'
+        ];
+
+        protected function getListeners(): array
+        {
+            return array_merge($this->listeners, [
+                "userEvent.{$this->user_id}" => 'loadData',
+            ]);
+        }
+    // ./ dynamic listener
+
 
     public string $name = '';
     public string $email = '';
@@ -36,29 +60,30 @@ class UserRoleEdit extends Component
 
     public function mount($id){
         $user = User::findOrFail($id);
+ 
+        $this->user_id = $user->id; 
 
+        $this->loadData();
+    }
+
+    // load the default data of the form
+    public function loadData(){ 
+
+        $user = User::findOrFail($this->user_id);
+         
         $this->name = $user->name;
-        $this->email = $user->email;
-        $this->user_id = $user->id;
+        $this->email = $user->email; 
         // $this->role = !empty($user->roles->first()->id) ? $user->roles->first()->id : null;
 
         $this->role_empty = $user->roles->isEmpty();
 
         $this->selectedRoles = $user->roles->pluck('id')->toArray();
-
-    }
-
-    //show password to text toggle
-    public function show_hide_password($status){
-        // dd($status);
-        if($this->password_hidden == 0){
-            $this->password_hidden = 1;
-        }elseif($this->password_hidden == 1){
-            $this->password_hidden = 0;
-        }
+         
+ 
     }
 
 
+    
     public function updated($fields){
 
         $this->validateOnly($fields,[ 
@@ -191,24 +216,30 @@ class UserRoleEdit extends Component
         // If reviewer permission is being removed, check for connections
         if ($hadReviewerPermission && !$hasReviewerPermissionAfter) {
             if ($this->hasConnectedRecords($user,'reviewer')) {
-                Alert::error('Error', 'Cannot remove reviewer role. This user is connected to existing records.');
-                return redirect()->route('user.index');
+                // Alert::error('Error', 'Cannot remove reviewer role. This user is connected to existing records.');
+                return redirect()->route('user.index')
+                    ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
+                    ;
             }
         }
 
         // If user permission is being removed, check for connections
         if ($hadUserPermission && !$hasUserPermissionAfter) {
             if ($this->hasConnectedRecords($user,'user')) {
-                Alert::error('Error', 'Cannot remove user role. This user is connected to existing records.');
-                return redirect()->route('user.index');
+                // Alert::error('Error', 'Cannot remove user role. This user is connected to existing records.');
+                return redirect()->route('user.index')
+                ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
+                ;
             }
         }
 
         // If admin permission is being removed, check for connections
         if ($hadAdminPermission && !$hasAdminPermissionAfter) {
             if ($this->hasConnectedRecords($user,'admin')) {
-                Alert::error('Error', 'Cannot remove admin role. This user is connected to existing records.');
-                return redirect()->route('user.index');
+                // Alert::error('Error', 'Cannot remove admin role. This user is connected to existing records.');
+                return redirect()->route('user.index')
+                ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
+                ;
             }
         }
         //  dd("All Gods");
@@ -230,19 +261,59 @@ class UserRoleEdit extends Component
 
          // if the user has no roles before
         if( $this->role_empty ){
-           
-            // send a notification to the user that his role had been updated and he can now access the websites and the functions for his role
-            Notification::send($user, new UserRoleUpdatedNotification($user));
-             
-            //send notification to the database
-            Notification::send($user, new UserRoleUpdatedNotificationDB($user));
+            
+            // the user in the context is also the one to be notified 
+            $userId = $user->id;
+            $userIdToNotify = $user->id;
+
+            // You can adapt this to your actual event
+            event(new NewUserVerified(
+                $userId ,
+                $userIdToNotify,
+                true
+
+            ));
 
         }
 
+
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = UserLogHelper::getActivityMessage('role-updated', $user->id, $authId);
+
+            // get the route
+            $route = UserLogHelper::getRoute('role-updated', $user->id);
+
+            // log the event 
+            event(new UserLogEvent(
+                $message ,
+                $authId, 
+                $user->id,
+
+            ));
+    
+            /** send system notifications to users */
+                
+                UserNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route , 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
  
 
-        Alert::success('Success','User updated successfully');
-        return redirect()->route('user.index');
+        // Alert::success('Success','User updated successfully');
+        return 
+            // redirect()->route('user.index')
+            redirect($route)
+            ->with('alert.success',$message)
+        ;
     }
 
 

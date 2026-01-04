@@ -1,9 +1,24 @@
-@import "@dasundev/livewire-dropzone-styles";
+@import "@dasundev/livewire-dropzone-styles"; 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 
+/*Session icon adjustments on design to fix the over top display*/
+.notyf-icon {
+    color: white !important;
+    font-size: 20px;
+    display: flex;
+    align-items: center;     /* vertically center */
+    justify-content: center; /* horizontally center */
+    height: 100%;            /* match container height */
+}
+
+.notyf__icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
 
 
  

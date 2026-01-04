@@ -25,7 +25,12 @@ class ReviewList extends Component
     use WithPagination;
 
     protected $listeners = [
-        'projectReviewCreated' => '$refresh', 
+        'systemEvent' => '$refresh',  
+
+        'projectEvent' => '$refresh',
+        'projectDocumentEvent' => '$refresh',
+
+        // 'projectReviewCreated' => '$refresh', 
         // 'reviewerUpdated' => '$refresh',
         // 'reviewerDeleted' => '$refresh',
         

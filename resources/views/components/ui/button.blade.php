@@ -26,6 +26,7 @@
 <div x-data="{ open:false }" class="relative inline-flex items-center align-middle">
   @if($linkHref)
     <a href="{{ $linkHref }}"
+      wire:navigate
        @mouseenter="open = true" @mouseleave="open = false"
        @focus="open = true" @blur="open = false"
        @keydown.escape.window="open = false"
@@ -39,7 +40,15 @@
             @focus="open = true" @blur="open = false"
             @keydown.escape.window="open = false"
             {{ $attributes->merge(['class' => $class]) }}>
-      {{ $label ?? $slot }}
+
+      
+      <span class="hidden lg:block">
+          {{ $label ?? $slot }}
+      </span>
+      
+      <span class="block lg:hidden text-xs font-semibold text-center">
+          {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($label, 0, 2)) }}
+      </span>
       @if($sr)<span class="sr-only">{{ $sr }}</span>@endif
     </button>
   @endif

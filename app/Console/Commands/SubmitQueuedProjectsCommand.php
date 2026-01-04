@@ -11,8 +11,13 @@ use App\Models\ProjectDocument;
 use Illuminate\Console\Command; 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Events\Project\ProjectLogEvent;
 use App\Helpers\ProjectDocumentHelpers;
 use App\Helpers\ProjectReviewerHelpers;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\SystemNotificationHelpers\SystemNotificationHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
 class SubmitQueuedProjectsCommand extends Command
 {
@@ -58,7 +63,7 @@ class SubmitQueuedProjectsCommand extends Command
 
 
 
-            $errors = ProjectDocumentHelpers::checkProjectDocumentRequirements();
+            $errors = ProjectHelper::checkProjectDocumentRequirements();
             $errorMessages = [];
 
             foreach ($errors as $key => $error) {
@@ -95,44 +100,93 @@ class SubmitQueuedProjectsCommand extends Command
                 $message .= '. Please wait for the admin to configure these settings.';
                 
                 $this->info($message);
+                // dd($message);
 
             }else{
-                $queuedProjectDocuments = ProjectDocument::where('status', 'on_que')->get();
+                $queuedProjects = Project::where('status', 'on_que')->get();
 
-                foreach ($queuedProjectDocuments as $project_document) { 
+ 
 
 
-                    
+                $this->info($queuedProjects);
 
-    
-                    $submission_type = "initial_submission";
-            
-                    // update project document
-                    ProjectDocumentHelpers::updateDocumentAndAttachments(
-                        $project_document,
-                        "submitted", 
-                        false
-                    );
-                            
-                      
-                    $project = Project::find($project_document->project_id);
+                foreach ($queuedProjects as $project) { 
+
+ 
+                    $project = Project::find($project->id);
                     $project->status = "submitted"; 
                     $project->updated_at = now();
                     $project->last_submitted_at = now(); 
                     $project->save();
 
+
+                    
+
+                    // logging and system notifications
+                        $authId = $project->created_by; // get the project creator
+
+                        // get the message from the helper 
+                        $message = ProjectLogHelper::getActivityMessage('auto-submit', $project->id, $authId);
+
+                        // get the route 
+                        $route = ProjectLogHelper::getRoute('auto-submit', $project->id);
+
+                        // log the event 
+                        event(new ProjectLogEvent(
+                            $message ,
+                            $authId, 
+                            $project->id,
+
+                        ));
+                
+                        /** send system notifications to users */
+                            
+                            $users_roles_to_notify = [
+                                'admin',
+                                'global_admin',
+                                // 'reviewer',
+                                // 'user'
+                            ];  
+
+                            
+
+
+                            // set custom users that will not be notified 
+                            $excluded_users = [];  
+                            // $excluded_users[] = 72; // for testing only
+                            // dd($excluded_users);
+
+                            $customIds = []; 
+                            $customIds[] = $authId; // includes the project creator
+
+
+                            // notified users without hte popup notification | ideal in notifying the user that triggered the event without the popu
+                            $customIdsNotifiedWithoutPopup = []; 
+
+                            // dd("good ");
+                            SystemNotificationHelper::sendSystemNotificationEvent(
+                                $users_roles_to_notify,
+                                $message,
+                                $customIds,
+                                'info', // use info, for information type notifications
+                                [$excluded_users],
+                                $route, // nullable
+                                $customIdsNotifiedWithoutPopup
+                            );
+
+                        /** ./ send system notifications to users */
+                    // ./ logging and system notifications
+
+
+
  
+                    $submission_type = "initial_submission";
+                    ProjectReviewerHelpers::setProjectReviewer($project,$submission_type);
 
-                    // set the project document reviewers
-                    ProjectReviewerHelpers::setProjectDocumentReviewers($project_document, $submission_type);
-
-
+ 
+                    // if($submission_type = "submission")
                     try {
-                        event(new \App\Events\ProjectDocument\Submitted(
-                            $project_document->id, 
-                            Auth::user()->id ?? $project->created_by,
-                            true,
-                            true));
+                        event(new \App\Events\Project\Submitted($project->id,auth()->user()->id ,true,true));
                     } catch (\Throwable $e) {
                         // Log the error without interrupting the flow
                         Log::error('Failed to dispatch Submitted event: ' . $e->getMessage(), [
@@ -140,20 +194,24 @@ class SubmitQueuedProjectsCommand extends Command
                             'trace' => $e->getTraceAsString(),
                         ]);
                     }
+                        
 
-
-                    // set the project document reviewers
-                    ProjectReviewerHelpers::sendNotificationOnReviewerListUpdate($project_document);
 
                     // send notification to the current reviewer
-                    ProjectReviewerHelpers::sendReviewNotificationToReviewer($project_document, $submission_type);
+                    ProjectReviewerHelpers::sendProjectReviewNotificationToReviewer($project,$submission_type);
 
 
-                     
+
+                    
+                    
+ 
+                    
+
+
 
                 }
 
-                $this->info('Submitted ' . $queuedProjectDocuments->count() . ' queued project(s).');
+                $this->info('Submitted ' . $queuedProjects->count() . ' queued project(s).');
             }
 
 

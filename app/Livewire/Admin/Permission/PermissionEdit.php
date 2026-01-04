@@ -2,15 +2,35 @@
 
 namespace App\Livewire\Admin\Permission;
 
-use App\Events\PermissionUpdated;
 use Livewire\Component;
 use App\Models\ActivityLog;
+use App\Events\PermissionUpdated;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Spatie\Permission\Models\Permission;
+use App\Events\Permission\PermissionLogEvent;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\ActivityLogHelpers\PermissionLogHelper;
+use App\Helpers\SystemNotificationHelpers\PermissionNotificationHelper;
 
 class PermissionEdit extends Component
 {
+
+
+    // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+        ];
+
+        protected function getListeners(): array
+        {
+            return array_merge($this->listeners, [
+                "permissionEvent.{$this->permission_id}" => 'loadData',
+            ]);
+        }
+    // ./ dynamic listener 
 
     public string $name = '';
     public $module;
@@ -18,79 +38,76 @@ class PermissionEdit extends Component
     public $permission_id;
 
     public $modules = [];
-     
-
+      
     public function mount($id){
         $permission = Permission::findOrFail($id);
-        $this->name = $permission->name;
-        $this->module = $permission->module;
         $this->permission_id = $permission->id;
 
-        $this->modules = [
-            'Dashboard',
-            'User',
-            'Permission',
-            
-            // global administrator is an override permission to everything
+        $this->loadData(); // load the default data 
 
-            'Role',
-            'System Access', 
-            /**
-             * These permissions declare a user's high-level access, independent of roles:
+        $this->modules = [ 
+            'Dashboard' => 'Dashboard',
+            'User' => 'User',
+            'Permission' => 'Permission',
 
-                Permission Name	Description
-                system access global admin	    Grants system-wide global admin access
-                system access admin	            Grants system-wide admin access
-                system access reviewer	        Grants system-wide reviewer access
-                system access user	            Grants standard system-wide user access
-             * 
-             * 
-             */
+            // Global administrator override
+            'Role' => 'Role',
+            'System Access' => 'System Access',
 
+            // Project ownership & overrides
+            'Project Own' => 'Project Own',
+            'Project Own Override' => 'Project Own Override',
+            'Project All Display' => 'Project All Display',
+            'Project Override' => 'Project Override',
 
-            // only projects has override 
+            // Project review
+            'Project Review' => 'Project Review',
+            'Project Review Override' => 'Project Review Override',
 
+            // Review attachments
+            'Project Review Attachment' => 'Project Review Attachment',
+            'Project Review Attachment Override' => 'Project Review Attachment Override',
 
-            'Project Own',  
-            'Project Own Override',      // lets a role override projects that he does not own     
-            'Project All Display',      
-            'Project Override', // general override 
+            // Project sub-modules
+            'Project Discussion' => 'Project Discussion',
+            'Project Discussion Override' => 'Project Discussion Override',
 
-            'Project Review',
-            'Project Review Override', // lets you review a project for a reviewer and override his review
+            'Project Reviewer' => 'Project Reviewer',
+            'Project Reviewer Override' => 'Project Reviewer Override',
 
+            'Project Document' => 'Project Document',
+            'Project Document Override' => 'Project Document Override',
 
-            'Project Review Attachment',    
-            'Project Review Attachment Override',    // lets you add atachment to review in a project for a reviewer and override his review
+            'Project Attachment' => 'Project Attachment',
+            'Project Attachment Override' => 'Project Attachment Override',
 
-
-            // part of the project model
-                // own nad 
-
-                'Project Discussion',
-                'Project Discussion Override',
-
-                'Project Reviewer',
-                'Project Reviewer Override',
-
-                'Project Document',
-                'Project Document Override',
- 
-                'Project Attachment', 
-                'Project Attachment Override', 
-
-
-            'Notifications',
-            'Review',
-            'Reviewer',
-            'Timer',
-            'Document Type',
-            'Activity Logs',
-            'Profile',
-            'Setting',
+            // System modules
+            'Notifications' => 'Notifications',
+            'Review' => 'Review',
+            'Reviewer' => 'Reviewer',
+            'Timer' => 'Timer',
+            'Document Type' => 'Document Type',
+            'Activity Logs' => 'Activity Logs',
+            'Profile' => 'Profile',
+            'Setting' => 'Setting',
         ];
 
     }
+
+     
+
+    // load the default data of the form
+    public function loadData(){ 
+
+        $permission = Permission::findOrFail($this->permission_id);
+ 
+
+        $this->name = $permission->name;
+        $this->module = $permission->module;
+        $this->permission_id = $permission->id;
+ 
+    }
+
 
 
     public function updated($fields){
@@ -126,23 +143,57 @@ class PermissionEdit extends Component
         ]);
 
         //save
-        $permission = Permission::findOrFail($this->permission_id,);
+        $permission = Permission::findOrFail($this->permission_id);
+        
+
 
         $permission->name = $this->name;
         $permission->module = $this->module;
         $permission->updated_at = now();
         $permission->save();
 
-        event(new PermissionUpdated($permission,auth()->user()->id));
+        // event(new PermissionUpdated($permission,auth()->user()->id));
 
-        ActivityLog::create([
-            'log_action' => "Permission \"".$this->name."\" updated ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Permission \"".$this->name."\" updated ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
-        Alert::success('Success','Permission updated successfully');
-        return redirect()->route('permission.index');
+        // Alert::success('Success','Permission updated successfully');
+
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = PermissionLogHelper::getActivityMessage('updated', $permission->id, $authId);
+
+            // get the route
+            $route = PermissionLogHelper::getRoute('updated', $permission->id);
+
+            // log the event 
+            event(new PermissionLogEvent(
+                $message ,
+                $authId, 
+                $permission->id, // add this modelId connected to the current model instance for the listener to reload the same page same model instance record 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                PermissionNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+        return 
+            // redirect()->route('permission.index')
+            redirect($route)
+            ->with('alert.success',$message);
     }
 
 

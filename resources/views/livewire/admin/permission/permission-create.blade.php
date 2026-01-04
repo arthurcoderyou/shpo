@@ -1,5 +1,5 @@
 <!-- Card Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
     {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
@@ -13,7 +13,7 @@
         <div class="bg-white rounded-xl shadow ">
 
 
-            <div class="  p-4">
+            <div class="  p-4 ">
 
                 <div class="sm:col-span-12">
                     <h2 class="text-lg font-semibold text-gray-800 ">
@@ -23,49 +23,49 @@
                 <!-- End Col -->
 
                 <!-- Grid -->
-                <div class="grid grid-cols-12 gap-x-2  ">
+                <div class="grid grid-cols-12 gap-x-2 mt-2 ">
 
-                    <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Name
-                        </label>
+                    <div class="space-y-2 col-span-12 sm:col-span-6  "> 
+                        <x-ui.input 
+                            id="name"
+                            name="name"
+                            type="text"
+                            wire:model.live="name"   
+                            label="Permission"
 
-                        <input
-                        autofocus autocomplete="name"
-                        wire:model="name"
-                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none " placeholder="">
-
-                        @error('name')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
+                            required="true"
+                              
+                            placeholder="Enter Permission" 
+                            :error="$errors->first('name')"
+ 
+                            displayTooltip
+                            position="top"
+                            tooltipText="Please enter the name" 
+                        />
+ 
                     </div>
 
 
 
                     <div class="space-y-2 col-span-12 sm:col-span-6  ">
-                        <label for="module" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Module
-                        </label>
+                       
+
+                        <x-ui.select 
+                            id="module"
+                            name="module" 
+                            wire:model.live="module"   
+                            label="Module"
+
+                            required="true"
+                            :options="$modules"
+                              
+                            placeholder="Enter Module" 
+                            :error="$errors->first('module')"
  
-                        <select autofocus autocomplete="module"
-                        wire:model="module" 
-                        id="module"
-                        name="module"
-                         class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
-                            <option value="">Sort By</option>
-                            @if(!empty($modules))
-                                @foreach ($modules as $mod_key => $mod_value)
-                                    <option >{{ $mod_value }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-
-
-                        @error('module')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
+                            displayTooltip
+                            position="top"
+                            tooltipText="Please select the module" 
+                        />
 
 
                     </div>
@@ -78,14 +78,28 @@
  
 
                 <div class="mt-5 flex justify-center gap-x-2">
-                    <a href="{{ route('permission.index') }}"
-                    wire:navigate
-                    class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                        Cancel
-                    </a>
-                    <button type="submit" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-                    Save
-                    </button>
+                    
+                    <x-ui.button 
+                        id="cancel" 
+                        label="Cancel"
+                        sr="Cancel" 
+                        :linkHref="route('permission.index')" {{-- to make it as a link --}}
+
+                        class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none"
+                    />
+  
+                    <x-ui.button 
+                        id="save" 
+                        type="button"
+                        label="Save"
+                        sr="Save"
+ 
+                        onclick="confirm('Are you sure, you want to save this record?') || event.stopImmediatePropagation()" 
+                        wire:click.prevent="save" 
+
+
+                        class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+                    />
                 </div>
             </div>
         </div>

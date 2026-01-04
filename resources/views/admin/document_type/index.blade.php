@@ -5,9 +5,9 @@
     ]" />
 
 
-    @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type create') )
+    {{-- @if(Auth::user()->can('system access global admin') || Auth::user()->can('document type create') )
         <livewire:admin.document-type.document-type-create />
-    @endif
+    @endif --}}
 
 
     <livewire:admin.document-type.document-type-list />

@@ -469,7 +469,7 @@ class ProjectReviewerList extends Component
     public function save()
     {
 
-        dd($this->assignedByType);
+        // dd($this->assignedByType);
         $project = Project::where('id',$this->project_id)->first();
 
         if(!empty($this->assignedByType)){

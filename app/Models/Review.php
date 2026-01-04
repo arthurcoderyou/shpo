@@ -51,20 +51,20 @@ class Review extends Model
         parent::boot();
         
 
-        static::created(function ($review) { 
+        // static::created(function ($review) { 
 
-            try {
-                event(new \App\Events\ReviewCreated($review->id, auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ReviewCreated event: ' . $e->getMessage(), [
-                    'review_id' => $review->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        //     try {
+        //         event(new \App\Events\ReviewCreated($review->id, auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ReviewCreated event: ' . $e->getMessage(), [
+        //             'review_id' => $review->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
 
 
-        });
+        // });
 
         // static::updated(function ($project_reviewer) {
         //     // event(new  \App\Events\ProjectReviewerUpdated($project_reviewer));
@@ -273,7 +273,7 @@ class Review extends Model
         foreach ($reviews as $review) {
             // If response_time_hours exists, use it
             if (!is_null($review->response_time_hours)) {
-                $response_times[] = (float) $review->response_time_hours;
+                $response_times[] = (int) $review->response_time_hours;
                 continue;
             }
         }

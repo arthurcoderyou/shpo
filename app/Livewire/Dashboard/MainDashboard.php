@@ -54,7 +54,42 @@ class MainDashboard extends Component
 
     // end of Metrics table data
 
+    public bool $showGuide = false;
+
+     
+    public function closeGuide()
+    {
+        $this->showGuide = false;
+    }
+
+
     public function mount(){
+
+        $user = Auth::user();
+        if ($user) {
+            $hasRcOrSubmitted = $user->projects()
+                ->where(function ($q) {
+                    $q->where(function ($q2) {
+                        $q2->whereNotNull('rc_number')
+                           ->where('rc_number', '!=', '');
+                    })
+                    ->orWhere('status', 'submitted');
+                })
+                ->exists();
+
+            // "New" user if they have NO rc_number project AND NO submitted project
+            if (! $hasRcOrSubmitted) {
+                $this->showGuide = true;
+            }
+
+            // check if the user is an admin to hide the guide
+            if(!$user->can('system access user') ){
+
+                $this->showGuide = false;
+            }
+
+        }
+
 
         // Users Table Report
             /** Count of Users per role */
@@ -308,10 +343,10 @@ class MainDashboard extends Component
         $user = Auth::user();
 
         $accessColors = [
-            'system access user' => ['bg' => 'bg-blue-900', 'text' => 'text-blue-100'],
-            'system access reviewer' => ['bg' => 'bg-slate-900', 'text' => 'text-white'],
-            'system access admin' => ['bg' => 'bg-purple-900', 'text' => 'text-purple-100'],
-            'system access global admin' => ['bg' => 'bg-green-900', 'text' => 'text-green-100'],
+            'system access user' => ['bg' => 'bg-blue-500', 'text' => 'text-white'],
+            'system access reviewer' => ['bg' => 'bg-blue-500', 'text' => 'text-white'],
+            'system access admin' => ['bg' => 'bg-blue-500', 'text' => 'text-white'],
+            'system access global admin' => ['bg' => 'bg-blue-500', 'text' => 'text-white'],
         ];
 
         // default fallback

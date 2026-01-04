@@ -1,7 +1,7 @@
 <x-app-layout>
 
     <!-- Table Section -->
-    <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+    <div class="max-w-full px-4 py-6 sm:px-6 lg:px-8  mx-auto">
      
         <!-- Card -->
         <div class=""> 
@@ -45,7 +45,7 @@
                     
                     <!-- ========== FOOTER ========== -->
                     <footer class="mt-auto text-center py-5">
-                        <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                         <p class="text-sm text-gray-500 ">©Copyright {{ date('Y') }} | All Rights Reserved | Dimension Systems, Inc.  </p>
                         </div>
                     </footer>

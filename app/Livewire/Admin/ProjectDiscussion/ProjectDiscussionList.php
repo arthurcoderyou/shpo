@@ -3,9 +3,12 @@
 namespace App\Livewire\Admin\ProjectDiscussion;
 
 use App\Models\Project;
-use App\Models\ProjectDocument;
 use Livewire\Component;
+use App\Models\ProjectDocument;
 use App\Models\ProjectDiscussion;
+use Illuminate\Support\Facades\Auth;
+use App\Events\Project\ProjectLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
 
 class ProjectDiscussionList extends Component
 {
@@ -27,6 +30,7 @@ class ProjectDiscussionList extends Component
         'projectDiscussionReplied' => '$refresh',
         'projectDiscussionDeleted' => '$refresh',
         
+        'projectEvent' => '$refresh',
     ];
 
     /**
@@ -68,6 +72,25 @@ class ProjectDiscussionList extends Component
 
             broadcast(new \App\Events\ProjectDiscussionReplied($parent->project, $parent ,$reply));
 
+
+            // temporary || should be on ProjectDiscussion events
+                $authId = Auth::id() ?? null;
+
+                // Success message from the activity log project helper 
+                $message =  ProjectLogHelper::getProjectActivityMessage('updated', $this->project->id,$authId);
+        
+                // get the route 
+                $route = ProjectLogHelper::getRoute('updated',  $this->project->id);
+                
+
+                // // log the event 
+                event(new ProjectLogEvent(
+                    $message ,
+                    $authId, 
+
+                ));
+
+            
             // Refresh  
             // $this->dispatch('projectDiscussionAdded');
 
@@ -123,6 +146,25 @@ class ProjectDiscussionList extends Component
             $discussion->save();
 
             broadcast(new \App\Events\ProjectDiscussionEdited($discussion->project, $discussion));
+
+            // temporary || should be on ProjectDiscussion events
+                $authId = Auth::id() ?? null;
+
+                // Success message from the activity log project helper 
+                $message =  ProjectLogHelper::getProjectActivityMessage('updated', $this->project->id,$authId);
+        
+                // get the route 
+                $route = ProjectLogHelper::getRoute('updated',  $this->project->id);
+                
+
+                // // log the event 
+                event(new ProjectLogEvent(
+                    $message ,
+                    $authId, 
+
+                ));
+
+
 
             // Refresh  
             $this->dispatch('projectDiscussionEdited');

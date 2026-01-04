@@ -28,7 +28,10 @@ class ActivityLogsList extends Component
 
     public $file;
 
-    protected $listeners = ['activitylogCreated' => '$refresh']; 
+    protected $listeners = [
+        'activitylogCreated' => '$refresh',
+        'systemEvent' => '$refresh',
+    ]; 
 
 
 

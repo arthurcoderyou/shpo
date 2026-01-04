@@ -13,9 +13,27 @@ use Illuminate\Support\Facades\Auth;
 use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Events\ProjectDocument\ProjectDocumentLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
 
 class ProjectDocumentShow extends Component
 {
+
+    // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+        ];
+
+        protected function getListeners(): array
+        {
+            return array_merge($this->listeners, [
+                "projectDocumentEvent.{$this->project_document_id}" => 'loadData',
+            ]);
+        }
+    // ./ dynamic listener 
 
 
     /** Actions with Password Confirmation panel */
@@ -66,26 +84,55 @@ class ProjectDocumentShow extends Component
 
     public $counts; 
 
+    public $existingFiles;
+  
+
     public function mount($project_id, $project_document_id){
         $this->project_id = $project_id;
-        $this->project_document_id;
+        $this->project_document_id = $project_document_id;
         $this->project = Project::findOrFail($this->project_id);
         $this->project_document = ProjectDocument::findOrFail($this->project_document_id);
+        
+        $this->loadData();
 
 
-        $this->counts = $this->project_document->attachmentTypeCounts();
 
-    }
+    } 
+
+
+    public function loadData(){
+
+        $project = Project::findOrFail($this->project_id);
+        $project_document = ProjectDocument::findOrFail($this->project_document_id);
+
+        // dd($this->project_document );
+
+        $project_document->refresh();
+        
+
+        $this->counts = $project_document->attachmentTypeCounts();
+        $this->existingFiles = $this->getExistingFilesProperty();
+    }   
 
 
     public function submit_project($project_id){
 
+        // dd("Here");
         ProjectHelper::submit_project($project_id);
 
     }
 
     public function submit_project_document($project_document_id){
 
+
+        // $project_document = ProjectDocument::find($project_document_id);
+        // ProjectReviewerHelpers::setProjectDocumentReviewers($project_document,'supplemental_submission');
+
+
+
+
+
+        // dd("All good ");
         ProjectDocumentHelpers::submit_project_document($project_document_id);
 
     }
@@ -366,11 +413,53 @@ class ProjectDocumentShow extends Component
 
 
 
-        Alert::success('Success',"Project attachment deleted ");
+        // logging and system notifications
+            $authId = Auth::id() ?? null;
+            $projectId = $project_document->project_id; 
+
+            // logging for the project document 
+                // Success message from the activity log project helper
+                $message =  ProjectDocumentLogHelper::getActivityMessage('updated',$project_document->id,$authId);
+        
+                // get the route 
+                $route = ProjectDocumentLogHelper::getRoute('updated', $project_document->id);
+                
+
+                // // log the event 
+                event(new ProjectDocumentLogEvent(
+                    $message ,
+                    $authId, 
+                    $projectId,
+                    $project_document->id,
+
+                ));
+            // ./ logging for the project document  
+            
+
+            /** send system notifications to users */
+                /** send system notifications to users */
+                    
+                    ProjectDocumentNotificationHelper::sendSystemNotification(
+                        message: $message,
+                        route: $route 
+                    );
+
+                /** ./ send system notifications to users */
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+
+
+
+        // Alert::success('Success',"Project attachment deleted ");
         return redirect()->route('project.project-document.show',[
             'project' => $this->project->id,
             'project_document' => $this->project_document->id,
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
 
 
     }
@@ -384,7 +473,7 @@ class ProjectDocumentShow extends Component
 
 
         return view('livewire.admin.project-document.project-document-show',[
-            'existingFiles' => $this->existingFiles,
+            
         ]);
     }
 }

@@ -18,8 +18,9 @@ document.addEventListener('livewire:navigated', () => {
 
 
 import './echo';
-
-
+import './event';
+import './sidebar';
+ 
 
 //  document.addEventListener('alpine:init', () => {
 

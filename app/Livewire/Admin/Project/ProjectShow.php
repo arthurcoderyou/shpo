@@ -2,22 +2,24 @@
 
 namespace App\Livewire\Admin\Project;
 
-use App\Models\ActiveDays;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Review;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\Reviewer;
+use App\Models\ActiveDays;
 use App\Models\ActivityLog;
 use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use App\Events\ProjectQueued;
 use Livewire\WithFileUploads;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectReviewer;
 use App\Events\ProjectSubmitted;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
@@ -26,27 +28,29 @@ use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
-use App\Helpers\ProjectHelper;
 
 class ProjectShow extends Component
 {
     use WithFileUploads;
 
-    protected $listeners = [
-        'projectCreated' => '$refresh',
-        'projectUpdated' => '$refresh',
-        'projectDeleted' => '$refresh',
-        'projectSubmitted' => '$refresh',
-        'projectQueued' => '$refresh',
-        'projectDocumentCreated' => '$refresh',
-        'projectDocumentUpdated' => '$refresh',
-        'projectDocumentDeleted' => '$refresh',
-        
-    ];
+    // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+        ];
+
+        protected function getListeners(): array
+        {
+            return array_merge($this->listeners, [
+                "projectEvent.{$this->project_id}" => 'loadData',
+            ]);
+        }
+    // ./ dynamic listener 
     
     public string $name = '';
     public string $description = '';
-    public string $federal_agency = ''; 
+    public string $agency = ''; 
     public $type;
     public $shpo_number;
     public $project_number;
@@ -60,6 +64,7 @@ class ProjectShow extends Component
     public $user;
 
     public $status;
+    public $project_status;
 
 
     public $enable_submit = true;
@@ -78,10 +83,58 @@ class ProjectShow extends Component
     public $selectedUsers;
 
     public $home_route;
-    public function mount($id){
 
+
+    public bool $showGuide = false;
+
+    public array $projectReferences;
+
+     
+    public function closeGuide()
+    {
+        $this->showGuide = false;
+    }
+    
+
+
+    public function mount($id){
         $project = Project::find($id);
         $this->project = $project;
+
+        $this->loadData();
+
+    }
+
+
+    public function loadData(){
+
+        $user = Auth::user();
+        if ($user) {
+            $hasRcOrSubmitted = $user->projects()
+                ->where(function ($q) {
+                    $q->where(function ($q2) {
+                        $q2->whereNotNull('rc_number')
+                           ->where('rc_number', '!=', '');
+                    })
+                    ->orWhere('status', 'submitted');
+                })
+                ->exists();
+
+            // "New" user if they have NO rc_number project AND NO submitted project
+            if (! $hasRcOrSubmitted) {
+                $this->showGuide = true;
+            }
+
+            if($user->can('system access admin') || $user->can('system access global admin') || $user->can('system access reviewer')){
+                 $this->showGuide = false;
+            }
+
+
+        }
+
+ 
+        $project = $this->project ;
+        $id = $project->id;
 
 
         if($project->created_by == Auth::id()){
@@ -100,7 +153,7 @@ class ProjectShow extends Component
 
         $this->name = $project->name;
         $this->description = $project->description;
-        $this->federal_agency = $project->federal_agency;
+        $this->agency = $project->agency;
         $this->type = $project->type;
 
         $this->shpo_number = $project->shpo_number;
@@ -162,8 +215,49 @@ class ProjectShow extends Component
         }
 
 
+
+        $this->loadProjectReferences();
+
+
     }
+
  
+
+    public function loadProjectReferences(){
+        $this->projectReferences = [];
+        $project = $this->project;
+
+        // // check if it is the first in order 
+        if(
+            // !empty($current_reviewer ) && $current_reviewer->order == 1 && 
+            !empty($project->references ) && count($project->references ) > 0 ) 
+            {
+                //  dd($this->selectedProjects);
+                foreach($project->references as $proj){
+                    
+                    // $proj = Project::find($reference->referenced_project_id);
+                    if(!empty($proj['rc_number']) && $proj['status'] !== "draft"){
+
+                        // dd($proj['name']);
+
+                        $this->projectReferences[] = [
+                            'id' => $proj['id'],
+                            'name' => $proj['name'],
+                            'lot_number' => $proj['lot_number'], 
+                            'rc_number' => $proj['rc_number'], 
+                            'location' => $proj['location'],
+                            'type' => $proj['type'],
+                            'agency' => $proj['agency'],
+                        ];
+                    } 
+                }
+ 
+
+
+        }
+
+
+    }
 
  
     public function updated($fields){
@@ -175,7 +269,7 @@ class ProjectShow extends Component
             'description' => [
                 'required'
             ],
-            'federal_agency' => [
+            'agency' => [
                 'required'
             ]
 
@@ -217,9 +311,16 @@ class ProjectShow extends Component
     
     public function submit_project($project_id){
 
-        ProjectHelper::submit_project($project_id);
+        
+        // dd($project_id);
+        ProjectHelper::submit_project_for_rc_evaluation($project_id);
 
     }
+
+    public function returnStatusConfig($status){
+        return ProjectDocumentHelpers::returnStatusConfig($status);
+    }
+    
 
 
 

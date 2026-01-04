@@ -10,6 +10,7 @@
   'placeholder' => '',
   'help' => null,               // small help text under the field
   'error' => null,              // pass $errors->first('field') if any
+  'warning' => null,
 
   // Tooltip (optional)
   'displayTooltip' => false,
@@ -96,13 +97,22 @@
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 translate-y-1">
               {{ $tooltipText }}
-              @if(!empty($tooltipLabelTextArrMsg))
-                <div class="my-1 space-y-1">
-                  @foreach($tooltipLabelTextArrMsg as $msgKey => $msgText)
-                    <div><span class="text-lime-500 uppercase">{{ $msgKey }}</span>: {{ $msgText }}</div>
-                  @endforeach
-                </div>
-              @endif
+              <div class="my-2 space-y-1 text-xs">
+                @foreach($tooltipLabelTextArrMsg as $msgKey => $msgText)
+                    <div class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-lime-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M5 13l4 4L19 7" />
+                        </svg>
+
+                        <div>
+                            <span class="font-semibold text-white">{{ $msgKey }}:</span>
+                            <span class="text-slate-300">{{ $msgText }}</span>
+                        </div>
+                    </div>
+                @endforeach
+              </div>
             </div>
           </div>
         @endif
@@ -141,4 +151,9 @@
   @if($error)
     <p id="{{ $errId }}" class="mt-1 text-sm text-red-700">{{ $error }}</p>
   @endif
+
+  @if($warning)
+    <p id="{{ $errId }}" class="mt-1 text-sm text-blue-700">{{ $warning }}</p>
+  @endif
+
 </div>

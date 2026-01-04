@@ -1136,7 +1136,36 @@ class ProjectDocument extends Model
             ->first();
     }
 
+    /**
+     * Recalculate and update the parent project status
+     * based on all of its documents.
+     */
+    public function syncProjectStatusFromDocuments(): void
+    {
+        if (! $this->project) {
+            return;
+        }
 
+        $approvedStatus = 'approved';
+
+        $hasNotApprovedDocument = $this->project
+            ->project_documents()
+            ->where(function ($q) use ($approvedStatus) {
+                $q->where('status', '!=', $approvedStatus)
+                  ->orWhereNull('status');
+            })
+            ->exists();
+
+        $desiredStatus = $hasNotApprovedDocument
+            ? 'in_review'
+            : 'approved';
+
+        if ($this->project->status !== $desiredStatus) {
+            $this->project->update([
+                'status' => $desiredStatus,
+            ]);
+        }
+    }
 
 
 

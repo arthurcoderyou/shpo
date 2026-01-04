@@ -25,8 +25,8 @@ class ProjectReviewer extends Model
         'reviewer_type',
         'project_document_id',
 
-        'slot_type',
-        'slot_role',
+        'slot_type', // open || person 
+        'slot_role', // admin || reviewer
         
         'requires_project_update',
         'requires_document_update',
@@ -52,51 +52,51 @@ class ProjectReviewer extends Model
         parent::boot();
         
 
-        static::created(function ($project_reviewer) {
-            // event(new  \App\Events\ProjectReviewerCreated($project_reviewer));
+        // static::created(function ($project_reviewer) {
+        //     // event(new  \App\Events\ProjectReviewerCreated($project_reviewer));
 
-            try {
-                event(new \App\Events\ProjectReviewerCreated($project_reviewer,auth()->user()->id  ));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectReviewerCreated event: ' . $e->getMessage(), [
-                    'project_reviewer_id' => $project_reviewer->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-
-
-        });
-
-        static::updated(function ($project_reviewer) {
-            // event(new  \App\Events\ProjectReviewerUpdated($project_reviewer));
-
-            try {
-                event(new \App\Events\ProjectReviewerUpdated($project_reviewer, auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectReviewerUpdated event: ' . $e->getMessage(), [
-                    'project_reviewer_id' => $project_reviewer->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        //     try {
+        //         event(new \App\Events\ProjectReviewerCreated($project_reviewer,auth()->user()->id  ));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectReviewerCreated event: ' . $e->getMessage(), [
+        //             'project_reviewer_id' => $project_reviewer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
 
 
-        });
+        // });
 
-        static::deleted(function ($project_reviewer) {
-            // event(new  \App\Events\ProjectReviewerDeleted($project_reviewer));
+        // static::updated(function ($project_reviewer) {
+        //     // event(new  \App\Events\ProjectReviewerUpdated($project_reviewer));
 
-            try {
-                event(new \App\Events\ProjectReviewerDeleted($project_reviewer->id,auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectReviewerDeleted event: ' . $e->getMessage(), [
-                    'project_reviewer_id' => $project_reviewer->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-        });
+        //     try {
+        //         event(new \App\Events\ProjectReviewerUpdated($project_reviewer, auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectReviewerUpdated event: ' . $e->getMessage(), [
+        //             'project_reviewer_id' => $project_reviewer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+
+
+        // });
+
+        // static::deleted(function ($project_reviewer) {
+        //     // event(new  \App\Events\ProjectReviewerDeleted($project_reviewer));
+
+        //     try {
+        //         event(new \App\Events\ProjectReviewerDeleted($project_reviewer->id,auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectReviewerDeleted event: ' . $e->getMessage(), [
+        //             'project_reviewer_id' => $project_reviewer->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+        // });
 
 
     }

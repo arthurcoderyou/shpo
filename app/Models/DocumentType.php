@@ -47,53 +47,53 @@ class DocumentType extends Model
 
         parent::boot();
         
-        static::created(function ($documentType) {
-            // event(new  \App\Events\DocumentTypeCreated($documentType));
+        // static::created(function ($documentType) {
+        //     // event(new  \App\Events\DocumentTypeCreated($documentType));
 
-            try {
-                event(new \App\Events\DocumentTypeCreated($documentType,auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch DocumentTypeCreated event: ' . $e->getMessage(), [
-                    'documentType' => $documentType->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        //     try {
+        //         event(new \App\Events\DocumentTypeCreated($documentType,auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch DocumentTypeCreated event: ' . $e->getMessage(), [
+        //             'documentType' => $documentType->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
 
             
 
 
-        });
+        // });
 
-        static::updated(function ($documentType) {
-            // event(new  \App\Events\DocumentTypeUpdated($documentType));
+        // static::updated(function ($documentType) {
+        //     // event(new  \App\Events\DocumentTypeUpdated($documentType));
 
 
-            try {
-                event(new \App\Events\DocumentTypeUpdated($documentType,auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch DocumentTypeUpdated event: ' . $e->getMessage(), [
-                    'documentType' => $documentType->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-        });
+        //     try {
+        //         event(new \App\Events\DocumentTypeUpdated($documentType,auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch DocumentTypeUpdated event: ' . $e->getMessage(), [
+        //             'documentType' => $documentType->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+        // });
 
-        static::deleted(function ($documentType) {
-            // event(new  \App\Events\DocumentTypeDeleted($documentType));
+        // static::deleted(function ($documentType) {
+        //     // event(new  \App\Events\DocumentTypeDeleted($documentType));
 
-            try {
-                event(new \App\Events\DocumentTypeDeleted($documentType));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch DocumentTypeDeleted event: ' . $e->getMessage(), [
-                    'documentType' => $documentType->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        //     try {
+        //         event(new \App\Events\DocumentTypeDeleted($documentType));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch DocumentTypeDeleted event: ' . $e->getMessage(), [
+        //             'documentType' => $documentType->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
 
-        });
+        // });
     }
 
 

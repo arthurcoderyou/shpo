@@ -62,6 +62,13 @@
     @endif
     --}}
 
+
+
+    
     <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
-  
+    <script>
+    window.addEventListener('systemEvent', () => {
+        window.location.reload();
+    });
+    </script>
 </x-app-layout>

@@ -2,13 +2,15 @@
 
 namespace App\Livewire\Admin\Reviewer;
 
-use App\Enums\PeriodUnit;
+use App\Helpers\SystemNotificationHelpers\ReviewerNotificationHelper;
 use App\Models\User;
 use App\Models\Review;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\Reviewer;
+use App\Enums\PeriodUnit;
 use App\Models\ActivityLog;
+use Illuminate\Support\Str;
 use App\Models\DocumentType;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -21,14 +23,16 @@ use Illuminate\Support\Facades\Log;
 use App\Models\DocumentTypeReviewer;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Events\Reviewer\ReviewerLogEvent;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ProjectOpenReviewNotification;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\ActivityLogHelpers\ReviewerLogHelper;
 use App\Notifications\ProjectOpenReviewNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotification;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
-use Illuminate\Support\Str;
 
 class ReviewerList extends Component
 {
@@ -37,9 +41,9 @@ class ReviewerList extends Component
     use WithPagination;
 
     protected $listeners = [
-        'reviewerCreated' => '$refresh', 
-        'reviewerUpdated' => '$refresh',
-        'reviewerDeleted' => '$refresh',
+        'reviewerEvent' => 'loadData', 
+        // 'reviewerUpdated' => '$refresh',
+        // 'reviewerDeleted' => '$refresh',
         
     ];
 
@@ -73,14 +77,24 @@ class ReviewerList extends Component
     /** @var array<int,int> */
     public array $period_unit_options = [];         // period_unit_options [ options for the period ]
 
+
+    
+
     
     public $period_unit = "day";
     public $period_value = 0;
+
+    public $selected_user_id = null;
+
+    public array $user_options = [];
+    public array $user_admin_options = [];
 
 
     public function mount()
     {
         
+
+       
 
 
         // Load document types
@@ -91,7 +105,7 @@ class ReviewerList extends Component
         //     ['id' => 3, 'name' => 'Photos'],
         // ];
 
-       
+
         $this->documentTypes = collect(DocumentType::orderBy('order','asc')->get())
                 ->mapWithKeys(fn ($doc) => [$doc->id => $doc->name])
                 ->toArray();
@@ -99,6 +113,8 @@ class ReviewerList extends Component
         $this->period_unit_options = collect(PeriodUnit::cases())
                 ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
                 ->toArray();
+
+        
 
         
 
@@ -117,6 +133,19 @@ class ReviewerList extends Component
         }
 
 
+
+
+
+        $this->loadData();
+        
+    }
+ 
+
+    public function loadData(){
+
+        
+
+
         // Pull users + their roles in one go (no N+1)
         $users = User::select('id','name')
             ->with('roles:id,name') // eager load roles
@@ -133,39 +162,63 @@ class ReviewerList extends Component
         ]; // set the permissions that the user must have atleast one of it 
         
  
+        // get user options for the select 
+        $this->user_options = User::with('roles:id,name')
+            ->permission($perms) // <- Spatie scope: matches direct perms OR via roles
+            ->get()
+            ->mapWithKeys(function ($user) {
+
+                // Get roles as string, default to "No role"
+                $roles = $user->roles->pluck('name')->join(', ');
+                $roles = $roles ?: 'No role';
+
+                // Build label
+                $label = "{$user->name} ({$roles})";
+
+                return [$user->id => $label];
+            })
+            ->toArray();
+
+
+        // get user (only admin) options for the select 
+        $this->user_admin_options = User::with('roles:id,name')
+            ->permission(['system access admin']) // <- Spatie scope: matches direct perms OR via roles
+            ->get()
+            ->mapWithKeys(function ($user) {
+
+                // Get roles as string, default to "No role"
+                $roles = $user->roles->pluck('name')->join(', ');
+                $roles = $roles ?: 'No role';
+
+                // Build label
+                $label = "{$user->name} ({$roles})";
+
+                return [$user->id => $label];
+            })
+            ->toArray();
+
 
         // dd($this->options);
 
+ 
+ 
 
-        // Load available reviewer options per doc type (customize per your rules)
-        // Example uses the same pool for all, but you can vary per type.
-        // Example options (replace with DB)
-        
-         
+        /** Updated  */
+
+        $defaultAdmin = User::permission('system access admin')
+            ->latest('id')   // same as orderBy('id','desc')
+            ->first();
+
+
+
         foreach ($this->documentTypes as $key => $label) {
             $typeId = (int) $key; 
 
-            // enable this if you want to change the options [users] and make it different in every document type 
-            // Map to the structure Alpine expects
-            /** 
-            $this->optionsByType[$typeId]  = $users->map(function ($u) {
-
-                // dd($u->getRoleNames()->toArray());
-
-                return [
-                    'id'    => $u->id,
-                    'name'  => $u->name,
-                    'roles' => $u->getRoleNames()->toArray(), // ['admin','reviewer'] or []
-                ];
-            })->toArray();
-            */
-  
-
             $this->selectedByType[$typeId] = [];
             $this->assignedByType[$typeId] = [];
-            $this->repeatByType[$typeId] = 1; // default
+            $this->repeatByType[$typeId]   = 1; // default
 
-            // Load previously added reviewers
+            // Start with current assigned array
             $assigned = $this->assignedByType[$typeId] ?? [];
             $order    = empty($assigned) ? 0 : max(array_column($assigned, 'order'));
 
@@ -179,40 +232,159 @@ class ReviewerList extends Component
                         $user = $reviewer->user;
 
                         $assigned[] = [
-                            'row_uid'   => (string) Str::uuid(),
-                            'slot_type' => 'person',                         // explicit person row
-                            'user_id'   => (int) $user->id,
-                            'name'      => $user->name ?: null,
-                            // ✅ Spatie role names (array of strings)
-                            'roles'     => $user->getRoleNames()->values()->all(),
-                            'order'     => ++$order, 
-                            'period_value'     => $reviewer->period_value,
-                            'period_unit'      => $reviewer->period_unit,
-
+                            'row_uid'      => (string) Str::uuid(),
+                            'slot_type'    => 'person',
+                            'user_id'      => (int) $user->id,
+                            'name'         => $user->name ?: null,
+                            'roles'        => $user->getRoleNames()->values()->all(),
+                            'order'        => ++$order,
+                            'period_value' => $reviewer->period_value,
+                            'period_unit'  => $reviewer->period_unit,
                         ];
                     } else {
                         // OPEN SLOT (no user yet)
                         $assigned[] = [
-                            'row_uid'   => (string) Str::uuid(),
-                            'slot_type' => 'open',                           // explicit open slot
-                            'slot_role'      => $reviewer->slot_role ?? 'reviewer',    // optional: intended role for slot
-                            'user_id'   => null,
-                            'name'      => null,
-                            // Open slot has no roles until claimed
-                            'roles'     => [],
-                            'order'     => ++$order,
-                            'period_value'     => $reviewer->period_value,
-                            'period_unit'      => $reviewer->period_unit,
-
+                            'row_uid'      => (string) Str::uuid(),
+                            'slot_type'    => 'open',
+                            'slot_role'    => $reviewer->slot_role ?? 'reviewer',
+                            'user_id'      => null,
+                            'name'         => null,
+                            'roles'        => [],
+                            'order'        => ++$order,
+                            'period_value' => $reviewer->period_value,
+                            'period_unit'  => $reviewer->period_unit,
                         ];
                     }
                 }
             }
 
+            // 🔥 If nothing was loaded, create defaults:
+            if (empty($assigned)) {
+                $order = 0;
+
+                 // 1) OPEN SLOT
+                $assigned[] = [
+                    'row_uid'      => (string) Str::uuid(),
+                    'slot_type'    => 'open',
+                    'slot_role'    => 'reviewer',     // or something from config
+                    'user_id'      => null,
+                    'name'         => null,
+                    'roles'        => [],
+                    'order'        => ++$order,
+                    'period_value' => 1,
+                    'period_unit'  => "day",
+                ];
+
+                // 2) PERSON SLOT → first user with "system access admin" permission
+                if (!empty($defaultAdmin)) {
+                    $assigned[] = [
+                        'row_uid'      => (string) Str::uuid(),
+                        'slot_type'    => 'person',
+                        'user_id'      => (int) $defaultAdmin->id,
+                        'name'         => $defaultAdmin->name ?: null,
+                        'roles'        => $defaultAdmin->getRoleNames()->values()->all(),
+                        'order'        => ++$order,
+                        'period_value' => 1,   // set defaults as you need
+                        'period_unit'  => "day",
+                    ];
+                }
+
+               
+            }
+
+
+
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | ✅ Enforce FIRST and LAST slot rules
+            |--------------------------------------------------------------------------
+            | - First slot must be `slot_type = 'open'`
+            | - Last slot must be `slot_type = 'person'` AND user has `system access admin`
+            */
+
+            if (!empty($assigned)) {
+                // --- FIRST SLOT RULE ---
+                $firstIndex = 0;
+                $first      = $assigned[$firstIndex];
+
+                if (($first['slot_type'] ?? null) !== 'open') {
+                    // Override first slot as OPEN
+                    $assigned[$firstIndex] = [
+                        'row_uid'      => (string) Str::uuid(),
+                        'slot_type'    => 'open',
+                        'slot_role'    => $first['slot_role'] ?? 'admin',
+                        'user_id'      => null,
+                        'name'         => null,
+                        'roles'        => [],
+                        'order'        => $first['order'] ?? 1,
+                        'period_value' => $first['period_value'] ?? 1,
+                        'period_unit'  => $first['period_unit'] ?? 'day',
+                    ];
+                }
+
+                // --- LAST SLOT RULE ---
+                $lastIndex = count($assigned) - 1;
+                $last      = $assigned[$lastIndex];
+
+                $needsOverride = false;
+
+                if (($last['slot_type'] ?? null) !== 'person') {
+                    $needsOverride = true;
+                } else {
+                    $userId = $last['user_id'] ?? null;
+
+                    if (empty($userId)) {
+                        $needsOverride = true;
+                    } else {
+                        $user = User::find($userId);
+
+                        // `hasPermissionTo` includes permissions via roles (Spatie)
+                        if (
+                            ! $user ||
+                            ! $user->hasPermissionTo('system access admin')
+                        ) {
+                            $needsOverride = true;
+                        }
+                    }
+                }
+
+                if ($needsOverride && !empty($defaultAdmin)) {
+                    // Override LAST slot with last admin user
+                    $assigned[$lastIndex] = [
+                        'row_uid'      => (string) Str::uuid(),
+                        'slot_type'    => 'person',
+                        'user_id'      => (int) $defaultAdmin->id,
+                        'name'         => $defaultAdmin->name ?: null,
+                        'roles'        => $defaultAdmin->getRoleNames()->values()->all(),
+                        'order'        => $assigned[$lastIndex]['order'] ?? ($lastIndex + 1),
+                        'period_value' => $assigned[$lastIndex]['period_value'] ?? 1,
+                        'period_unit'  => $assigned[$lastIndex]['period_unit'] ?? 'day',
+                    ];
+                }
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             $this->assignedByType[$typeId] = $assigned;
- 
         }
 
+ 
 
 
         if(count($this->assignedByType[$this->currentTypeId]) == 1){
@@ -241,97 +413,10 @@ class ReviewerList extends Component
          
 
         // If editing existing data, prefill $this->assignedByType[...] with rows including row_uid + order.
+
     }
 
-    /** Add selected users N times (N = repeatByType[currentType]) */
 
-    
-    // public function addSelected(): void
-    // {
-
-    //     $this->validate([
-    //         'selectedByType' => 'required|array|min:1',
-    //         'period_unit' => 'required',
-    //         'period_value' => 'required'
-    //     ],[
-            
-    //         'period_unit.required' => 'Please select a unit',
-    //         'period_value.required' => 'Please enter a period'
-    //     ]);
-
-    //     // dd($this->all());
-
-    //     $typeId = (int) ($this->currentTypeId ?? 0);        // get the current typeId
-    //     if (!$typeId) return;       // if it is not set, return nothing
-
-    //     $selected = collect($this->selectedByType[$typeId] ?? [])
-    //         ->map(fn($id) => (int) $id)
-    //         ->filter()
-    //         ->values();
-
-    //     // dd($selected);
-    //     /**
-    //         Illuminate\Support\Collection {#1806 ▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:164
-    //             #items: array:2 [▼
-    //                 0 => 71
-    //                 1 => 32
-    //             ]
-    //             #escapeWhenCastingToString: false
-    //         }
-    //      */
-
-
-    //     if ($selected->isEmpty()) return;       // check if there is nothing selected, to stop the function and return nothing if empty
-
-    //     $repeat = max(1, (int) ($this->repeatByType[$typeId] ?? 1));        // sets how many times it will be repeatedly added to the assigned list 
-    //     $assigned = $this->assignedByType[$typeId] ?? [];       // list of assigned based on the selected current typeID
-    //     $order = empty($assigned) ? 0 : max(array_column($assigned, 'order'));      // order in which the option [user] selected will be added to the assigned array 
-
-    //     // $options = collect($this->optionsByType[$typeId] ?? []);
-    //     $options = collect($this->options ?? []);
-    //     // dd($this->options);
-
-    //     // dd($selected);
-    //     /**
-    //         Illuminate\Support\Collection {#1806 ▼ // app\Livewire\Admin\Reviewer\ReviewerList.php:185
-    //             #items: array:2 [▼
-    //                 0 => 71
-    //                 1 => 10
-    //             ]
-    //             #escapeWhenCastingToString: false
-    //         } 
-    //      */
-
-    //     foreach ($selected as $userId) {
-    //         $user = $options->firstWhere('id', $userId);
-    //         if (!$user) continue;
-
-    //         for ($i = 0; $i < $repeat; $i++) {
-    //             $assigned[] = [
-    //                 'row_uid' => (string) Str::uuid(),   // unique slot id 
-
-    //                 'slot_type' => 'person',              // explicit: this row is a person (not open slot)
-    //                 'slot_role'      => null,    // optional: intended role for slot_type = open
-    //                 'user_id'   => (int) $user['id'],     // ✅ use user_id to match the table’s Alpine lookup
-    //                 'name'      => $user['name'],
-    //                 // optional convenience copy (ok to remove and rely on rolesFor(user_id))
-    //                 'roles'     => $user['roles'] ?? [],
-    //                 'order'     => ++$order,
-    //                 'period_value' => $this->period_value,
-    //                 'period_unit' => $this->period_unit,
-
-    //             ];
-    //         }
-    //     }
-
-    //     $this->assignedByType[$typeId] = $assigned;     // add to the master list of assigned options [users] per type 
-    //     $this->selectedByType[$typeId] = [];       // clear chips
-    //     $this->repeatByType[$typeId]   = 1;        // reset to 1 (optional)
-    //     $this->period_unit = null;
-    //     $this->period_value = 0;
-
-    //     // dd($assigned);
-    // }
 
 
     /** Add selected users N times (N = repeatByType[currentType]) */
@@ -423,6 +508,12 @@ class ReviewerList extends Component
         $this->repeatByType[$typeId]   = 1;
         $this->period_unit             = null;
         $this->period_value            = 0;
+
+
+        // Recalculate or normalize the "order" field after removal
+        $this->reindexOrder($typeId);
+
+
     }
 
 
@@ -626,39 +717,88 @@ class ReviewerList extends Component
     // updating reviewer record
      
     // @this.update({{ $typeId }}, targetRowId,period_value,period_unit);
-    public function update_row(int $typeId, string $rowUid, int $period_value, string $period_unit){
+    public function update_row(int $typeId, string $rowUid, int $period_value, string $period_unit, $user_id = null)
+    {
+        $typeId = (int) $typeId;
 
-        $typeId = (int) $typeId; // make sure typeId is an integer
-    
-         
-        $typeId = (int) $typeId; 
+        // dd($typeId);
 
-        $map = collect($this->assignedByType[$typeId] ?? [])->keyBy('row_uid');
-        $updated = [];
-        $i = 1;
-        
-        // dd("typeId: ".$typeId." || rowUid: ".$rowUid. " || period_value: ". $period_value. " || period_unit: ". $period_unit);
-        // dd($map);
+        // Get original rows for this type
+        $rows = $this->assignedByType[$typeId] ?? [];
 
-        // keep any rows not present in $rowUids at the end (safety)
-        foreach ($map as $uid => $row) {
+        // Find the index of the row we are updating
+        $rowIndex = collect($rows)->search(function ($row) use ($rowUid) {
+            return isset($row['row_uid']) && $row['row_uid'] == $rowUid;
+        });
 
-            if ($map->has($uid) && $row['row_uid'] == $rowUid ) {
-                $row = $map[$rowUid];
-                $row['period_value'] = $period_value;
-                $row['period_unit'] = $period_unit;
-                $updated[] = $row;
-            }else{
-
-                $updated[] = $row;
-            }
- 
+        // Determine if this is the "first slot" and is open
+        $isFirstSlotAndOpen = false;
+        if ($rowIndex !== false && $rowIndex === 0 && isset($rows[0]['slot_type']) && $rows[0]['slot_type'] === 'open') {
+            $isFirstSlotAndOpen = true;
         }
 
-         
+        // Rebuild rows for this type (your original logic)
+        $map     = collect($rows)->keyBy('row_uid');
+        $updated = [];
+
+        foreach ($map as $uid => $row) {
+            if ($map->has($uid) && $row['row_uid'] == $rowUid) {
+                $row = $map[$rowUid];
+                $row['period_value'] = $period_value;
+                $row['period_unit']  = $period_unit;
+
+                if (!empty($user_id)) {
+                    $user           = User::find($user_id);
+                    if ($user) {
+                        $row['name']   = $user->name;
+                        $row['roles']  = $user->getRoleNames()->values()->all();
+                        $row['user_id'] = $user_id;
+                    }
+                }
+
+                $updated[] = $row;
+            } else {
+                $updated[] = $row;
+            }
+        }
+
+        // Save back for this type
         $this->assignedByType[$typeId] = $updated;
 
+        /**
+         * 🔁 Extra logic:
+         * If the updated row is the FIRST slot and slot_type = "open",
+         * update the FIRST open admin slot in EACH type
+         * to use the same period_unit (and optionally period_value).
+         */
+        if ($isFirstSlotAndOpen) {
+
+            // dd("Here");
+
+            foreach ($this->assignedByType as $tId => $typeRows) {
+                if (empty($typeRows)) {
+                    continue;
+                }
+
+                // Find FIRST open admin slot in this type
+                foreach ($typeRows as $idx => $slot) {
+                    $slotType = $slot['slot_type'] ?? null;
+                    $slotRole = $slot['slot_role'] ?? null;
+
+                    // adjust 'admin' if your admin slot_role uses a different label
+                    if ($slotType === 'open' && $slotRole === 'admin') {
+                        $this->assignedByType[$tId][$idx]['period_value']  = $period_value;
+                        // If you also want to sync value, uncomment:
+                        // $this->assignedByType[$tId][$idx]['period_value'] = $period_value;
+                        break; // only first open admin per type
+                    }
+                }
+            }
+        }
+
+
     }
+
 
 
  
@@ -708,6 +848,11 @@ class ReviewerList extends Component
                         ]); 
                     } 
                 }
+
+
+                
+               
+
 
             }
 
@@ -805,24 +950,60 @@ class ReviewerList extends Component
 
         $user = User::find(auth()->user()->id);
 
-        //send an update on the notifications 
-        try {
+        // //send an update on the notifications 
+        // try {
 
-            event(new ReviewerListUpdated(auth()->user()->id));
-        } catch (\Throwable $e) {
-            Log::error('Failed to send ReviewerListUpdated event: ' . $e->getMessage(), [ 
-                'user_id' => auth()->user()->id,
-                'trace' => $e->getTraceAsString(),
-            ]);
-        }
+        //     event(new ReviewerListUpdated(auth()->user()->id));
+        // } catch (\Throwable $e) {
+        //     Log::error('Failed to send ReviewerListUpdated event: ' . $e->getMessage(), [ 
+        //         'user_id' => auth()->user()->id,
+        //         'trace' => $e->getTraceAsString(),
+        //     ]);
+        // }
 
 
 
-        Alert::success('Success', 'Reviewer list saved successfully');
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = ReviewerLogHelper::getActivityMessage('updated', $authId);
+
+            // get the route
+            $route = ReviewerLogHelper::getRoute('updated');
+
+            // log the event 
+            event(new ReviewerLogEvent(
+                $message ,
+                $authId, 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                ReviewerNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+ 
+
+
+
+
+
+
+
+        // Alert::success('Success', 'Reviewer list saved successfully');
         return redirect()->route('reviewer.index', [
             'document_type_id' => $this->currentTypeId,
             // 'reviewer_type' => $reviewer_type,
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
 
 
     }

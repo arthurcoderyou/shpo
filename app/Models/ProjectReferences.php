@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectReferences extends Model
 {
-    use SoftDeletes;
+    // use SoftDeletes;
 
     /**
      * 

@@ -440,7 +440,7 @@
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Review</th>
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Review Period</th>
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Roles</th>
-          <th class="w-24 px-4 py-2"></th>
+          {{-- <th class="w-24 px-4 py-2"></th> --}}
         </tr>
       </thead>
 
@@ -483,11 +483,11 @@
                 <div class="h-5 w-20 rounded-full animate-pulse bg-slate-200 hidden sm:block"></div>
               </div>
             </td>
-            <td class="px-4 py-3 text-right">
+            {{-- <td class="px-4 py-3 text-right">
               <div class="inline-flex items-center gap-2">
                 <div class="h-8 w-20 rounded-lg animate-pulse bg-slate-200"></div>
               </div>
-            </td>
+            </td> --}}
           </tr>
         @endfor
       </tbody>
@@ -534,7 +534,7 @@
 
             data-uid="{{ $row['row_uid'] }}"
             
-            draggable="true"
+            draggable="false"
             @dragstart="start($event, '{{ $row['row_uid'] }}')"
             @dragover="over($event)"
             @drop="drop($event, '{{ $row['row_uid'] }}')"
@@ -645,7 +645,7 @@
               </div>
             </td>
 
-            <td class="px-4 py-2 text-right flex space-x-2">
+            {{-- <td class="px-4 py-2 text-right flex space-x-2">
 
               @if( Auth::user()->can('system access global admin') 
                 ||  Auth::user()->can('system access admin') 
@@ -714,7 +714,7 @@
                               x-model="updated_period_value"
                               required
                               placeholder="Review Period"
-                              {{-- help="Use the official title from the submission." --}}
+                              
                               :error="$errors->first('updated_period_value')"
                               type="number"
                               min="0"
@@ -772,7 +772,7 @@
 
 
 
-                  {{-- Check if there are exisitng reviews as well--}}
+                   
                 @php 
                     
                     $review_count = App\Models\Review::returnReviewCount($row['project_reviewer_id']);
@@ -790,7 +790,7 @@
 
 
 
-            </td>
+            </td> --}}
           </tr>
         @empty
           <tr>

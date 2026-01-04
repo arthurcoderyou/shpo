@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\ProjectTimer;
 
+use App\Helpers\SystemNotificationHelpers\ProjectTimerNotificationHelper;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Project;
@@ -14,15 +15,19 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
+use App\Events\ProjectTimer\ProjectTimerLogEvent;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Notifications\ProjectTimerUpdatedNotification;
 use App\Notifications\ProjectTimerUpdatedNotificationDB;
+use App\Helpers\ActivityLogHelpers\ProjectTimerLogHelper;
 
 class ProjectTimerEdit extends Component
 {
-    public $submitter_response_duration_type = null;
+    
     public $submitter_response_duration = null; 
+    public $submitter_response_duration_type = 'day';
     public $reviewer_response_duration = null;
-    public $reviewer_response_duration_type = null;  
+    public $reviewer_response_duration_type = 'day';  
 
     public $project_submission_open_time;
     public $project_submission_close_time;
@@ -38,7 +43,7 @@ class ProjectTimerEdit extends Component
     public $days;
 
     // protected $listeners = ['projectTimerUpdated' => '$refresh'];
-    protected $listeners = ['projectTimerUpdated' => 'refreshProjectTimerData'];
+    protected $listeners = ['projectTimerEvent' => 'loadData'];
     
 
 
@@ -46,42 +51,42 @@ class ProjectTimerEdit extends Component
     public function mount(){
         // dd("Here");
 
-        //get the first record from the project_timers
-        $this->loadProjectTimer();
+        // // get the first record from the project_timers
+        // $this->loadProjectTimer();
 
-        $this->loadDaysOfTheWeek(); /// loads the days of the week in realtime
+        // $this->loadDaysOfTheWeek(); /// loads the days of the week in realtime
 
-        $this->days = ActiveDays::all()->keyBy('id')->toArray();
+        // $this->days = ActiveDays::all()->keyBy('id')->toArray();
 
-        if(!empty($this->project_timer)){
+        // if(!empty($this->project_timer)){
 
             
-            // if there is an existing record 
-            $this->submitter_response_duration_type = $this->project_timer->submitter_response_duration_type ;
-            $this->submitter_response_duration = $this->project_timer->submitter_response_duration ;
-            $this->reviewer_response_duration = $this->project_timer->reviewer_response_duration ;
-            $this->reviewer_response_duration_type = $this->project_timer->reviewer_response_duration_type ;  
+        //     // if there is an existing record 
+        //     $this->submitter_response_duration_type = $this->project_timer->submitter_response_duration_type ;
+        //     $this->submitter_response_duration = $this->project_timer->submitter_response_duration ;
+        //     $this->reviewer_response_duration = $this->project_timer->reviewer_response_duration ;
+        //     $this->reviewer_response_duration_type = $this->project_timer->reviewer_response_duration_type ;  
 
-            $this->project_submission_open_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_open_time)->format('h:i A');
-            $this->project_submission_close_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_close_time)->format('h:i A');
-
-
-            $this->message_on_open_close_time = $this->project_timer->message_on_open_close_time ;
-            $this->project_submission_restrict_by_time = filter_var($this->project_timer->project_submission_restrict_by_time, FILTER_VALIDATE_BOOLEAN); 
-
-            // dd($this->project_submission_open_time);
-            $this->validateCloseTime();
+        //     $this->project_submission_open_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_open_time)->format('h:i A');
+        //     $this->project_submission_close_time = Carbon::createFromFormat('H:i:s', $this->project_timer->project_submission_close_time)->format('h:i A');
 
 
-        }
+        //     $this->message_on_open_close_time = $this->project_timer->message_on_open_close_time ;
+        //     $this->project_submission_restrict_by_time = filter_var($this->project_timer->project_submission_restrict_by_time, FILTER_VALIDATE_BOOLEAN); 
 
-        
+        //     // dd($this->project_submission_open_time);
+        //     $this->validateCloseTime();
+
+
+        // }
+
+        $this->loadData();
 
     }
 
 
 
-    public function refreshProjectTimerData()
+    public function loadData()
     {
         $this->loadProjectTimer();
 
@@ -253,7 +258,7 @@ class ProjectTimerEdit extends Component
 
         
 
-        // dd($users);
+        // dd("here");
 
 
 
@@ -293,7 +298,7 @@ class ProjectTimerEdit extends Component
 
         $project_timer = ProjectTimer::first();
 
-
+        // dd($this->all());
         if(empty( $project_timer)){
             $project_timer = new ProjectTimer();
             $project_timer->created_by = Auth::user()->id;
@@ -323,51 +328,48 @@ class ProjectTimerEdit extends Component
             }
         }
 
-        /** Email notification to every user  */
-
-         $targetPermissions = [
-            'system access user',
-            'system access admin',
-            'system access reviewer',
-            'system access global admin',
-        ];
-
-        $users = User::permission($targetPermissions)->get();
-
-        foreach ($users as $user) {
-            try {
-                Notification::send($user, new ProjectTimerUpdatedNotification($project_timer));
-            } catch (\Throwable $e) {
-                Log::error('Failed to send ProjectTimerUpdatedNotification notification: ' . $e->getMessage(), [
-                    'project_timer_id' => $project_timer->id,
-                    'user_id' => $user->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-
-            try {
-                Notification::send($user, new ProjectTimerUpdatedNotificationDB($project_timer));
-            } catch (\Throwable $e) {
-                Log::error('Failed to send ProjectTimerUpdatedNotificationDB notification: ' . $e->getMessage(), [
-                    'project_timer_id' => $project_timer->id,
-                    'user_id' => $user->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-
-        }
+        
  
+
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = ProjectTimerLogHelper::getActivityMessage('updated', $authId);
+
+            // get the route
+            $route = ProjectTimerLogHelper::getRoute('updated');
+
+            // log the event 
+            event(new ProjectTimerLogEvent(
+                $message ,
+                $authId, 
+
+
+            ));
+    
+            /** send system notifications to users */
+                
+                ProjectTimerNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
         
 
 
-        // ActivityLog::create([
-        //     'log_action' => "Project timer  updated ",
-        //     'log_username' => Auth::user()->name,
-        //     'created_by' => Auth::user()->id,
-        // ]);
 
-        Alert::success('Success','Project timer updated successfully');
-        return redirect()->route('project_timer.index');
+ 
+        
+
+        
+        return redirect()->route('project_timer.index')
+            ->with('alert.success',$message);
+            ;
         
 
     }

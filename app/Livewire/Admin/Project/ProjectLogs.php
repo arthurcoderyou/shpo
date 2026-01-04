@@ -29,20 +29,36 @@ class ProjectLogs extends Component
 
     public $file;
 
-    protected $listeners = [
-        'projectReviewCreated' => '$refresh', 
-        'projectCreated' => '$refresh',
-        'projectUpdated' => '$refresh',
-        'projectDeleted' => '$refresh',
-        'activitylogCreated' => '$refresh',
-        'projectDocumentCreated' => '$refresh',
-        'projectDocumentUpdated' => '$refresh',
-        'projectDocumentDeleted' => '$refresh',
-        'projectDiscussionAdded' => '$refresh',
-        'projectDiscussionEdited' => '$refresh',
-        'projectDiscussionReplied' => '$refresh',
-        'projectDiscussionDeleted' => '$refresh',
-    ]; 
+    // protected $listeners = [
+    //     // 'projectReviewCreated' => '$refresh', 
+    //     // 'projectCreated' => '$refresh',
+    //     // 'projectUpdated' => '$refresh',
+    //     // 'projectDeleted' => '$refresh',
+    //     // 'activitylogCreated' => '$refresh',
+    //     // 'projectDocumentCreated' => '$refresh',
+    //     // 'projectDocumentUpdated' => '$refresh',
+    //     // 'projectDocumentDeleted' => '$refresh',
+    //     // 'projectDiscussionAdded' => '$refresh',
+    //     // 'projectDiscussionEdited' => '$refresh',
+    //     // 'projectDiscussionReplied' => '$refresh',
+    //     // 'projectDiscussionDeleted' => '$refresh',
+    // ]; 
+
+    // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+        ];
+
+        protected function getListeners(): array
+        {
+            return array_merge($this->listeners, [
+                "projectEvent.{$this->project_id}" => 'loadData',
+            ]);
+        }
+    // ./ dynamic listener 
+    
 
 
     public $log_filter = "Project Logs";
@@ -182,7 +198,7 @@ class ProjectLogs extends Component
 
             // dd($activity_logs->get());
 
-
+            // dd($this->log_filter);
             switch ($this->log_filter) {
                 case 'Project Logs':
                     $activity_logs = $activity_logs

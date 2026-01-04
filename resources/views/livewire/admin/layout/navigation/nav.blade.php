@@ -867,7 +867,7 @@ new class extends Component {
                             'icon'  => 'users',
                            
                             'patterns' => [
-                                'user.index', 
+                                'user.*',  
                                 'role.index',    
                                 'permission.index',
                                  
@@ -885,6 +885,8 @@ new class extends Component {
                                     ],
                                     
                                     'count' => User::count() ?? 0, // shows 0 if none
+ 
+                                    
                                      
                                 ],
                                 [
@@ -1196,6 +1198,15 @@ new class extends Component {
 
 
                     ],
+
+                    'require' => [  // requirement to show the heading
+                        'auth' => true,
+                        'permissions_any' => [
+                            'system access global admin', 
+                        ], 
+                    ],
+
+
                 ],  // ./ TESTING LINKS
             ];
 

@@ -24,15 +24,19 @@ use App\Notifications\ReviewerReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ReviewerReviewNotificationDB;
 use App\Notifications\ProjectOpenReviewNotification;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Events\ProjectDocument\Review\ReviewSubmitted;
 use App\Notifications\ProjectOpenReviewNotificationDB;
+use App\Events\ProjectDocument\ProjectDocumentLogEvent;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewerUpdatedNotification;
 use App\Notifications\ProjectCompleteApprovalNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
+use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
 use App\Notifications\ProjectDocumentCompleteApprovalNotification;
+use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
  
 
 
@@ -117,7 +121,7 @@ class ProjectDocumentHelpers
             $message = 'The project document cannot be submitted because: ';
             $message .= implode(', ', $errorMessages);
             $message .= '. Please wait for the admin to configure these settings.';
-            Alert::error('Error', $message);
+            // Alert::error('Error', $message);
 
 
             // if($project->created_by == Auth::id()){ 
@@ -133,7 +137,9 @@ class ProjectDocumentHelpers
             return redirect()->route('project.project-document.show',[
                 'project' => $project->id,
                 'project_document' => $project_document->id
-            ]);
+            ])
+            ->with('alert.error',$message)
+            ;
  
             
         }
@@ -141,7 +147,8 @@ class ProjectDocumentHelpers
 
         // check if there are existing project reviewers 
         if(Reviewer::count() == 0){
-            Alert::error('Error','Project reviewers are not added yet to the system');
+            $message = 'Project reviewers are not added yet to the system';
+            // Alert::error('Error','Project reviewers are not added yet to the system');
 
             // if($project->created_by == Auth::id()){ 
             //     return redirect()->route('project.project_documents',['project' => $project]);
@@ -156,7 +163,9 @@ class ProjectDocumentHelpers
             return redirect()->route('project.project-document.show',[
                 'project' => $project->id,
                 'project_document' => $project_document->id
-            ]);
+            ])
+            ->with('alert.error',$message)
+            ;
 
              
 
@@ -167,12 +176,15 @@ class ProjectDocumentHelpers
         
         // check if there are existing project documents as it is required 
         if($attachmemts == 0){
-            Alert::error('Error','There must be atleast one project attachment to the submitted project document'); 
+            // Alert::error('Error','There must be atleast one project attachment to the submitted project document'); 
+            $message = 'There must be atleast one project attachment to the submitted project document';
   
             return redirect()->route('project.project-document.show',[
                 'project' => $project->id,
                 'project_document' => $project_document->id
-            ]);
+            ])
+            ->with('alert.error',$message)
+            ;
 
         }
  
@@ -227,21 +239,57 @@ class ProjectDocumentHelpers
 
                     $message = "Project document submission is currently restricted. Your project has been queued and will be submitted automatically on $nextAvailableDay between $formattedOpen and $formattedClose.";
 
-                      
-                    // update project document
-                    ProjectDocumentHelpers::updateDocumentAndAttachments(
-                        $project_document,
-                        "on_que", 
-                        false
-                    );
+ 
+
+ 
+
+                    // logging and system notifications
+                        $authId = Auth::id() ?? null;
+                        $projectId = $project_document->project_id; 
+
+                        // logging for the project document 
+                            // Success message from the activity log project helper
+                            $message =  ProjectDocumentLogHelper::getActivityMessage('on-que',$project_document->id,$authId);
+                    
+                            // get the route 
+                            $route = ProjectDocumentLogHelper::getRoute('on-que', $project_document->id);
+                            
+
+                            // // log the event 
+                            event(new ProjectDocumentLogEvent(
+                                $message ,
+                                $authId, 
+                                $projectId,
+                                $project_document->id,
+
+                            ));
+                        // ./ logging for the project document  
+                        
+
+                        /** send system notifications to users */
+                            /** send system notifications to users */
+                                
+                                ProjectDocumentNotificationHelper::sendSystemNotification(
+                                    message: $message,
+                                    route: $route 
+                                );
+
+                            /** ./ send system notifications to users */
+                        /** ./ send system notifications to users */
+                    // ./ logging and system notifications
 
 
 
-                    Alert::info('Project Document Notice',$message); 
+
+
+
+                    // Alert::info('Project Document Notice',$message); 
                     return redirect()->route('project.project-document.show',[
                         'project' => $project->id,
                         'project_document' => $project_document->id
-                    ]);
+                    ])
+                    ->with('alert.info',$message)
+                    ;
 
 
 
@@ -291,10 +339,11 @@ class ProjectDocumentHelpers
                 // update the current project reviewer 
                 // for resubmission, make the current reviewer review_status into pending;
 
+                
                 $current_reviewer = $project_document->getCurrentReviewer();
                 $current_reviewer->review_status = "pending";
                 $current_reviewer->save();
-
+                 
  
                 $submission_type = "supplemental_submission";
                 
@@ -305,15 +354,16 @@ class ProjectDocumentHelpers
                 "submitted", 
                 false
                 );
+                
 
                  
 
             } 
         }
 
-
+        // dd( $submission_type);
         // if all are good, then we move on to the setup of the document reviewers 
-        
+
         if($submission_type == "initial_submission"){
 
             // set the project document reviewers
@@ -400,18 +450,53 @@ class ProjectDocumentHelpers
 
 
 
+         // logging and system notifications
+            $authId = Auth::id() ?? null;
+            $projectId = $project_document->project_id; 
+
+            // logging for the project document 
+                // Success message from the activity log project helper
+                $message =  ProjectDocumentLogHelper::getActivityMessage('submitted',$project_document->id,$authId);
         
+                // get the route 
+                $route = ProjectDocumentLogHelper::getRoute('submitted', $project_document->id);
+                
+
+                // // log the event 
+                event(new ProjectDocumentLogEvent(
+                    $message ,
+                    $authId, 
+                    $projectId,
+                    $project_document->id,
+
+                ));
+            // ./ logging for the project document  
+            
+
+            /** send system notifications to users */
+                /** send system notifications to users */
+                    
+                    ProjectDocumentNotificationHelper::sendSystemNotification(
+                        message: $message,
+                        route: $route 
+                    );
+
+                /** ./ send system notifications to users */
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
 
 
 
  
-        Alert::success('Success','Project submitted successfully');
+        // Alert::success('Success','Project submitted successfully');
  
 
         return redirect()->route('project.project-document.show',[
             'project' => $project->id,
             'project_document' => $project_document->id
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
         
             
         
@@ -1037,6 +1122,8 @@ class ProjectDocumentHelpers
         // Load the project document or fail cleanly
         $project_document = ProjectDocument::findOrFail($project_document_id);
 
+        $project = Project::find($project_document->project_id);
+
         // Get the current authenticated user
         $userId = Auth::id();
 
@@ -1044,14 +1131,7 @@ class ProjectDocumentHelpers
         ProjectDocumentHelpers::createReviewSession($project_document->id, $userId);
 
 
-
-
-
-
-
-
-
-
+ 
         
         // If a custom URL is provided, use it
         if (!empty($url)) {
@@ -1061,11 +1141,43 @@ class ProjectDocumentHelpers
             // return redirect()->route($url);
         }
 
+
+        $authId = Auth::id() ?? null;
+
+        // Success message from the activity log project helper 
+        $message =  ProjectDocumentLogHelper::getActivityMessage('open-review-claimed',$project_document->id,$authId);
+ 
+        // get the route 
+        $route = ProjectDocumentLogHelper::getRoute('open-review-claimed', $project_document->id);
+        
+
+        // // log the event 
+        event(new ProjectDocumentLogEvent(
+            $message ,
+            $authId, 
+            $project->id,
+            $project_document->id,
+
+        ));
+
+           
+
+        /** send system notifications to users */
+                
+            ProjectDocumentNotificationHelper::sendSystemNotification(
+                message: $message,
+                route: $route 
+            );
+
+        /** ./ send system notifications to users */
+
         // Default redirect to the project document review route
         return redirect()->route('project-document.review', [
             'project'          => $project_document->project_id,
             'project_document' => $project_document->id,
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
     }
 
 
@@ -1172,9 +1284,9 @@ class ProjectDocumentHelpers
             'approved' => ['label' => 'Approved', 'bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'ring' => 'ring-emerald-200'],
             'rejected' => ['label' => 'Rejected', 'bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'ring' => 'ring-rose-200'],
             'completed' => ['label' => 'Completed', 'bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'ring' => 'ring-indigo-200'],
-            'cancelled' => ['label' => 'Cancelled', 'bg' => 'bg-gray-100', 'text' => 'text-gray-500', 'ring' => 'ring-gray-200'],
-            'reviewed' => ['label' => 'Reviewed', 'bg' => 'bg-lime-100', 'text' => 'text-lime-500', 'ring' => 'ring-lime-200'],
-            'changes_requested' => ['label' => 'Changes Requested', 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-500', 'ring' => 'ring-yellow-200'],
+            'cancelled' => ['label' => 'Cancelled', 'bg' => 'bg-gray-50', 'text' => 'text-gray-800', 'ring' => 'ring-gray-200'],
+            'reviewed' => ['label' => 'Reviewed', 'bg' => 'bg-green-50', 'text' => 'text-green-800', 'ring' => 'ring-green-200'],
+            'changes_requested' => ['label' => 'Changes Requested', 'bg' => 'bg-yellow-50', 'text' => 'text-yellow-800', 'ring' => 'ring-yellow-200'],
             'on_que' => ['label' => 'On Queue', 'bg' => 'bg-slate-100', 'text' => 'text-slate-500', 'ring' => 'ring-slate-200'],
         ];
 

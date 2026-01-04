@@ -21,7 +21,7 @@
                     Project Timer
                 </h2>
 
-                @if(Auth::user()->can('system access global admin')  || Auth::user()->can('timer apply to all'))
+                {{-- @if(Auth::user()->can('system access global admin')  || Auth::user()->can('timer apply to all'))
                 <button title="This is to apply the reviewer list here for all NOT APPROVED projects"
                     onclick="confirm('Are you sure, you want to apply this to all records?') || event.stopImmediatePropagation()"
                     wire:click.prevent="apply_to_all" 
@@ -30,96 +30,49 @@
                     
                     APPLY TO ALL
                 </button>
-                @endif
+                @endif --}}
 
             </div>
             <!-- End Col -->
             <form wire:submit="save">
                 <!-- Grid -->
-                <div class="grid grid-cols-12 gap-x-2  ">
+                <div class="grid grid-cols-12 gap-x-2 mt-2  ">
 
-                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="submitter_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Submitter duration
-                        </label>
-
-                        <input
-                        min="1"
-                        autofocus autocomplete="submitter_response_duration"
-                        wire:model="submitter_response_duration"
-                        id="submitter_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
-
-                        @error('submitter_response_duration')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
-                    </div>
-
-                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="submitter_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Submitter duration type
-                        </label>
-
-                        <select 
-                        autofocus autocomplete="submitter_response_duration_type"
-                        wire:model="submitter_response_duration_type"
-                        id="submitter_response_duration_type" 
-                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
-                            <option selected="">Select type</option>
-                            <option value="day">Day</option>
-                            <option value="week">Week</option>
-                            <option value="month">Month</option>
-                        </select>
-
-                        @error('submitter_response_duration_type')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
+                    <div class="space-y-2 col-span-12 sm:col-span-6  ">
+                         
+                        <x-ui.input    
+                            id="submitter_response_duration"
+                            name="submitter_response_duration"
+                            type="number"
+                            wire:model.live="submitter_response_duration"   
+                            label="Submission duration (in days)"
+                            required  
+                            placeholder="Enter submission duration (in days)" 
+                            :error="$errors->first('submitter_response_duration')"
+ 
+ 
+                        />
 
                     </div>
+ 
 
 
-                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="reviewer_response_duration" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Reviewer duration
-                        </label>
-
-                        <input
-                        min="1"
-                        autofocus autocomplete="reviewer_response_duration"
-                        wire:model="reviewer_response_duration"
-                        id="reviewer_response_duration" type="number" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
-
-                        @error('reviewer_response_duration')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
+                    <div class="space-y-2 col-span-12 sm:col-span-6  ">
+                         
+                        <x-ui.input    
+                            id="reviewer_response_duration"
+                            name="reviewer_response_duration"
+                            type="number"
+                            wire:model.live="reviewer_response_duration"   
+                            label="Review duration (in days)"
+                            required  
+                            placeholder="Enter review duration (in days)" 
+                            :error="$errors->first('reviewer_response_duration')"
+ 
+ 
+                        />
                     </div>
-
-                    <div class="space-y-2 col-span-12 sm:col-span-3  ">
-                        <label for="reviewer_response_duration_type" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Reviewer duration type
-                        </label>
-
-                        <select 
-                        autofocus autocomplete="reviewer_response_duration_type"
-                        wire:model="reviewer_response_duration_type"
-                        id="reviewer_response_duration_type" 
-                        class="py-2 px-3 pe-11  block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  ">
-                            <option selected="">Select type</option>
-                            <option value="day">Day</option>
-                            <option value="week">Week</option>
-                            <option value="month">Month</option>
-                        </select>
-
-                        @error('reviewer_response_duration_type')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
-
-                    </div>
+ 
                     
                     @if(!empty($project_timer))
                     <p class="text-sm text-gray-500 mt-2 col-span-12"> 
@@ -282,6 +235,13 @@
                         </button>
                     @endif
 
+
+                    {{-- <!-- Project subscribers button and box -->
+                        <x-ui.project-timer.send-email-box /> 
+                    <!-- ./ Project subscribers button and box --> --}}
+
+
+
                 </div>
 
             </form>
@@ -291,21 +251,44 @@
 
 
     <!--  Loaders -->
+ 
 
-        {{-- loading action   --}}
-        <div wire:loading 
-            class="p-0 m-0"
-            style="padding: 0; margin: 0;">
-            <div class="absolute right-4 top-4 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
-                <div>   
-                    <svg class="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
+        <!-- Floating Loading Notification -->
+        <div 
+        wire:loading    
+        class="fixed top-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]
+                rounded-2xl border border-slate-200 bg-white shadow-lg"
+        role="status"
+        aria-live="polite"
+        >
+            <div class="flex items-start gap-3 p-4">
+                <!-- Spinner -->
+                <svg class="h-5 w-5 mt-0.5 animate-spin text-slate-600 shrink-0"
+                    viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10"
+                        stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z" />
+                </svg>
+
+                <!-- Text + Progress -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-slate-900">
+                        Loading data…
+                    </div>
+                    <div class="mt-0.5 text-xs text-slate-600">
+                        Fetching the latest records. Please wait.
+                    </div>
+
+                    <!-- Indeterminate Progress Bar -->
+                    <div class="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                        class="absolute inset-y-0 left-0 w-1/3 rounded-full bg-slate-400"
+                        style="animation: indeterminate-bar 1.2s ease-in-out infinite;"
+                        ></div> 
+
+                    </div>
                 </div>
-                <div>
-                    Loading new data, please wait...
-                </div> 
             </div>
         </div>
 
@@ -340,32 +323,47 @@
     
 
     <script>
-        $(document).ready(function() {
-            flatpickr("#project_submission_open_time", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "h:i K",
+        function initProjectFlatpickr() {
+            // Avoid double-init by checking if element exists
+            const openInput  = document.querySelector('#project_submission_open_time');
+            const closeInput = document.querySelector('#project_submission_close_time');
 
-                minuteIncrement: 30,
-                onChange: function(selectedDates, dateStr, instance) {
-                    @this.set('project_submission_open_time', dateStr);
-                }
-            });
-        });
+            if (openInput) {
+                flatpickr(openInput, {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "h:i K",
+                    minuteIncrement: 30,
+                    onChange: function (selectedDates, dateStr) {
+                        // $wire.set('project_submission_open_time', dateStr);
+                        @this.set('project_submission_open_time', dateStr);
+                    },
+                });
+            }
 
-        $(document).ready(function() {
-            flatpickr("#project_submission_close_time", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "h:i K",
+            if (closeInput) {
+                flatpickr(closeInput, {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "h:i K",
+                    minuteIncrement: 30,
+                    onChange: function (selectedDates, dateStr) {
+                        // $wire.set('project_submission_close_time', dateStr);
+                        @this.set('project_submission_close_time', dateStr);
+                    },
+                });
+            }
+        }
 
-                minuteIncrement: 30,
-                onChange: function(selectedDates, dateStr, instance) {
-                    @this.set('project_submission_close_time', dateStr);
-                }
-            });
+        // First page load
+        document.addEventListener('DOMContentLoaded', initProjectFlatpickr);
+
+        // Livewire v3 wire:navigate navigation
+        document.addEventListener('livewire:navigated', () => {
+            initProjectFlatpickr();
         });
     </script>
+
 
 
 

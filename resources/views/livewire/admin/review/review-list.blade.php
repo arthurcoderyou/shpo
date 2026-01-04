@@ -1184,7 +1184,7 @@
 
     <!--  Loaders -->
         {{-- wire:target="table"   --}}
-        <div wire:loading 
+        {{-- <div wire:loading 
             class="p-0 m-0"
             style="padding: 0; margin: 0;">
             <div class="absolute right-4 top-4 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm text-white bg-blue-600 border border-blue-700 shadow-md animate-pulse mb-4 mx-3">
@@ -1198,7 +1198,7 @@
                     Loading lists, please wait...
                 </div> 
             </div>
-        </div>
+        </div> --}}
 
          
 

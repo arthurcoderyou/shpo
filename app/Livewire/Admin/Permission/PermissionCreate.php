@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Admin\Permission;
 
-use App\Events\PermissionCreated;
+use App\Helpers\SystemNotificationHelpers\PermissionNotificationHelper;
 use Livewire\Component;
 use App\Models\ActivityLog;
+use App\Events\PermissionCreated; 
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Spatie\Permission\Models\Permission;
+use App\Events\Permission\PermissionLogEvent;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\ActivityLogHelpers\PermissionLogHelper;
 
 class PermissionCreate extends Component
 {
@@ -18,68 +22,52 @@ class PermissionCreate extends Component
     public $modules = [];
     public function mount(){
         $this->modules = [
-            'Dashboard',
-            'User',
-            'Permission',
-            
-            // global administrator is an override permission to everything
+            'Dashboard' => 'Dashboard',
+            'User' => 'User',
+            'Permission' => 'Permission',
 
-            'Role',
-            'System Access', 
-            /**
-             * These permissions declare a user's high-level access, independent of roles:
+            // Global administrator override
+            'Role' => 'Role',
+            'System Access' => 'System Access',
 
-                Permission Name	Description 
-                system.access.global admin	    Grants system-wide global admin access
-                system.access.admin	            Grants system-wide admin access
-                system.access.reviewer	        Grants system-wide reviewer access
-                system.access.user	            Grants standard system-wide user access
-             * 
-             * 
-             */
+            // Project ownership & overrides
+            'Project Own' => 'Project Own',
+            'Project Own Override' => 'Project Own Override',
+            'Project All Display' => 'Project All Display',
+            'Project Override' => 'Project Override',
 
+            // Project review
+            'Project Review' => 'Project Review',
+            'Project Review Override' => 'Project Review Override',
 
-            // only projects has override 
+            // Review attachments
+            'Project Review Attachment' => 'Project Review Attachment',
+            'Project Review Attachment Override' => 'Project Review Attachment Override',
 
+            // Project sub-modules
+            'Project Discussion' => 'Project Discussion',
+            'Project Discussion Override' => 'Project Discussion Override',
 
-            'Project Own',  
-            'Project Own Override',      // lets a role override projects that he does not own     
-            'Project All Display',      
-            'Project Override', // general override 
+            'Project Reviewer' => 'Project Reviewer',
+            'Project Reviewer Override' => 'Project Reviewer Override',
 
-            'Project Review',
-            'Project Review Override', // lets you review a project for a reviewer and override his review
+            'Project Document' => 'Project Document',
+            'Project Document Override' => 'Project Document Override',
 
+            'Project Attachment' => 'Project Attachment',
+            'Project Attachment Override' => 'Project Attachment Override',
 
-            'Project Review Attachment',    
-            'Project Review Attachment Override',    // lets you add atachment to review in a project for a reviewer and override his review
-
-
-            // part of the project model
-                // own nad 
-
-                'Project Discussion',
-                'Project Discussion Override',
-
-                
-                'Project Reviewer',
-                'Project Reviewer Override',
-
-                'Project Document',
-                'Project Document Override',
- 
-                'Project Attachment', 
-                'Project Attachment Override', 
-
-            'Notifications',
-            'Review',
-            'Reviewer',
-            'Timer',
-            'Document Type',
-            'Activity Logs',
-            'Profile',
-            'Setting',
+            // System modules
+            'Notifications' => 'Notifications',
+            'Review' => 'Review',
+            'Reviewer' => 'Reviewer',
+            'Timer' => 'Timer',
+            'Document Type' => 'Document Type',
+            'Activity Logs' => 'Activity Logs',
+            'Profile' => 'Profile',
+            'Setting' => 'Setting',
         ];
+
     }
 
 
@@ -121,16 +109,48 @@ class PermissionCreate extends Component
             'module' => $this->module,
         ]);
 
-        event(new PermissionCreated($permission,auth()->user()->id));
+        // event(new PermissionCreated($permission,auth()->user()->id));
 
-        ActivityLog::create([
-            'log_action' => "Permission \"".$this->name."\" created ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Permission \"".$this->name."\" created ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
-        Alert::success('Success','Permission created successfully');
-        return redirect()->route('permission.index');
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = PermissionLogHelper::getActivityMessage('created', $permission->id, $authId);
+
+            // get the route
+            $route = PermissionLogHelper::getRoute('created', $permission->id);
+
+            // log the event 
+            event(new PermissionLogEvent(
+                $message ,
+                $authId, 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                PermissionNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+
+        // Alert::success('Success','Permission created successfully');
+        return 
+            // redirect()->route( $route)
+            redirect($route)
+            ->with('alert.success',$message);
     }
 
 

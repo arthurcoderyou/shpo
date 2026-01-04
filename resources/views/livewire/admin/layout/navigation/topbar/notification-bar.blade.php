@@ -78,6 +78,8 @@ new class extends Component {
 >
     {{-- Backdrop --}}
     <div
+        x-cloak
+
         x-show="open"
         x-transition.opacity
         class="fixed inset-0 bg-black/30 z-40"
@@ -86,6 +88,7 @@ new class extends Component {
 
     {{-- Panel --}}
     <aside
+        x-cloak
         id="notif-offcanvas"
         class="fixed inset-y-0 right-0 w-full sm:w-[28rem] bg-white border-l z-50 transition-transform duration-200 ease-out"
         :class="open ? 'translate-x-0' : 'translate-x-full'"
@@ -102,12 +105,27 @@ new class extends Component {
                             title="Mark all as read"
                         >Mark all read</button>
 
-                        <button
+                        {{-- <button
                             wire:click="clearAll"
                             class="rounded-lg border px-2 py-1 text-sm hover:bg-gray-50 text-rose-600"
                             title="Delete all notifications"
                             onclick="return confirm('Delete all notifications?')"
-                        >Clear all</button>
+                        >Clear all</button> --}}
+
+                        <button
+                            x-data
+                            x-on:click.prevent="
+                                if (confirm('Delete all notifications?')) {
+                                    $wire.clearAll()
+                                }
+                            "
+                            class="rounded-lg border px-2 py-1 text-sm hover:bg-gray-50 text-rose-600"
+                            title="Delete all notifications"
+                        >
+                            Clear all
+                        </button>
+
+
                     @endauth
 
                     <button

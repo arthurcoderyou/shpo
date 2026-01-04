@@ -2,13 +2,17 @@
 
 namespace App\Livewire\Admin\Role;
 
-use App\Events\RoleCreated;
+use App\Events\Role\RoleLogEvent;
+use App\Helpers\SystemNotificationHelpers\RoleNotificationHelper;
 use App\Models\User;
 use Livewire\Component;
+use App\Events\RoleCreated;
 use App\Models\ActivityLog;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Helpers\ActivityLogHelpers\RoleLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 
 class RoleCreate extends Component
 {
@@ -58,16 +62,40 @@ class RoleCreate extends Component
             'description' => $this->description,
         ]);
 
-        event(new RoleCreated($role, auth()->user()->id));
+          
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
 
-        ActivityLog::create([
-            'log_action' => "Role \"".$this->name."\" created ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+            // get the message from the helper 
+            $message = RoleLogHelper::getActivityMessage('created', $role->id, $authId);
 
-        Alert::success('Success','Role created successfully');
-        return redirect()->route('role.index');
+            // get the route
+            $route = RoleLogHelper::getRoute('created', $role->id);
+
+            // log the event 
+            event(new RoleLogEvent(
+                $message ,
+                $authId, 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                RoleNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+        // Alert::success('Success','Role created successfully');
+        return 
+            // redirect()->route('role.index')
+            redirect($route)
+            ->with('alert.success',$message);
+            ;
     }
 
 

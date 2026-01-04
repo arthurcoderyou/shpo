@@ -11,8 +11,23 @@ use Illuminate\Support\Facades\Hash;
 use App\Helpers\ProjectDocumentHelpers;
 
 class ProjectDocumentReview extends Component
-{
+{   
+    protected $listeners = [
+        'systemEvent' => '$refresh',  
 
+        'projectEvent' => '$refresh',
+        'projectDocumentEvent' => '$refresh',
+
+
+        // 'projectCreated' => '$refresh',
+        // 'projectUpdated' => '$refresh',
+        // 'projectDeleted' => '$refresh',
+        // 'projectSubmitted' => '$refresh',
+        // 'projectQueued' => '$refresh',
+        // 'projectDocumentCreated' => '$refresh',
+        // 'projectDocumentUpdated' => '$refresh',
+        // 'projectDocumentDeleted' => '$refresh',
+    ];
 
     /** Actions with Password Confirmation panel */
         public $passwordConfirm = '';

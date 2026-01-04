@@ -8,16 +8,19 @@ use App\Models\Setting;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use Illuminate\Support\Arr; 
+use Livewire\WithFileUploads;
 use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\File;
 use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
-use Livewire\WithFileUploads;
 use RealRashid\SweetAlert\Facades\Alert;
 use Spatie\LivewireFilepond\WithFilePond;
-use Illuminate\Validation\Rules\File;
+use App\Events\ProjectDocument\ProjectDocumentLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
 
 class ProjectDocumentEdit extends Component
 {
@@ -607,11 +610,51 @@ class ProjectDocumentEdit extends Component
         //     'created_by' => Auth::user()->id,
          // ]);
 
-        Alert::success('Success',"Project attachments on \"".$project_document->document_type->name."\" updated ");
+        // Alert::success('Success',"Project attachments on \"".$project_document->document_type->name."\" updated ");
+
+
+        // logging and system notifications
+            $authId = Auth::id() ?? null;
+            $projectId = $project_document->project_id; 
+
+            // logging for the project document 
+                // Success message from the activity log project helper
+                $message =  ProjectDocumentLogHelper::getActivityMessage('updated',$project_document->id,$authId);
+        
+                // get the route 
+                $route = ProjectDocumentLogHelper::getRoute('updated', $project_document->id);
+                
+
+                // // log the event 
+                event(new ProjectDocumentLogEvent(
+                    $message ,
+                    $authId, 
+                    $projectId,
+                    $project_document->id,
+
+                ));
+            // ./ logging for the project document  
+            
+
+            /** send system notifications to users */
+                /** send system notifications to users */
+                    
+                    ProjectDocumentNotificationHelper::sendSystemNotification(
+                        message: $message,
+                        route: $route 
+                    );
+
+                /** ./ send system notifications to users */
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
         return redirect()->route('project.project-document.show',[
             'project' => $this->project->id,
             'project_document' => $this->project_document->id,
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
 
 
 

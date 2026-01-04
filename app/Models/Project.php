@@ -45,7 +45,7 @@ class Project extends Model
     protected $fillable = [
         'name',
         'description',
-        'federal_agency', // this is shown as company
+        'agency', // this is shown as company
         # 
         'type', 
             // - local
@@ -108,53 +108,53 @@ class Project extends Model
         });
 
 
-        static::created(function ($project) {
-            // event(new  \App\Events\ProjectCreated($project));
+        // static::created(function ($project) {
+        //     // event(new  \App\Events\ProjectCreated($project));
 
-            try {
-                event(new \App\Events\ProjectCreated($project , auth()->user()->id ));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
-                    'project_id' => $project->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-
-
-        });
-
-        static::updated(function ($project) {
-            // event(new  \App\Events\ProjectUpdated($project));
-
-            try {
-                event(new \App\Events\ProjectUpdated($project,auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectUpdated event: ' . $e->getMessage(), [
-                    'project_id' => $project->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-
-        });
-
-        static::deleted(function ($project) {
-            // event(new  \App\Events\ProjectDeleted(project: $project));
+        //     try {
+        //         event(new \App\Events\ProjectCreated($project , auth()->user()->id ));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectCreated event: ' . $e->getMessage(), [
+        //             'project_id' => $project->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
 
 
-             try {
-                event(new \App\Events\ProjectDeleted($project->id, auth()->user()->id));
-            } catch (\Throwable $e) {
-                // Log the error without interrupting the flow
-                Log::error('Failed to dispatch ProjectDeleted event: ' . $e->getMessage(), [
-                    'project_id' => $project->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+        // });
+
+        // static::updated(function ($project) {
+        //     // event(new  \App\Events\ProjectUpdated($project));
+
+        //     try {
+        //         event(new \App\Events\ProjectUpdated($project,auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectUpdated event: ' . $e->getMessage(), [
+        //             'project_id' => $project->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+
+        // });
+
+        // static::deleted(function ($project) {
+        //     // event(new  \App\Events\ProjectDeleted(project: $project));
 
 
-        });
+        //      try {
+        //         event(new \App\Events\ProjectDeleted($project->id, auth()->user()->id));
+        //     } catch (\Throwable $e) {
+        //         // Log the error without interrupting the flow
+        //         Log::error('Failed to dispatch ProjectDeleted event: ' . $e->getMessage(), [
+        //             'project_id' => $project->id,
+        //             'trace' => $e->getTraceAsString(),
+        //         ]);
+        //     }
+
+
+        // });
 
        
 
@@ -195,7 +195,7 @@ class Project extends Model
      */
     public function project_references()
     {
-        return $this->hasMany(ProjectReferences::class, 'project_id', 'id');
+        return $this->hasMany(\App\Models\ProjectReferences::class, 'project_id', 'id');
     }
 
     /**
@@ -205,7 +205,7 @@ class Project extends Model
      */
     public function referenced_project()
     {
-        return $this->hasMany(ProjectReferences::class, 'referenced_project_id', 'id');
+        return $this->hasMany(\App\Models\ProjectReferences::class, 'referenced_project_id', 'id');
     }
 
 
@@ -1113,8 +1113,11 @@ class Project extends Model
             return true;
         }
 
-        // 3. Has role 'DSI God Admin' or 'Admin'?
-        if ($user->hasRole('DSI God Admin') || $user->hasRole('Admin')) {
+        // Has permission via ANY role (or direct assignment)
+        if ($user->hasAnyPermission([
+            'system access global admin',
+            'system access admin',
+        ])) {
             return true;
         }
 
@@ -1181,7 +1184,7 @@ class Project extends Model
     {
         return $query->where(function ($q) use ($search) {
             $q->where('name', 'LIKE', "%$search%")
-            ->orWhere('federal_agency', 'LIKE', "%$search%")
+            ->orWhere('agency', 'LIKE', "%$search%")
             ->orWhere('type', 'LIKE', "%$search%")
             ->orWhere('description', 'LIKE', "%$search%")
             ->orWhere('location', 'LIKE', "%$search%")
@@ -1349,11 +1352,143 @@ class Project extends Model
 
 
 
+   public static function countBasedOnReviewStatus(string $review_status,$pending_rc_number = false){
+
+        $query = Project::query();  
+
+         
+
+        $query = $query->applyReviewStatusBasedFilters($review_status);
+
+
+        if(Auth::user()->hasPermissionTo('system access user')){
+             $query = $query->where('created_by',Auth::user()->id);
+            
+        }
+
+        if($pending_rc_number){
+            $query = $query->whereNull('rc_number')
+                ->where(function ($q) {
+                    $q->doesntHave('project_documents');
+                })
+                ;
+        }
+
+        return $query->count() ?? 0;
+
+    }
 
 
 
 
+    // function to filter the records based on the review_status
+    public function scopeApplyReviewStatusBasedFilters(Builder $q, string $status){
+        $user = Auth::user();
+        $userId = $user->id;
 
+        // dd($status);
+ 
+        switch ($status) {
+             
+
+            case 'pending': 
+                // pending 
+                // submission is not allowed
+                // review status is pending
+
+                if($user->hasPermissionTo('system access user')){
+                    return $q
+                        ->where('allow_project_submission', false)
+                        ->whereHas('project_reviewers', function ($query) use ($userId) {
+                            $query->where('status', true)
+                            ->where('review_status', 'pending');
+                        });
+                }elseif( $user->hasPermissionTo('system access admin') || $user->hasPermissionTo('system access reviewer') ){
+                    return $q
+                    ->where('allow_project_submission', false)
+                    ->whereHas('project_reviewers', function ($query) use ($userId) {
+                        $query->where('user_id',$userId) // if for reviewers and admin, ensure that they are the current reviewer
+                        ->where('status', true)
+                        ->where('review_status', 'pending');
+                    });
+
+
+                }
+                
+            case 'approved': 
+                // approved
+                // submission is not allowed
+                // review status is rejected
+                return $q
+                    ->where('allow_project_submission', false)
+                    ->whereHas('project_reviewers', function ($query) use ($userId) {
+                        $query->where('status', true)
+                        ->where('review_status', 'approved');
+                    });
+
+            case 'rejected':
+                // rejected
+                // submission is allowed
+                // review status is rejected
+                return $q
+                    ->where('allow_project_submission', true)
+                    ->whereHas('project_reviewers', function ($query) use ($userId) {
+                        $query->where('status', true)
+                        ->where('review_status', 'rejected');
+                    });
+
+            case 'open_review':
+                // open_review
+                // submisiosn is not allowed
+                // review status is rejected
+
+                // dd("Here");
+                return $q
+                    ->where('allow_project_submission', false)
+                    ->whereHas('project_reviewers', function ($query) use ($userId) {
+                        $query->where('status', true)
+                        ->where('slot_type', 'open')
+                        // to know if it is claimed
+                        ->whereNull('user_id')
+                        ->where('review_status', 'pending');
+                    });
+
+            case 'changes_requested':
+                // changes_requested
+                // submission is allowed
+                // review status is changes requested 
+                if($user->hasPermissionTo('system access user')){
+                    return $q->where('created_by',$userId)
+                        ->where('allow_project_submission', true)
+                        ->whereHas('project_reviewers', function ($query) use ($userId) {
+                            $query->where('status', true)
+                            ->where('review_status', 'changes_requested');
+                        }); 
+                }elseif( $user->hasPermissionTo('system access admin') || $user->hasPermissionTo('system access reviewer') ){
+                    
+                    return $q 
+                        ->where('allow_project_submission', true)
+                        ->whereHas('project_reviewers', function ($query) use ($userId) {
+                            $query->where('status', true)
+                            ->where('review_status', 'changes_requested');
+                        }); 
+
+
+                }
+ 
+            default:
+                // Default to just pass it back
+
+                if(Auth::user()->hasPermissionTo('system access user')){
+                    return $q->ownedBy($userId);
+                }else{
+                    return $q;
+                }
+
+                 
+        } 
+
+    }
 
 
 

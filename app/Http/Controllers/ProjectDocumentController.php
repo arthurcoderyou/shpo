@@ -369,9 +369,7 @@ class ProjectDocumentController extends Controller
         if($project_document->status == "submitted"){
             $project_document->status = "in_review";
             $project_document->save();
-
-            $project_document->status = "in_review";
-            $project_document->save();
+ 
             
         }
 

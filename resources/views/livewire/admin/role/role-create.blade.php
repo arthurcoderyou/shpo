@@ -1,5 +1,5 @@
 <!-- Card Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
     {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
@@ -23,42 +23,44 @@
                 <!-- End Col -->
 
                 <!-- Grid -->
-                <div class="grid grid-cols-12 gap-x-2  ">
+                <div class="grid grid-cols-12 gap-2 mt-2 ">
 
                     <div class="space-y-2 col-span-12   ">
-                        <label for="name" class="inline-block text-sm font-medium text-gray-800 mt-2.5 ">
-                            Name
-                        </label>
+                        
+                        <x-ui.input 
+                            id="name"
+                            name="name"
+                            type="text"
+                            wire:model.live="name"   
+                            label="Name"
 
-                        <input
-                        autofocus autocomplete="name"
-                        wire:model="name"
-                        id="name" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
-
-                        @error('name')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
-
+                            required="true"
+                              
+                            placeholder="Enter role" 
+                            :error="$errors->first('name')"
+ 
+                            displayTooltip
+                            position="top"
+                            tooltipText="Please enter the name" 
+                        />
 
                     </div>
 
                     <div class="space-y-2 col-span-12 ">
-                        <label for="description" class="inline-block text-sm font-medium text-gray-800 mt-2.5">
-                            Description
-                        </label>
+                         
 
-                        <textarea
+                        <x-ui.textarea 
                             id="description"
-                            wire:model="description"
-                            autofocus
-                            autocomplete="description"
-                            rows="4" 
-                            class="py-2 px-3 block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none resize-y"
-                            placeholder="Enter role description "></textarea>
-
-                        @error('description')
-                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
-                        @enderror
+                            name="description" 
+                            wire:model.live="description"   
+                            label="Description" 
+                            placeholder="Enter description" 
+                            :error="$errors->first('description')"
+ 
+                            displayTooltip
+                            position="top"
+                            tooltipText="Please enter the description" 
+                        />
                     </div>
 
 
@@ -67,14 +69,30 @@
                 <!-- End Grid -->
 
                 <div class="mt-5 flex justify-center gap-x-2">
-                    <a href="{{ route('role.index') }}"
-                    wire:navigate
-                    class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                        Cancel
-                    </a>
-                    <button type="submit" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-                    Save
-                    </button>
+                    
+
+                     <x-ui.button 
+                        id="cancel" 
+                        label="Cancel"
+                        sr="Cancel" 
+                        :linkHref="route('role.index')" {{-- to make it as a link --}}
+
+                        class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none"
+                    />
+  
+                    <x-ui.button 
+                        id="save" 
+                        type="button"
+                        label="Save"
+                        sr="Save"
+ 
+                        onclick="confirm('Are you sure, you want to save this record?') || event.stopImmediatePropagation()" 
+                        wire:click.prevent="save" 
+
+
+                        class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+                    />
+
                 </div>
             </div>
         </div>

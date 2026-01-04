@@ -23,9 +23,15 @@ use App\Models\ProjectAttachments;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\File;
+use App\Events\Project\ProjectLogEvent;
 use App\Helpers\ProjectDocumentHelpers;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Events\ProjectDocument\ProjectDocumentLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
 
 
 class ProjectDocumentCreate extends Component
@@ -205,9 +211,9 @@ class ProjectDocumentCreate extends Component
 
         $this->validate([
             'document_type_id' => 'required',
-            'applicant' => ['string','required'],
-            'document_from' => ['string','required'],
-            'company' => ['string','required'],
+            // 'applicant' => ['string','required'],
+            // 'document_from' => ['string','required'],
+            // 'company' => ['string','required'],
 
 
             'attachments' => [
@@ -327,19 +333,67 @@ class ProjectDocumentCreate extends Component
 
 
         // 'project.project_document.edit_attachments
-        ActivityLog::create([
-            'log_action' => "Project \"".$this->name."\" updated ",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // ActivityLog::create([
+        //     'log_action' => "Project \"".$this->name."\" updated ",
+        //     'log_username' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
 
-        Alert::success('Success','Project document created successfully');
+        // Alert::success('Success','Project document created successfully');
         // return redirect()->route('project.project_document',['project' => $this->project->id,'project_document' => $project_document->id]);
+
+
+
+        // logging and system notifications
+            $authId = Auth::id() ?? null;
+            $projectId = $project_document->project_id; 
+
+            // logging for the project document 
+                // Success message from the activity log project helper
+                $message =  ProjectDocumentLogHelper::getActivityMessage('created',$project_document->id,$authId);
+        
+                // get the route 
+                $route = ProjectDocumentLogHelper::getRoute('created', $project_document->id);
+                
+
+                // // log the event 
+                event(new ProjectDocumentLogEvent(
+                    $message ,
+                    $authId, 
+                    $projectId,
+                    $project_document->id,
+
+                ));
+            // ./ logging for the project document  
+            
+
+            /** send system notifications to users */
+                /** send system notifications to users */
+                    
+                    ProjectDocumentNotificationHelper::sendSystemNotification(
+                        message: $message,
+                        route: $route 
+                    );
+
+                /** ./ send system notifications to users */
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+ 
+
+
 
         return redirect()->route('project.project-document.show',[
             'project' => $this->project->id,
             'project_document' => $project_document->id
-        ]);
+        ])
+        ->with('alert.success',$message)
+        ;
+
+        //  return redirect()->route('project.show',['project'=> $project->id])
+        //     ->with('alert.success',$message)
+        //     ;
+
 
 
     }

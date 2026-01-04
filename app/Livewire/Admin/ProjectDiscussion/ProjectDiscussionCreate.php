@@ -3,9 +3,12 @@
 namespace App\Livewire\Admin\ProjectDiscussion;
 
 use App\Models\Project;
-use App\Models\ProjectDocument;
 use Livewire\Component;
+use App\Models\ProjectDocument;
 use App\Models\ProjectDiscussion;
+use Illuminate\Support\Facades\Auth;
+use App\Events\Project\ProjectLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
 
 class ProjectDiscussionCreate extends Component
 {
@@ -44,6 +47,25 @@ class ProjectDiscussionCreate extends Component
 
 
         broadcast(new \App\Events\ProjectDiscussionCreated($project  ,$project_discussion));
+
+
+        // temporary || should be on ProjectDiscussion events
+            $authId = Auth::id() ?? null;
+
+            // Success message from the activity log project helper 
+            $message =  ProjectLogHelper::getProjectActivityMessage('updated',$project->id,$authId);
+    
+            // get the route 
+            $route = ProjectLogHelper::getRoute('updated', $project->id);
+            
+
+            // // log the event 
+            event(new ProjectLogEvent(
+                $message ,
+                $authId, 
+
+            ));
+
 
         // Refresh  
         $this->dispatch('projectDiscussionAdded');

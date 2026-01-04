@@ -27,8 +27,6 @@ class ProjectReviewerCreatedListener  implements ShouldQueue
 
         $project_reviewer = ProjectReviewer::find($event->projectReviewerId) ;
         $user = User::find($event->authId );
-
- 
  
 
         ActivityLog::create([

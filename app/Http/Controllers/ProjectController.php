@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Models\ProjectDocument;
 use Illuminate\Http\Request;
+use App\Helpers\ProjectHelper;
+use App\Models\ProjectDocument;
 use Illuminate\Support\Facades\Auth;
+use App\Events\Project\ProjectLogEvent;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
 class ProjectController extends Controller
 {
@@ -367,15 +371,36 @@ class ProjectController extends Controller
         $user = Auth::user();
         $project = Project::findOrFail($id);
 
+        if(!empty($project->rc_number)){
+
+            // If there is no previous URL, redirect to the dashboard
+            return redirect()->route('project.show',['project' => $project->id])
+                ->with('alert.success',"Project Reviewed already")
+                ;
+        }
+
+
+
+        // dd("Here");
+
+
+        $review_accepted = false;
+        $review_accepted = ProjectHelper::verifyAndClearReviewSession($project->id, $user->id);
+
+ 
+
 
         // check if the current project reviewer is an open review
         if(!empty($project->getCurrentReviewer()) && empty($project->getCurrentReviewer()->user_id) ){
             // Check if the user has the role "system access global admin" OR the permission "project review"
             if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review create'))) {
-                Alert::error('Error', 'You do not have permission to access this section.');
+
+                $message = 'You do not have permission to access this section.';
+                // Alert::error('Error', 'You do not have permission to access this section.');
 
                 // If there is no previous URL, redirect to the dashboard
-                return redirect()->to(url()->previous() ?? route('dashboard'));
+                return redirect()->to(url()->previous() ?? route('dashboard')) ->with('alert.error',$message)  
+                ;
                 
                 
             }
@@ -383,13 +408,38 @@ class ProjectController extends Controller
 
             //
 
-            // dd("Open Review");
+            // dd("Open Review Claimed");
 
-            $project_reviewer = $project->getCurrentReviewer();
-            $project_reviewer->user_id = Auth::user()->id;
-            $project_reviewer->updated_at = now();
-            $project_reviewer->updated_by = Auth::user()->id;
-            $project_reviewer->save();
+            if($review_accepted){
+
+                // dd("accepted");
+                $project_reviewer = $project->getCurrentReviewer();
+                $project_reviewer->user_id = Auth::user()->id;
+                $project_reviewer->updated_at = now();
+                $project_reviewer->updated_by = Auth::user()->id;
+                $project_reviewer->save();
+
+                // update the status of the project if it is submitted and when the reviewer enter this view, the new status should be in_review
+                if($project->status == "submitted"){
+                    $project->status = "in_review";
+                    $project->save();
+
+                    
+
+
+                }elseif($project->status !== "in_review" && empty($project->rc_number) ){
+                    $project->status = "submitted";
+                    $project->save(); 
+
+                }
+ 
+
+
+            }else{
+                //  dd("not accepted");
+            }
+
+            
 
 
 
@@ -400,38 +450,21 @@ class ProjectController extends Controller
 
         // Check if the user has the role "system access global admin" OR the permission "project review"
         if (!$user || (!$user->can('system access global admin') && !$user->hasPermissionTo('project review create'))) {
-            Alert::error('Error', 'You do not have permission to access this section.');
+            $message = 'You do not have permission to access this section.';
+            // Alert::error('Error', 'You do not have permission to access this section.');
 
             // If there is no previous URL, redirect to the dashboard
-            return redirect()->to(url()->previous() ?? route('dashboard'));
+            return redirect()->to(url()->previous() ?? route('dashboard'))
+            ->with('alert.error',$message)
+            ;
                
              
         }
+ 
 
+        
 
  
-       
-
-
-        // update the status of the project if it is submitted and when the reviewer enter this view, the new status should be in_review
-        if($project->status == "submitted"){
-            $project->status = "in_review";
-            $project->save();
-        }
-
-
-
-
-        // // check if the user is a reviewer 
-        // $isReviewer = $project->project_reviewers()->where('user_id', auth()->id())->exists();
-
-        // if(!$isReviewer){
-        //     Alert::error('Error', 'You are not a reviewer for this project');
-
-        //     // If there is no previous URL, redirect to the dashboard
-        //     return redirect()->route('project.in_review');
-        // }
-
 
 
         return view('admin.project.review',compact('project'));

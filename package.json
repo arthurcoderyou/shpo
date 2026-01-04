@@ -19,7 +19,9 @@
     },
     "dependencies": {
         "@dasundev/livewire-dropzone-styles": "^2.0.2",
+        "@fortawesome/fontawesome-svg-core": "^7.1.0",
         "@tailwindplus/elements": "^1.0.15",
+        "notyf": "^3.10.0",
         "ol": "^10.4.0",
         "preline": "^2.7.0"
     }

@@ -7,7 +7,7 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
-        './node_modules/preline/dist/*.js', // Add this line
+        './node_modules/preline/dist/*.js', // Add this line, 
     ],
     safelist: [
         'bg-blue-900',

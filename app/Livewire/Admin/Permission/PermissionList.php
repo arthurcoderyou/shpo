@@ -2,28 +2,44 @@
 
 namespace App\Livewire\Admin\Permission;
 
-use App\Events\PermissionDeleted;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use App\Events\PermissionDeleted;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Spatie\Permission\Models\Permission;
+use App\Events\Permission\PermissionLogEvent; 
+use App\Helpers\ActivityLogHelpers\PermissionLogHelper;
+use App\Helpers\SystemNotificationHelpers\PermissionNotificationHelper;
 
 class PermissionList extends Component
 {
 
     protected $listeners = [ 
-        'permissionCreated' => '$refresh',
-        'permissionUpdated' => '$refresh',
-        'permissionDeleted' => '$refresh',
-    ];
+        'permissionEvent' => '$refresh'
+        // 'permissionCreated' => '$refresh',
+        // 'permissionUpdated' => '$refresh',
+        // 'permissionDeleted' => '$refresh',
+    ]; 
 
+    
     use WithFileUploads;
     use WithPagination;
 
     public $search = '';
     public $sort_by = '';
+
+    public array $sorting_options = [
+        "" => "Sort by",
+        "Name A - Z" => "Name A - Z",
+        "Name Z - A" => "Name Z - A",
+        "Latest Added" => "Latest Added",
+        "Oldest Added" => "Oldest Added",
+        "Latest Updated" => "Latest Updated",
+        "Oldest Updated" => "Oldest Updated", 
+    ];
+
     public $record_count = 10;
 
     public $selected_records = [];
@@ -34,6 +50,10 @@ class PermissionList extends Component
     public $file;
 
     public $module;
+
+    public $permission_count;
+
+
 
 
     // Method to delete selected records
@@ -49,6 +69,7 @@ class PermissionList extends Component
         Alert::success('Success','Selected permissions deleted successfully');
         return redirect()->route('permission.index');
     }
+    
 
     // This method is called automatically when selected_records is updated
     public function updateSelectedCount()
@@ -72,11 +93,45 @@ class PermissionList extends Component
         $permission = Permission::find($id);
 
 
-        $permission->delete();
-        event(new PermissionDeleted($permission,auth()->user()->id));
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
 
-        Alert::success('Success','Permission deleted successfully');
-        return redirect()->route('permission.index');
+            // get the message from the helper 
+            $message = PermissionLogHelper::getActivityMessage('deleted', $permission->id, $authId);
+
+            // get the route
+            $route = PermissionLogHelper::getRoute('deleted', $permission->id);
+
+            // log the event 
+            event(new PermissionLogEvent(
+                $message ,
+                $authId, 
+                $permission->id, // add this modelId connected to the current model instance for the listener to reload the same page same model instance record 
+
+            ));
+    
+            /** send system notifications to users */
+                
+                PermissionNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+        
+
+        $permission->delete();
+       
+       
+       
+        // event(new PermissionDeleted($permission,auth()->user()->id));
+
+        // Alert::success('Success','Permission deleted successfully');
+        return 
+            // redirect()->route('permission.index')
+            redirect($route)
+            ->with('alert.success',$message);
 
     }
 
@@ -194,27 +249,43 @@ class PermissionList extends Component
         }
 
 
-
+        $this->permission_count = $permissions->count();
 
 
         $permissions = $permissions->paginate($this->record_count);
 
 
-        $module_permissions = Permission::orderBy('module', 'asc')->get();
 
-        if (!Auth::user()->hasRole('DSI God Admin')) {
-            $module_permissions = $module_permissions->reject(function ($permission) {
-                return $permission->module === 'Permission';
-            });
-        }
+        // getting the module permission options
+            $module_permissions = Permission::orderBy('module', 'asc')->get();
 
-        $module_permissions = $module_permissions->groupBy('module');
+            if (!Auth::user()->hasRole('DSI God Admin')) {
+                $module_permissions = $module_permissions->reject(function ($permission) {
+                    return $permission->module === 'Permission';
+                });
+            }
+
+            $module_permissions = $module_permissions->groupBy('module');
+            
+            // dd($module_permissions);
+
+            $module_options = []; // options 
+
+            foreach($module_permissions as $module => $module_permissions){
+                $module_options[ $module] =  $module; 
+            }
+
+            // foreach()
+
+        // ./ getting the module permission options
+
+
+
         
-
         
         return view('livewire.admin.permission.permission-list',[
             'permissions' => $permissions,
-            'module_permissions' => $module_permissions,
+            'module_options' => $module_options,
         ]);
     }
 }

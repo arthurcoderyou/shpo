@@ -54,7 +54,7 @@ implements ShouldQueue
             ->subject("New User Verification Request: {$this->new_user->name} for the role {$this->new_user->role_request}")
             ->markdown('emails.user.review', [
                 'new_user' => $this->new_user, 
-                'url' => route('user.edit', $this->new_user->id),
+                'url' => route('user.edit_role', $this->new_user->id),
             ]);
  
 

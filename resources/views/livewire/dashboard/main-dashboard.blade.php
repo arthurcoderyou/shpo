@@ -110,6 +110,46 @@
             Auth::user()->hasPermissionTo('system access admin')
             )   
 
+
+            <!--  only one needs to be shown on this portion  -->  
+                <!-- project list view all showing no RC number  -->
+                @if (Auth::user()->hasPermissionTo('system access global admin') 
+                || Auth::user()->hasPermissionTo('project list view all') )    
+
+                    
+                    <livewire:dashboard.dashboard-tile.project-tile
+                            title="Project without RC#"  
+                            :icon="view('components.icons.projects-total')->render()" 
+                            :route="route('project.index.all')" 
+                            routeKey="project.index.all" 
+                            :iconColor="$iconColor"
+                            :iconBg="$iconBg" 
+                        />
+        
+        
+                {{-- @endif --}}
+
+                <!-- project list view all no drafts  -->
+                @elseif (Auth::user()->hasPermissionTo('system access global admin')  ||
+                // || Auth::user()->hasPermissionTo('project list view all no drafts') 
+                Auth::user()->hasPermissionTo('system access admin') 
+                
+                )   
+
+                    
+                    <livewire:dashboard.dashboard-tile.project-tile
+                            title="Project without RC# (No Drafts )"  
+                            :icon="view('components.icons.projects-total')->render()" 
+                            :route="route('project.index.all.no-drafts')" 
+                            routeKey="project.index.all.no-drafts" 
+                            :iconColor="$iconColor"
+                            :iconBg="$iconBg" 
+                        />
+        
+        
+                @endif
+            <!-- ./ only one needs to be shown on this portion -->
+
              
             <livewire:dashboard.dashboard-tile.user-tile
                     title="New Users (No Role)"  
@@ -538,15 +578,11 @@
             options: {
             scales: {
                 y: {
-                  beginAtZero: true,
-                  suggestedMin: 0,   // Ensure small values are visible
-                 // Adjust based on your range
-                  ticks: {
-                      stepSize: 5.0005, // Set a step size suitable for small values
-                      callback: function(value) {
-                          return value.toFixed(5); // Display full decimal precision
-                      }
-                  }
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,     // ✅ force whole numbers
+                        stepSize: 1       // ✅ integer increments
+                    }
                 }
             }
             }
@@ -579,15 +615,11 @@
             options: {
             scales: {
                 y: {
-                  beginAtZero: true,
-                  suggestedMin: 0,   // Ensure small values are visible
-                 // Adjust based on your range
-                  ticks: {
-                      stepSize: 5.0005, // Set a step size suitable for small values
-                      callback: function(value) {
-                          return value.toFixed(5); // Display full decimal precision
-                      }
-                  }
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,     // ✅ force whole numbers
+                        stepSize: 1       // ✅ integer increments
+                    }
                 }
             }
             }
@@ -626,15 +658,11 @@
             options: {
             scales: {
                 y: {
-                  beginAtZero: true,
-                  suggestedMin: 0,   // Ensure small values are visible
-                 // Adjust based on your range
-                  ticks: {
-                      stepSize: 5.0005, // Set a step size suitable for small values
-                      callback: function(value) {
-                          return value.toFixed(5); // Display full decimal precision
-                      }
-                  }
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,     // ✅ force whole numbers
+                        stepSize: 1       // ✅ integer increments
+                    }
                 }
             }
             }
@@ -666,15 +694,11 @@
             options: {
             scales: {
                 y: {
-                  beginAtZero: false,
-                  suggestedMin: 0,   // Ensure small values are visible
-                  // max: Math.max(...project_count_per_month_table_values) // Adjust based on your range
-                  ticks: {
-                      stepSize: 5.0005, // Set a step size suitable for small values
-                      callback: function(value) {
-                          return value.toFixed(5); // Display full decimal precision
-                      }
-                  }
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,     // ✅ force whole numbers
+                        stepSize: 1       // ✅ integer increments
+                    }
                 }
             }
             }
@@ -717,15 +741,11 @@
 
               scales: {
                   y: {
-                    beginAtZero: true, 
-                    suggestedMin: 0,   // Ensure small values are visible
-                   // Adjust based on your range
-                    ticks: {
-                        stepSize: 5.0005, // Set a step size suitable for small values
-                        callback: function(value) {
-                            return value.toFixed(5); // Display full decimal precision
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,     // ✅ force whole numbers
+                            stepSize: 1       // ✅ integer increments
                         }
-                    }
 
 
 
@@ -772,16 +792,11 @@
 
               scales: {
                   y: {
-                    beginAtZero: true, 
-                    suggestedMin: 0,   // Ensure small values are visible
-                   // Adjust based on your range
-                    ticks: {
-                        stepSize: 5.0005, // Set a step size suitable for small values
-                        callback: function(value) {
-                            return value.toFixed(5); // Display full decimal precision
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,     // ✅ force whole numbers
+                            stepSize: 1       // ✅ integer increments
                         }
-                    }
-
 
 
                   }
@@ -827,16 +842,10 @@
 
               scales: {
                   y: {
-                    beginAtZero: true, 
-                    suggestedMin: 0,   // Ensure small values are visible
-                     
+                    beginAtZero: true,
                     ticks: {
-                      // autoSkip: false, // Ensure all values are shown
-
-                        stepSize: 5.0005, // Set a step size suitable for small values
-                        callback: function(value) {
-                            return value.toFixed(5); // Display full decimal precision
-                        }
+                        precision: 0,     // ✅ force whole numbers
+                        stepSize: 1       // ✅ integer increments
                     }
 
 
@@ -878,12 +887,11 @@
             },
             scales: {
             y: {
-                beginAtZero: true,
-                suggestedMin: 0,
-                ticks: {
-                stepSize: 5.0005,
-                callback: (v) => Number(v).toFixed(5),
-                },
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,     // ✅ force whole numbers
+                        stepSize: 1       // ✅ integer increments
+                    }
             },
             },
         };
@@ -1010,6 +1018,161 @@
 
 
     @endif
+
+
+
+
+
+
+
+
+
+
+    <div
+    x-data="{ open: @entangle('showGuide') }"
+    x-init="
+        if (open) {
+            // Modal auto-opened for new user
+        }
+    "
+>
+    {{-- Page content here --}}
+
+    {{-- MODAL OVERLAY --}}
+    <div
+        x-show="open"
+        x-transition
+        @keydown.escape.window="open = false; $wire.closeGuide()"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-lg p-6 sm:p-7 space-y-5">
+
+            {{-- Header --}}
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-600 text-xl">
+                        🧭
+                    </span>
+                    <span>Welcome! Let’s get your first project started</span>
+                </h2>
+                <p class="text-sm text-slate-600">
+                    You don’t have any submitted projects yet.  
+                    Follow these 3 quick steps to begin the project review process:
+                </p>
+            </div>
+
+            {{-- HORIZONTAL 3-STEP PROGRESS --}}
+            <div class="flex items-center gap-3">
+                {{-- Step 1 --}}
+                <div class="flex items-center gap-2">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
+                        1
+                    </div>
+                    <span class="text-xs font-medium text-slate-800">
+                        Create Project
+                    </span>
+                </div>
+
+                <div class="flex-1 h-px bg-slate-200"></div>
+
+                {{-- Step 2 --}}
+                <div class="flex items-center gap-2">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
+                        2
+                    </div>
+                    <span class="text-xs font-medium text-slate-800">
+                        Fill Details
+                    </span>
+                </div>
+
+                <div class="flex-1 h-px bg-slate-200"></div>
+
+                {{-- Step 3 --}}
+                <div class="flex items-center gap-2">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
+                        3
+                    </div>
+                    <span class="text-xs font-medium text-slate-800">
+                        Submit for Review
+                    </span>
+                </div>
+            </div>
+
+            {{-- Detailed step descriptions --}}
+            <div class="space-y-4 mt-1">
+                {{-- Step 1 --}}
+                <div class="space-y-1">
+                    <h3 class="text-sm font-semibold text-slate-800">
+                        Step 1: Create your first project
+                    </h3>
+                    <p class="text-sm text-slate-600">
+                        Click the <strong>"Create Project"</strong> button in the top-right corner of the page.
+                    </p>
+                </div>
+
+                {{-- Step 2 --}}
+                <div class="space-y-1">
+                    <h3 class="text-sm font-semibold text-slate-800">
+                        Step 2: Complete the project details
+                    </h3>
+                    <p class="text-sm text-slate-600">
+                        Fill in all required fields such as project name, location, applicant, and RC number
+                        (if already available).
+                    </p>
+                </div>
+
+                {{-- Step 3 --}}
+                <div class="space-y-1">
+                    <h3 class="text-sm font-semibold text-slate-800">
+                        Step 3: Submit the project for admin review
+                    </h3>
+                    <p class="text-sm text-slate-600">
+                        After saving, open the project page and click the <strong>"Submit"</strong> button so
+                        the admin can evaluate and approve it.
+                    </p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-500">
+                Once you’ve created and submitted your first project, this guide will no longer appear.
+            </p>
+
+            {{-- Actions --}}
+            <div class="flex justify-end gap-3 pt-2">
+                <button
+                    type="button"
+                    class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-sm hover:bg-slate-50"
+                    @click="open = false; $wire.closeGuide()"
+                >
+                    Close
+                </button>
+
+                <button
+                    type="button"
+                    class="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
+                    @click="
+                        open = false;
+                        $wire.closeGuide();
+                        window.location.href = '{{ route('project.create') }}';
+                    "
+                >
+                    Take me to Create Project
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
 
 
 </div>

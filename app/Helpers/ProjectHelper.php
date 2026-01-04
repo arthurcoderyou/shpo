@@ -14,20 +14,26 @@ use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Events\Project\ProjectLogEvent;
+use App\Helpers\ProjectReviewerHelpers;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ReviewerReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ReviewerReviewNotificationDB;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
 use App\Notifications\ProjectOpenReviewNotification;
+use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectOpenReviewNotificationDB;
 use App\Notifications\ProjectReviewFollowupNotification;
+use App\Helpers\ActivityLogHelpers\ProjectTimerLogHelper;
 use App\Notifications\ProjectReviewerUpdatedNotification;
 use App\Notifications\ProjectCompleteApprovalNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
+use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
 
 
@@ -411,6 +417,418 @@ class ProjectHelper
         
 
     }
+
+
+    // submit project for rc evaluation 
+    public static function submit_project_for_rc_evaluation($project_id, $override_on_que_submission = false){
+ 
+        // dd($project_id);
+
+ 
+
+        $errors = checkProjectRequirements();
+        $errorMessages = [];
+
+        $authId = Auth::user()->id ?? null;
+
+        foreach ($errors as $key => $error) {
+            if ($error) {
+                switch ($key) {
+                    case 'response_duration':
+                        $errorMessages[] = ProjectTimerLogHelper::getActivityMessage('response_duration',$authId) ;
+                        break;
+                    case 'project_submission_times':
+                        $errorMessages[] =  ProjectTimerLogHelper::getActivityMessage('project_submission_times',$authId);
+                        break;
+                    case 'no_reviewers':
+                        $errorMessages[] = ProjectTimerLogHelper::getActivityMessage('no_reviewers',$authId);
+                        break;
+                    case 'no_document_types':
+                        $errorMessages[] = ProjectTimerLogHelper::getActivityMessage('no_document_types',$authId);
+                        break;
+                }
+            }
+        }
+  
+
+        $projectTimer = ProjectTimer::first();
+        $isProjectSubmissionAllowed = true;
+        $queuedForNextDay = false;
+        $errorMessages = [];
+
+        if ($projectTimer && $projectTimer->project_submission_restrict_by_time) {
+            $currentTime = now();
+            $currentDay = $currentTime->format('l'); // e.g. "Monday"
+
+            // Ensure times are Carbon instances
+            $openTime = Carbon::parse($projectTimer->project_submission_open_time);
+            $closeTime = Carbon::parse($projectTimer->project_submission_close_time);
+
+            // Check if today is active
+            $isDayActive = ActiveDays::where('day', $currentDay)
+                            ->where('is_active', true)
+                            ->exists();
+
+            // Check if within time
+            $isWithinTime = $currentTime->between($openTime, $closeTime);
+
+            // Set flag
+            if (!($isDayActive && $isWithinTime)) {
+                $isProjectSubmissionAllowed = false;
+                $queuedForNextDay = true;
+            }
+        }
+
+        
+
+        $project = Project::find($project_id);
+        
+
+
+        if (!empty($errorMessages)) {
+            $message = 'The project cannot be submitted because: ';
+            $message .= implode(', ', $errorMessages);
+            $message .= '. Please wait for the admin to configure these settings.';
+            // Alert::error('Error', $message);
+
+
+
+
+            // if($project->created_by == Auth::id()){ 
+            //     return redirect()->route('project.index');
+
+            // }else{ 
+
+            //     // return redirect()->route('project.index');
+            //     return ProjectHelper::returnHomeRouteBasedOnProject($project);
+
+
+
+            // }
+
+            return redirect()->route('project.show',['project' => $project->id])
+                ->with('alert.error',$message)
+                ;
+
+
+            
+        }
+
+
+
+        // check if there are existing project reviewers 
+        if(Reviewer::count() == 0){
+            $message = 'Project reviewers are not added yet to the system';
+            // Alert::error('Error','Project reviewers are not added yet to the system');
+
+            // if($project->created_by == Auth::id()){ 
+            //     return redirect()->route('project.index');
+
+            // }else{ 
+
+            //     // return redirect()->route('project.index');
+            //     return ProjectHelper::returnHomeRouteBasedOnProject($project);
+
+            // }
+
+            return redirect()->route('project.show',['project' => $project->id])
+                 ->with('alert.error',$message)
+            ;
+
+
+             
+
+        }
+
+
+         
+
+        
+         
+        $response_time_hours = 0;
+
+        /** Update the response time */
+
+            // Ensure updated_at is after created_at
+            if ( $project->updated_at && now()->greaterThan( $project->updated_at)) {
+                // Calculate time difference in hours
+                // $response_time_hours = $this->project->updated_at->diffInHours(now()); 
+                $response_time_hours = $project->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
+            }
+ 
+        /** ./ Update the response time */
+
+
+        // dd($project);
+
+
+
+        // dd("Projects had been submitted");
+        // dd($project->project_documents);
+
+        $submission_type = "";
+
+        $authId = auth()->user()->id;
+        
+
+        // get the message from the helper 
+        $message = ProjectLogHelper::getActivityMessage('submitted', $project->id, $authId);
+
+        
+        // if override admin que submit is true
+        if($override_on_que_submission){
+
+            // dd("Here");
+            $submission_type = "submission";
+
+
+            // override submit the project 
+            $project->status = "submitted";
+            $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+            
+            $project->updated_at = now();
+            $project->last_submitted_at = now();
+            $project->last_submitted_by = Auth::user()->id;
+            $project->save();
+
+
+            // logging and system notifications
+                $authId = Auth::check() ? Auth::id() : null;
+
+                // get the message from the helper 
+                $message = ProjectLogHelper::getActivityMessage('force-submit', $project->id, $authId);
+
+                // get the route
+                $route = ProjectLogHelper::getRoute('force-submit', $project->id);
+
+                // log the event 
+                event(new ProjectLogEvent(
+                    $message ,
+                    $authId, 
+                    $project->id,
+
+                ));
+        
+                /** send system notifications to users */
+                    
+                    ProjectNotificationHelper::sendSystemNotification(
+                        message: $message,
+                        route: $route 
+                    );
+
+                /** ./ send system notifications to users */
+            // ./ logging and system notifications
+
+            ProjectHelper::updateDocumentsAndAttachments($project);
+
+        }else{
+
+
+           
+
+            // SUBMISSION OF NEW PROJECTS 
+            // if the project is a draft, create the default values
+            if($project->status == "draft"){
+
+                $submission_type = "submission";
+
+
+
+                // check if project submission restriction is on
+                // que the project for submission if the project is on queue
+                if (!$isProjectSubmissionAllowed && $queuedForNextDay) {
+                    // Find the next available active day
+                    $daysOfWeek = [
+                        'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+                    ];
+
+                    $nextAvailableDay = null;
+                    for ($i = 1; $i <= 7; $i++) {
+                        $nextDay = now()->addDays($i)->format('l');
+                        $isNextActive = ActiveDays::where('day', $nextDay)
+                            ->where('is_active', true)
+                            ->exists();
+                        if ($isNextActive) {
+                            $nextAvailableDay = $nextDay;
+                            break;
+                        }
+                    }
+
+                    $formattedOpen = Carbon::parse($projectTimer->project_submission_open_time)->format('h:i A');
+                    $formattedClose = Carbon::parse($projectTimer->project_submission_close_time)->format('h:i A');
+
+                    $message = "Project submission is currently restricted. Your project has been queued and will be submitted automatically on $nextAvailableDay between $formattedOpen and $formattedClose.";
+
+
+                    // dd("Timer detectected");
+
+                    // update project info
+                    $project->status = "on_que";
+                    $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                    
+                    $project->updated_at = now();
+                    $project->last_submitted_at = now();
+                    $project->last_submitted_by = Auth::user()->id;
+                    $project->save();
+
+                    ProjectHelper::updateDocumentsAndAttachments($project);
+
+
+                    // Alert::info('Project Notice',$message);
+
+                    
+
+                    // logging and system notifications
+                        $authId = Auth::check() ? Auth::id() : null;
+
+                        // get the message from the helper 
+                        $message = ProjectLogHelper::getActivityMessage('on-que', $project->id, $authId);
+
+                        // get the route
+                        $route = ProjectLogHelper::getRoute('on-que', $project->id);
+
+                        // log the event 
+                        event(new ProjectLogEvent(
+                            $message ,
+                            $authId, 
+                            $project->id,
+
+                        ));
+                
+                        /** send system notifications to users */
+                            
+                            ProjectNotificationHelper::sendSystemNotification(
+                                message: $message,
+                                route: $route 
+                            );
+
+                        /** ./ send system notifications to users */
+                    // ./ logging and system notifications
+
+
+
+                    // return ProjectHelper::returnHomeRouteBasedOnProject($project);
+
+                    return redirect()->route('project.show',[
+                        'project' => $project->id,
+                    ])
+                    ->with('alert.info',$message)
+                    ;
+
+                }else{
+
+                    // dd("Timer not detectected");
+
+                    // else, submit normally
+                    $project->status = "submitted";
+                    $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                    
+                    $project->updated_at = now();
+                    $project->last_submitted_at = now();
+                    $project->last_submitted_by = Auth::user()->id;
+                    $project->save();
+
+
+                    ProjectHelper::updateDocumentsAndAttachments($project);
+
+                }
+
+    
+                
+                // ProjectHelper::setProjectReviewers($project,$submission_type);
+
+                // $reviewer = $project->getNextReviewer();
+
+                // ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
+
+             
+            } 
+
+        
+        
+        }
+
+        // dd("Passed all");
+        
+
+        $submission_type = "initial_submission";
+
+ 
+        ProjectReviewerHelpers::setProjectReviewer($project,$submission_type);
+ 
+
+        
+
+        // when override submission, use the project creator 
+        if($override_on_que_submission){
+            $authId = $project->created_by;
+        }
+        // if($submission_type = "submission")
+        try {
+            event(new \App\Events\Project\Submitted($project->id,$authId ,true,true));
+        } catch (\Throwable $e) {
+            // Log the error without interrupting the flow
+            Log::error('Failed to dispatch Submitted event: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+            
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // // get the message from the helper 
+            // $message = ProjectLogHelper::getActivityMessage('on-que', $project->id, $authId);
+
+            // // get the route
+            $route = ProjectLogHelper::getRoute('submitted', $project->id);
+
+            // log the event 
+            event(new ProjectLogEvent(
+                $message ,
+                $authId, 
+                $project->id,
+
+            ));
+    
+            /** send system notifications to users */
+                
+                ProjectNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+        // send notification to the current reviewer
+        ProjectReviewerHelpers::sendProjectReviewNotificationToReviewer($project,$submission_type,$override_on_que_submission );
+
+
+        // Alert::success('Success','Project submitted successfully');
+
+        // if($project->created_by == $authId){
+        //     return redirect()->route('project.index');
+            
+        // }else{
+        //     // return redirect()->route('project.index');
+        //     return ProjectHelper::returnHomeRouteBasedOnProject($project);
+        // } 
+
+
+
+        return redirect()->route('project.show',[
+            'project' => $project->id,
+        ])
+        ->with('alert.success',$message);
+        ;
+            
+        
+
+    }
+
 
 
 
@@ -875,14 +1293,14 @@ class ProjectHelper
 
 
         }
-
-
-        
  
 
 
-
     }
+
+ 
+
+
 
 
 
@@ -2174,46 +2592,140 @@ class ProjectHelper
 
 
     // return home route for Livewire classes
-    public static function returnHomeProjectRoute(Project $project = null){
-
-        if(!empty($project)){
-             
-            if($project->created_by == Auth::user()->id && Auth::user()->can('project list view')){
-
-                return route('project.index');
-            }elseif(Auth::user()->can('project list view all') || Auth::user()->can('system access global admin')){
-                return route('project.index.all');
-            }elseif(Auth::user()->can('project list view all no drafts')){
-                return route('project.index.all.no-drafts');
-            }else{
-                return route('dashboard');
-            }  
-        }else{
-            if(Auth::user()->can('project list view all') || Auth::user()->can('system access global admin')){
-                return route('project.index.all');
-            }elseif(Auth::user()->can('project list view all no drafts')){
-                return route('project.index.all.no-drafts');
-            } elseif(Auth::user()->can('project list view')){ // for pure users only
-                return route('project.index');
-            }else{
-                return route('dashboard');
-            }  
-        } 
+    // return home route for Livewire classes
+    public static function returnHomeProjectRoute(?Project $project = null, array $params = []): string
+    {
+        $user = Auth::user();
 
 
+        //  dd($project);
 
+        // If we have a project and caller didn't explicitly set 'project',
+        // add it as an optional parameter (will become a query string if
+        // the route doesn't have {project} in the URI).
+        // if ($project && ! array_key_exists('project', $params)) {
+        //     $params['project'] = $project->id;
+        // }
+
+
+        // dd($params['project']);
+
+
+        // Decide which route name to use
+        if ($project) {
+
+            // dd($project);
+
+            if ($project->created_by == $user->id && $user->can('project list view')) {
+                // dd(1);
+                $routeName = 'project.index';
+
+            } elseif ($user->can('project list view all') || $user->can('system access global admin')) {
+                // dd(2);
+                $routeName = 'project.index.all';
+
+            } elseif ($user->can('project list view all no drafts')) {
+                // dd(3);
+                $routeName = 'project.index.all.no-drafts';
+
+            } else {
+                // dd(vars: 4);
+                $routeName = 'dashboard';
+            }
+
+        } else {
+
+            if ($user->can('project list view all') || $user->can('system access global admin')) {
+
+                $routeName = 'project.index.all';
+
+            } elseif ($user->can('project list view all no drafts')) {
+
+                $routeName = 'project.index.all.no-drafts';
+
+            } elseif ($user->can('project list view')) { // for pure users only
+
+                $routeName = 'project.index';
+
+            } else {
+
+                $routeName = 'dashboard';
+            }
+        }
+
+        return route($routeName, $params);
     }
 
 
 
 
+     // return home route for Livewire classes
+    // return home route for Livewire classes
+    public static function returnHomeProjectRouteFromId(int $projectId, array $params = []): string
+    {
+        $user = Auth::user();
+        $project = Project::find($projectId);
+
+        //  dd($project);
+
+        // If we have a project and caller didn't explicitly set 'project',
+        // add it as an optional parameter (will become a query string if
+        // the route doesn't have {project} in the URI).
+        // if ($project && ! array_key_exists('project', $params)) {
+        //     $params['project'] = $project->id;
+        // }
 
 
-    public static function open_review_project($project_id){
+        // dd($params['project']);
 
-        return redirect()->route('project.review',['project' => $project_id]);
 
+        // Decide which route name to use
+        if ($project) {
+
+            // dd($project);
+
+            if ($project->created_by == $user->id && $user->can('project list view')) {
+                // dd(1);
+                $routeName = 'project.index';
+
+            } elseif ($user->can('project list view all') || $user->can('system access global admin')) {
+                // dd(2);
+                $routeName = 'project.index.all';
+
+            } elseif ($user->can('project list view all no drafts')) {
+                // dd(3);
+                $routeName = 'project.index.all.no-drafts';
+
+            } else {
+                // dd(vars: 4);
+                $routeName = 'dashboard';
+            }
+
+        } else {
+
+            if ($user->can('project list view all') || $user->can('system access global admin')) {
+
+                $routeName = 'project.index.all';
+
+            } elseif ($user->can('project list view all no drafts')) {
+
+                $routeName = 'project.index.all.no-drafts';
+
+            } elseif ($user->can('project list view')) { // for pure users only
+
+                $routeName = 'project.index';
+
+            } else {
+
+                $routeName = 'dashboard';
+            }
+        }
+
+        return route($routeName, $params);
     }
+
+
+  
 
 
 
@@ -2496,6 +3008,37 @@ class ProjectHelper
 
 
 
+
+        // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = ProjectLogHelper::getActivityMessage('deleted', $project->id, $authId);
+
+            // get the route
+            $route = ProjectLogHelper::getRoute('deleted', $project->id);
+
+            // log the event 
+            event(new ProjectLogEvent(
+                $message ,
+                $authId, 
+                // $project->id ?? null,
+
+            ));
+    
+            /** send system notifications to users */
+                
+                ProjectNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                );
+
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+
         $project->delete();
 
 
@@ -2508,7 +3051,7 @@ class ProjectHelper
 
 
 
-        Alert::success('Success','Project deleted successfully');
+        // Alert::success('Success','Project deleted successfully');
         // return redirect()->route('project.index');
 
         // if($project->created_by == auth()->user()->id){
@@ -2519,10 +3062,16 @@ class ProjectHelper
         //     return redirect()->route('project.index');
         // }
 
+
+ 
+
+
         // return ProjectHelper::returnHomeRouteBasedOnProject($project);
         $route = ProjectHelper::returnHomeProjectRoute($project);
 
-        return redirect($route); 
+        return redirect($route)
+            ->with('alert.success',$message)
+        ; 
 
 
  
@@ -2530,4 +3079,197 @@ class ProjectHelper
     }
 
 
+    public static function open_review_project(int $project_id, ?string $url = null)
+    {
+        // Load the project document or fail cleanly
+        $project = Project::findOrFail($project_id);
+
+        // Get the current authenticated user
+        $userId = Auth::id();
+
+        // Create/open the review session for this user
+        ProjectHelper::createReviewSession($project->id, $userId);
+ 
+        // If a custom URL is provided, use it
+        if (!empty($url)) {
+            // you can use redirect()->to() if $url is a full URL
+            return redirect()->to($url);
+            // or if $url is a named route, use:
+            // return redirect()->route($url);
+        }
+
+        // Alert::success('Success','Project review claimed successfully');
+        $message = 'Project review claimed successfully';
+
+        
+
+         // logging and system notifications
+            $authId = Auth::check() ? Auth::id() : null;
+
+            // get the message from the helper 
+            $message = ProjectLogHelper::getActivityMessage('open-review-claimed', $project->id, $authId);
+
+            // get the route
+            $route = ProjectLogHelper::getRoute('open-review-claimed', $project->id);
+
+            // log the event 
+            event(new ProjectLogEvent(
+                $message ,
+                $authId, 
+                $project->id,
+
+            ));
+    
+            /** send system notifications to users */
+                
+                ProjectNotificationHelper::sendSystemNotification(
+                    message: $message,
+                    route: $route 
+                ); 
+
+
+            /** ./ send system notifications to users */
+
+            // send system notification to the project creator
+                // this is to notify the user that his project is now under review
+                $customIds = [];
+                $customIds[] = $project->created_by;
+
+                // get the message from the helper 
+                $message = ProjectLogHelper::getActivityMessage('your-open-review-claimed', $project->id, $authId);
+
+                // get the route
+                $route = ProjectLogHelper::getRoute('your-open-review-claimed', $project->id);
+
+
+                ProjectNotificationHelper::sendSystemNotificationCustomIds(
+                    message: $message,
+                    route: $route,
+                    customIds: $customIds
+                );
+
+
+
+            // ./ send system notification to the project creator
+
+        // ./ logging and system notifications
+
+
+
+
+
+
+        // Default redirect to the project document review route
+        return redirect()->route('project.review',['project' => $project->id])
+        ->with('alert.success',$message)
+        ;
+    }
+
+
+   /**
+     * Create a session key for an accepted review.
+     *
+     * @param  int|string  $project_id
+     * @param  int|null    $userId
+     * @return void
+     */
+    public static function createReviewSession($project_id, $userId = null)
+    {
+        $userId = $userId ?? Auth::id();
+
+        if (!$userId) {
+            throw new Exception('User must be authenticated to create review session.');
+        }
+
+        $key = "project.review.accepted.$project_id";
+
+        $hash = hash('sha256', "accepted_by_{$userId}");
+
+        session([
+            $key => [
+                'user_id' => $userId,
+                'hash'    => $hash,
+                'time'    => now()->toDateTimeString(),
+            ],
+        ]);
+    }
+
+
+
+    /**
+     * Verify and clear the session for a review.
+     *
+     * @param  int|string  $project_id
+     * @param  int|null    $userId
+     * @param  int         $expiryMinutes  (optional) time validity in minutes
+     * @return bool
+     */
+    public static function verifyAndClearReviewSession($project_id, $userId = null, $expiryMinutes = 10)
+    {
+        $userId = $userId ?? Auth::id();
+        $key = "project.review.accepted.$project_id";
+        $data = session($key);
+
+        // Always clear after attempting to use it
+        session()->forget($key);
+
+        if (!$data) {
+            return false;
+        }
+
+        // Check expiry
+        $created = Carbon::parse($data['time']);
+        if ($created->diffInMinutes(now()) > $expiryMinutes) {
+            return false; // expired
+        }
+
+        // Validate hash
+        $expected = hash('sha256', "accepted_by_{$userId}");
+        if (!hash_equals($expected, $data['hash'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+
+     /** Project Submission restriction  */
+    public static function checkProjectDocumentRequirements()
+    {
+         
+        $projectTimer = ProjectTimer::first();
+
+        // DocumentTypes that don't have any reviewers
+        $documentTypesWithoutReviewers = DocumentType::whereDoesntHave('reviewers')->pluck('name')->toArray();
+
+
+        // dd( $documentTypesWithoutReviewers);
+
+        // Check if all document types have at least one reviewer
+        $allDocumentTypesHaveReviewers = empty($documentTypesWithoutReviewers);
+
+        // Check if there are reviewers by type
+        // $hasInitialReviewers = Reviewer::where('reviewer_type', 'initial')->exists();
+        // $hasFinalReviewers = Reviewer::where('reviewer_type', 'final')->exists(); 
+        return [
+            'response_duration' => !$projectTimer || (
+                !$projectTimer->submitter_response_duration_type ||
+                !$projectTimer->submitter_response_duration ||
+                !$projectTimer->reviewer_response_duration ||
+                !$projectTimer->reviewer_response_duration_type
+            ),
+            'project_submission_times' => !$projectTimer || (
+                !$projectTimer->project_submission_open_time ||
+                !$projectTimer->project_submission_close_time ||
+                !$projectTimer->message_on_open_close_time
+            ),
+            'no_reviewers' => Reviewer::count() === 0,
+            'no_document_types' => DocumentType::count() === 0, // Add a new error condition
+            'document_types_missing_reviewers' => !$allDocumentTypesHaveReviewers,
+            'documentTypesWithoutReviewers' => $documentTypesWithoutReviewers,
+            // 'no_initial_reviewers' => !$hasInitialReviewers,
+            // 'no_final_reviewers' => !$hasFinalReviewers,
+        ];
+    } 
 }

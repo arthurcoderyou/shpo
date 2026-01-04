@@ -1,5 +1,5 @@
 <!-- Table Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
     {{-- <!-- Loading for list -->
     <div wire:loading style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">

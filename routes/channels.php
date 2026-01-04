@@ -3,109 +3,28 @@
 use Illuminate\Support\Facades\Broadcast;
 use App\Models\Project;
 
-Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
-});
-
-
 Broadcast::channel('project.discussions.global', function ($user) {
     // return $user->hasRole(['Admin', 'DSI God Admin']) ||
     //        $user->reviewed_projects()->exists() ||
     //        $user->created_projects()->exists();
 
 
-    return $user->hasAnyPermission(['system access global admin', 'system access user', 'system access reviewer','system access user']);
-
-});
-
-// users channel
-Broadcast::channel('users', function ($user) {
-    return $user->hasPermissionTo('user list view') || $user->hasPermissionTo('system access global admin');
-});
-
-// roles channel
-Broadcast::channel('roles', function ($user) {
-    return $user->hasPermissionTo('role list view') || $user->hasPermissionTo('system access global admin');
-});
-
-// permissions channel
-Broadcast::channel('permissions', function ($user) {
-    return $user->hasPermissionTo('permission list view') || $user->hasPermissionTo('system access global admin');
-});
-
-
-
-Broadcast::channel('project.timer', function ($user) {
-    // return $user->hasAnyPermission(['system access global admin']) ||
-    //        $user->reviewed_projects()->exists() ||
-    //        $user->created_projects()->exists();
-
-
-    return $user->hasAnyPermission(['system access global admin', 'timer list view']);
+    return $user->hasAnyPermission(['system access global admin', 'system access admin', 'system access reviewer','system access user']);
 
 });
 
 
-Broadcast::channel('activitylog', function ($user) { 
-    
-    return Auth::check();
-
-});
-
-Broadcast::channel('document.type', function ($user) {
-    return $user && $user->hasAnyPermission([
-        'system access global admin',
-        'document type list view'
-    ]);
-});
-
-Broadcast::channel('reviewer', function ($user) { 
-    
-    return $user->hasAnyPermission(['system access global admin', 'reviewer list view']);
-
-});
-
-Broadcast::channel('project', function ($project) { 
-    
-    return Auth::check();
-
-});
-
-Broadcast::channel('project_document', function ($project) { 
-    
-    return Auth::check();
-
-});
-Broadcast::channel('project_attachment', function ($project) { 
-    
-    return Auth::check();
-
-});
-
-Broadcast::channel('project_reviewer', function ($project) { 
-    
-    return Auth::check();
-
-});
-
-Broadcast::channel('project_subscriber', function ($review) { 
-    
-    return Auth::check();
-
-});
-
-Broadcast::channel('review', function ($review) { 
-    
-    return Auth::check();
-
-});
-
-
-// Broadcast::channel('notifications', function ($review) { 
-    
+// Broadcast::channel('projects', function ($project) {
+  
+//     // return $user->hasAnyPermission(['system access global admin', 'system access admin', 'system access reviewer','system access user']);
 //     return Auth::check();
-
 // });
+
+
+
+
+
+ 
 Broadcast::channel('notifications.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
@@ -116,22 +35,141 @@ Broadcast::channel('project-document-submitted.{userId}', function ($user, $user
     return (int) $user->id === (int) $userId;
 });
 
-
-
-Broadcast::channel('project-document', function ($review) { 
-    
-    return Auth::check();
-
-});
+ 
 
 Broadcast::channel('attachment.{authId}', function ($user, int $authId) {
     return (int) $user->id === (int) $authId;
 });
+ 
 
 
-Broadcast::channel('attachments', function ($attachment) { 
-    
-    return Auth::check();
-
+Broadcast::channel('system.{id}', function ($user, $id) {
+    // Only allow the user with this id to listen on this channel
+    return (int) $user->id === (int) $id;
 });
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+/** @channel permission channel */
+    // model wide
+    Broadcast::channel('permission', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('permission.{modelId}', function ($user, $modelId) {
+        
+        return Auth::check();
+    }); 
+/** @channel ./ permission channel */
+ 
+
+
+/** @channel user channel */
+    // model wide
+    Broadcast::channel('user', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('user.{modelId}', function ($user, $modelId) {
+        return Auth::check();
+    });
+/** @channel ./ user channel */
+
+/** @channel role channel */
+    // model wide
+    Broadcast::channel('role', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('role.{modelId}', function ($user, $modelId) {
+        return Auth::check();
+    });
+    
+/** @channel ./ role channel */
+
+/** @channel document_type */
+    // model wide
+    Broadcast::channel('document_type', function ($userr) { 
+        return Auth::check();
+    });
+
+/** @channel ./ document_type */
+
+
+
+/** @channel project channel */
+    // model wide
+    Broadcast::channel('project', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('project.{modelId}', function ($user, $modelId) {
+        return Auth::check();
+    });
+    
+/** @channel ./ project channel */
+
+/** @channel project_document channel */
+    // model wide
+    Broadcast::channel('project_document', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('project_document.{modelId}', function ($user, $modelId) {
+        return Auth::check();
+    });
+    
+/** @channel ./ project_document channel */
+
+
+/** @channel project_timer channel */
+    // model wide
+    Broadcast::channel('project_timer', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('project_timer.{modelId}', function ($user, $modelId) {
+        return Auth::check();
+    });
+    
+/** @channel ./ project_timer channel */
+
+ 
+/** @channel reviewer channel */
+    // model wide
+    Broadcast::channel('reviewer', function ($user) {
+        return Auth::check();
+    });
+
+    // instance specific
+    Broadcast::channel('reviewer.{modelId}', function ($user, $modelId) {
+        return Auth::check();
+    });
+    
+/** @channel ./ reviewer channel */
+ 
+
+
+
+
+
+
+
 

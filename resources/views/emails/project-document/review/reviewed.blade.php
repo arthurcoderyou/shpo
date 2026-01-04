@@ -24,7 +24,7 @@
 {{ $resubmitRequirements }}
 @endif
 
-@if(!empty($hasNextUnapproved) && $hasNextUnapproved)
+@if(!empty($hasNextUnapproved) && $hasNextUnapproved && empty($resubmitRequirements))
 @component('mail::panel')
 **Next Step:** Waiting on next reviewer:  
 **{{ $nextReviewerName ?? 'Open Reviewer' }}**  

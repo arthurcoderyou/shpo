@@ -350,7 +350,7 @@
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Reviewer</th>
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Review</th>
           <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600">Roles</th>
-          <th class="w-24 px-4 py-2"></th>
+          {{-- <th class="w-24 px-4 py-2"></th> --}}
         </tr>
       </thead>
 
@@ -424,7 +424,7 @@
 
             data-uid="{{ $row['row_uid'] }}"
             
-            draggable="true"
+            draggable="false"
             @dragstart="start($event, '{{ $row['row_uid'] }}')"
             @dragover="over($event)"
             @drop="drop($event, '{{ $row['row_uid'] }}')"
@@ -526,9 +526,7 @@
               </div>
             </td>
 
-            <td class="px-4 py-2 text-right">
-
-                 {{-- Check if there are exisitng reviews as well--}}
+            {{-- <td class="px-4 py-2 text-right"> 
                 @php 
                    
                     $review_count = App\Models\Review::returnReviewCount($row['project_reviewer_id']);
@@ -543,7 +541,7 @@
                     <span class="px-2 py-1 text-sm rounded-md  font-bold bg-gray-50 ">Locked</span>
                 @endif 
 
-            </td>
+            </td> --}}
           </tr>
         @empty
           <tr>

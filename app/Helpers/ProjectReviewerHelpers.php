@@ -1,6 +1,5 @@
 <?php 
 namespace App\Helpers;
-use App\Events\ProjectDocument\ReReview\ReReviewRequest;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Review;
@@ -13,6 +12,7 @@ use App\Models\DocumentType;
 use App\Models\ProjectTimer;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -27,16 +27,18 @@ use App\Events\ProjectDocument\Review\ReviewRequest;
 use App\Notifications\ProjectOpenReviewNotification;
 use App\Notifications\ProjectSubscribersNotification;
 use App\Notifications\ProjectOpenReviewNotificationDB;
+use App\Events\ProjectReviewer\ProjectReviewerLogEvent;
+use App\Events\ProjectDocument\ReReview\ReReviewRequest;
 use App\Events\ProjectDocument\Review\OpenReviewRequest;
 use App\Notifications\ProjectReviewFollowupNotification;
 use App\Notifications\ProjectReviewerUpdatedNotification;
 use App\Notifications\ProjectCompleteApprovalNotification;
 use App\Notifications\ProjectReviewFollowupNotificationDB;
 use App\Notifications\ProjectReviewerUpdatedNotificationDB;
-use App\Events\ProjectDocument\Review\FollowupReviewRequest;
-use App\Notifications\ProjectDocumentCompleteApprovalNotification;
  
-use Illuminate\Support\Collection;
+use App\Events\ProjectDocument\Review\FollowupReviewRequest;
+use App\Helpers\ActivityLogHelpers\ProjectReviewerLogHelper;
+use App\Notifications\ProjectDocumentCompleteApprovalNotification;
 
 class ProjectReviewerHelpers
 {
@@ -50,6 +52,8 @@ class ProjectReviewerHelpers
      */
     public static function setProjectDocumentReviewers(ProjectDocument $project_document, string $submission_type = 'initial_submission'): void
     {
+        $project = Project::find($project_document->project_id);
+        // dd($project);
 
         $auth_user_id = Auth::id() ?? $project_document->created_by;
         // Normalize submission type
@@ -75,13 +79,29 @@ class ProjectReviewerHelpers
             return;
         }
 
-        DB::transaction(function () use ($reviewers, $project_document, $submission_type,$auth_user_id) {
+        $firstProjectReview = $projectReviews = Review::whereNotNull('project_id')   // project review exists
+            ->where('project_id',$project->id)
+            ->whereNull('project_document_id')                // ensure NOT tied to project_document
+            ->first();
+
+
+        // dd($firstProjectReview);
+
+       
+
+
+
+
+
+        DB::transaction(function () use ($reviewers, $project_document, $submission_type,$auth_user_id, $project, $firstProjectReview) {
             foreach ($reviewers as $reviewer) {
                 // Keys that must be unique
                 $unique = [
                     'project_id'          => (int) $project_document->project_id,
                     'project_document_id' => (int) $project_document->id,
                     'order'               => (int) $reviewer->order,
+                    // 'slot_type'               => (string) $reviewer->slot_type,
+                    // 'user_id'               => (int) $reviewer->user_id,
                 ];
 
                 // Values to set on create
@@ -100,14 +120,17 @@ class ProjectReviewerHelpers
                 // Values to update (only for supplemental or if the row already exists)
                 // You can decide what should be mutable on supplemental—below we refresh
                 // the templated fields in case the template changed.
-                $update = [
-                    'user_id'    => $reviewer->user_id ?? null,
+                $update = [ 
                     'slot_type'  => $reviewer->slot_type ?? null,
                     'slot_role'  => $reviewer->slot_role ?? null,
                     'period_value'      => $reviewer->period_value ?? null,
                     'period_unit'      => $reviewer->period_unit ?? null,
                     'updated_by' => Auth::id() ?? $auth_user_id,
                 ];
+
+                if (($pr->slot_type ?? null) !== 'open') {
+                    $update['user_id'] = $reviewer->user_id ?? null;
+                }
 
                 if ($submission_type === 'initial_submission') {
                     // Create if missing; do NOT touch existing (prevents clobbering state)
@@ -122,6 +145,64 @@ class ProjectReviewerHelpers
                     $pr->save();
                 }
             }
+
+
+
+
+            if(!empty($project->rc_number) && !empty($firstProjectReview)){
+
+                $project_document->rc_number = $project->rc_number;
+                $project_document->save();
+
+                $firstProjectDocumentReviewer = ProjectReviewer::where('project_document_id', $project_document->id)
+                    ->where('project_id', $project->id)
+                    ->first();
+                $firstProjectDocumentReviewer->review_status = "reviewed";
+                $firstProjectDocumentReviewer->save();
+
+
+                // generated the review 
+                //add review
+                $review = new Review();
+                // $review->project_review = $this->project_review;
+                $review->project_review = $firstProjectReview->project_review;
+                $review->project_id = $project_document->project_id;
+                $review->project_document_id = $project_document->id;
+                $review->project_document_status = $project_document->status;
+                $review->project_reviewer_id = $firstProjectDocumentReviewer->id ;
+                $review->reviewer_id = Auth::user()->id;
+
+
+                /** Update the review time */
+                    /**
+                     * Review Time is now based on last_submitted_at of the project
+                     * 
+                     * last_reviewed_at
+                     * 
+                     */
+
+                    // Ensure updated_at is after created_at
+                    if ($project_document->updated_at && now()->greaterThan($project_document->updated_at)) {
+                        // Calculate time difference in hours
+                        // $review->review_time_hours = $project_document->updated_at->diffInHours(now()); 
+                        $review->review_time_hours = $project_document->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
+                    }
+        
+                /** ./ Update the review time */ 
+                
+                $review->review_status = "reviewed"; 
+
+
+                $review->created_by = Auth::user()->id;
+                $review->updated_by = Auth::user()->id;
+                $review->created_at = now();
+                $review->updated_at = now();
+                $review->save();
+
+
+            }
+
+
 
             // After seeding/ensuring rows, align the "current" reviewer pointers.
             // This keeps your original behavior.
@@ -255,6 +336,328 @@ class ProjectReviewerHelpers
 
 
 
+    /**
+     * Summary of sendProjectReviewNotificationToReviewer
+     * @param \App\Models\Project $project
+     * @param string $submission_type
+     * @return void
+     * initial_submission           - first submission of document submitter
+     * supplemental_submission      - supplemental submission of document submitter after updating the project
+     * reviewer_submission          - reviewer submission that is event based on after review on the document by the reviewer 
+     */
+    public static function sendProjectReviewNotificationToReviewer(Project $project, string $submission_type = 'initial_submission', $override_on_que_submission = false){
+
+        // get the current reviewer of the document 
+        $current_reviewer =     $project->getCurrentReviewer();
+
+        $auth_user_id = Auth::user()->id ?? $project->created_by;
+
+        if($override_on_que_submission){
+            $auth_user_id = 0; // we have made this into 0 to override and to not , not include the current auth user that had override the force submission of hte project 
+        }
+
+
+        // check if there are still project reviewers 
+        if( !empty($current_reviewer) ){
+            $slot_type = $current_reviewer->slot_type; 
+
+
+            if($submission_type == "initial_submission" || $submission_type == "reviewer_submission"){
+
+            
+                switch($slot_type){
+
+                    case "person":  
+
+                        try {
+                        event(new  \App\Events\Project\Review\ReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
+                        } catch (\Throwable $e) {
+                            // Log the error without interrupting the flow
+                            Log::error('Failed to dispatch ReviewRequest event: ' . $e->getMessage(), [
+                                'project_reviewer_id' => $current_reviewer->id,
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                        }
+                        
+                        break;
+                    case "open":
+
+                       // Get admin IDs (users with system access admin)
+                        $adminIds = User::permission('system access admin')
+                            ->pluck('id')
+                            ->filter() // remove null
+                            ->map(fn ($id) => (int) $id)
+                            ->reject(fn ($id) => $id === (int) $auth_user_id) // remove actor
+                            ->unique()
+                            ->values();
+
+                        // dd($adminIds);
+            
+
+                        if ($adminIds->isEmpty()) {
+                        // dd("Here");
+                            Log::info('No admin recipients for OpenReviewRequest.', [
+                                'project_reviewer_id' => $current_reviewer->id,
+                                'project_document_id' => $current_reviewer->project_document_id,
+                            ]);
+                        } else {
+                            // dd("Array Here");
+                            foreach ($adminIds as $userId) {
+                                try {
+                                    event(new \App\Events\Project\Review\OpenReviewRequest(
+                                        $current_reviewer->id, // project_reviewer_id
+                                        $userId,               // recipient user id
+                                        $userId, // also the authenticated user that will be logged for the open review request 
+                                        true,                  // send email
+                                        true                   // send broadcast
+                                    ));
+                                } catch (\Throwable $e) {
+                                    Log::error('Failed to dispatch OpenReviewRequest event.', [
+                                        'error'                 => $e->getMessage(),
+                                        'project_reviewer_id'   => $current_reviewer->id,
+                                        'recipient_user_id'     => $userId,
+                                        'actor_user_id'         => Auth::id(),
+                                        'trace'                 => $e->getTraceAsString(),
+                                    ]);
+                                }
+                            }
+                        }
+
+                        
+                        break;
+                    default: 
+                        
+                        break;
+                }
+            }else{ // string $submission_type = 'suplemental_submission'
+                
+                try {
+                event(new FollowupReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
+                } catch (\Throwable $e) {
+                    // Log the error without interrupting the flow
+                    Log::error('Failed to dispatch FollowupReviewRequest event: ' . $e->getMessage(), [
+                        'project_reviewer_id' => $current_reviewer->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+
+
+            }
+
+
+
+        }else{
+
+            // update project document  
+            $project->status = "reviewed";
+            $project->save();
+        }
+        
+        // send project approval updates for creators and project subscribers if the project is approved 
+        // if($project->status == "approved"){
+        //     ProjectDocumentHelpers::sendCompleteProjectDocumentApprovalNotification($project_document);
+        // }
+ 
+
+
+    }
+
+
+
+
+    /**
+     * Summary of sendProjectReviewNotification
+     * @param \App\Models\Project $project
+     * @param string $submission_type
+     * @return void
+     * initial_submission           - first submission of document submitter
+     * supplemental_submission      - supplemental submission of document submitter after updating the project
+     * reviewer_submission          - reviewer submission that is event based on after review on the document by the reviewer 
+     */
+    public static function sendProjectReviewNotification(Project $project, string $submission_type = 'initial_submission'){
+
+        // get the current reviewer of the project 
+        $current_reviewer =     $project->getCurrentReviewer();
+
+        $auth_user_id = Auth::user()->id ?? $current_reviewer->user_id;
+
+
+        // check if there are reviewer
+        if( !empty($current_reviewer) ){
+            $slot_type = $current_reviewer->slot_type; 
+
+
+            if($submission_type == "initial_submission" || $submission_type == "reviewer_submission"){
+
+            
+                switch($slot_type){
+
+                    case "person":  
+
+                        try {
+                        event(new ReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
+                        } catch (\Throwable $e) {
+                            // Log the error without interrupting the flow
+                            Log::error('Failed to dispatch ReviewRequest event: ' . $e->getMessage(), [
+                                'project_reviewer_id' => $current_reviewer->id,
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                        }
+                        
+                        break;
+                    case "open":
+
+                        // Fetch admin IDs for this document
+                        $rawAdminIds = ProjectReviewerHelpers::getNotificationRecipientUserIds(
+                            'admins',
+                            $current_reviewer->project_document_id
+                        ) ?? [];
+
+                        // Normalize -> integers, remove null/empty, dedupe, skip current actor
+                        $adminIds = collect(is_array($rawAdminIds) ? $rawAdminIds : [$rawAdminIds])
+                            ->filter()                                     // drop null/empty
+                            ->map(fn ($id) => (int) $id)
+                            ->unique()
+                            ->reject(fn ($id) => $id === (int) Auth::id()) // don't notify the actor
+                            ->values();
+
+                        if ($adminIds->isEmpty()) {
+                            Log::info('No admin recipients for OpenReviewRequest.', [
+                                'project_reviewer_id' => $current_reviewer->id,
+                                'project_document_id' => $current_reviewer->project_document_id,
+                            ]);
+                        } else {
+                            foreach ($adminIds as $userId) {
+                                try {
+                                    event(new OpenReviewRequest(
+                                        $current_reviewer->id, // project_reviewer_id
+                                        $userId,               // recipient user id
+                                        $auth_user_id,
+                                        true,                  // send email
+                                        true                   // send broadcast
+                                    ));
+                                } catch (\Throwable $e) {
+                                    Log::error('Failed to dispatch OpenReviewRequest event.', [
+                                        'error'                 => $e->getMessage(),
+                                        'project_reviewer_id'   => $current_reviewer->id,
+                                        'recipient_user_id'     => $userId,
+                                        'actor_user_id'         => Auth::id(),
+                                        'trace'                 => $e->getTraceAsString(),
+                                    ]);
+                                }
+                            }
+                        }
+
+                        
+                        break;
+                    default: 
+                        
+                        break;
+                }
+            }else{ // string $submission_type = 'suplemental_submission'
+                
+                try {
+                event(new FollowupReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
+                } catch (\Throwable $e) {
+                    // Log the error without interrupting the flow
+                    Log::error('Failed to dispatch FollowupReviewRequest event: ' . $e->getMessage(), [
+                        'project_reviewer_id' => $current_reviewer->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+
+
+            }
+
+
+
+        }else{
+
+            // update project document  
+            $project_document->status = "approved";
+            $project_document->save();
+        }
+        
+        // send project approval updates for creators and project subscribers if the project is approved 
+        if($project_document->status == "approved"){
+            ProjectDocumentHelpers::sendCompleteProjectDocumentApprovalNotification($project_document);
+        }
+ 
+
+
+    }
+
+
+
+
+
+
+
+
+    public static function setProjectReviewer(Project $project,  $submission_type){
+
+        if($submission_type == "initial_submission"){ // first time submission
+
+            // set the initial reviewers 
+                 
+                $project_reviewer = ProjectReviewer::create([
+                    'order' => 1,
+                    'status' => true,
+                    'review_status' => 'pending',
+                    'project_id' => $project->id,
+                    'user_id' =>  null,
+                    'created_by' => $project->created_by ?? auth()->id(),
+                    'updated_by' => $project->created_by ?? auth()->id(),  
+                    'slot_type'    => 'open',   
+                    'slot_role'    => 'admin',  
+                    'period_value' => 1,
+                    'period_unit'  => 'day', 
+                ]); 
+
+
+                // NO NEED TO NOTIFY AND LOG HERE BECAUSE IT IS ALREADY LOGGED DURING THE EVENTS 
+                // // logging and system notifications
+                //     $authId = $project->created_by ?? auth()->id(); 
+
+                //     // get the message from the helper 
+                //     $message = ProjectReviewerLogHelper::getActivityMessage('created', $project_reviewer->id, $authId);
+
+                //     // get the route
+                //     $route = ProjectReviewerLogHelper::getRoute('created', $project->id);
+
+                //     // log the event 
+                //     event(new ProjectReviewerLogEvent(
+                //         $message ,
+                //         $authId, 
+                //         $project_reviewer->id,
+                //         $project->id,
+                         
+                //     ));
+            
+                //     // No notification needed, only logging that the project reviewer has been added
+                //     // 
+                //     // /** send system notifications to users */
+                        
+                //     //     ProjectNotificationHelper::sendSystemNotification(
+                //     //         message: $message,
+                //     //         route: $route 
+                //     //     );
+
+                //     // /** ./ send system notifications to users */
+                // // ./ logging and system notifications
+
+
+
+            // ./ set the initial reviewers 
+
+        }
+
+    }
+
+
+
+
+
 
 
     public static function sendNotificationOnReviewerListUpdate(ProjectDocument $project_document){
@@ -377,7 +780,7 @@ class ProjectReviewerHelpers
 
      
     // ['submitter', 'reviewers', 'admins', 'subscribers']
-    public static function getNotificationRecipientUserIds($recipient = 'all', int $project_document_id): array
+    public static function getNotificationRecipientUserIds($recipient = 'all', int $project_document_id = null): array
     {
 
         $project_document = ProjectDocument::find($project_document_id);

@@ -4,12 +4,12 @@
     x-data="{ selectedRecordId: null }"
 >
      
-    <div wire:loading class="loading-overlay">
+    {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
             <div></div>
             <div></div>
         </div>
-    </div>
+    </div> --}}
 
     <div class=" col-span-12  "  >
  
@@ -82,7 +82,7 @@
                                         <svg class="hs-accordion-active:block hidden size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M5 12h14"></path>
                                         </svg>
-                                        Revision {{ $revision }}: <span class="text-slate-500 font-monospace">{{ $date }}</span>
+                                        Revision {{ $revision - 1 }}: <span class="text-slate-500 font-monospace">{{ $date }}</span>
                                     </button>
                         
                                     <div id="hs-basic-collapse-{{ $index }}" class="hs-accordion-content 
@@ -267,7 +267,7 @@
                         
             </div> 
         </div>
-        <!-- End Card -->
+        <!-- End Project Documents -->
     </div>
     
 
@@ -324,6 +324,106 @@
             </div>
         </form>
     @endif
+
+    <!-- Floating Loading Notification -->
+    <div 
+        wire:loading 
+    class="fixed top-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]
+            rounded-2xl border border-slate-200 bg-white shadow-lg"
+    role="status"
+    aria-live="polite"
+    >
+        <div class="flex items-start gap-3 p-4">
+            <!-- Spinner -->
+            <svg class="h-5 w-5 mt-0.5 animate-spin text-slate-600 shrink-0"
+                viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10"
+                    stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z" />
+            </svg>
+
+            <!-- Text + Progress -->
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-slate-900">
+                    Loading data…
+                </div>
+                <div class="mt-0.5 text-xs text-slate-600">
+                    Fetching the latest records. Please wait.
+                </div>
+
+                <!-- Indeterminate Progress Bar -->
+                <div class="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                    class="absolute inset-y-0 left-0 w-1/3 rounded-full bg-slate-400"
+                    style="animation: indeterminate-bar 1.2s ease-in-out infinite;"
+                    ></div> 
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {{-- Do not remove --}}
+    {{-- 
+        Essential for getting the model id from the browser bar 
+        This is to get model id for : 
+        1. Full page load (hard refresh, direct URL, normal navigation)
+        2. Livewire SPA navigation (wire:navigate)
+    --}}
+    @push('scripts')
+        <script>
+
+            (function () {
+
+                function getData(){
+                    window.pageProjectDocumentId = @json(optional(request()->route('project_document'))->id ?? request()->route('project_document') ?? null);
+                    console.log(window.pageProjectDocumentId);
+
+                    const pageProjectDocumentId = window.pageProjectDocumentId; // can be null
+                    // 2) Conditionally listen to the model-scoped user channel
+                    if (pageProjectDocumentId) {
+                        console.log(`listening to : ${pageProjectDocumentId}`);
+                        window.Echo.private(`project_document.${pageProjectDocumentId}`)
+                            .listen('.event', (e) => {
+                                console.log('[project_document model-scoped]');
+
+                                let dispatchEvent = `projectDocumentEvent.${pageProjectDocumentId}`;
+                                Livewire.dispatch(dispatchEvent); 
+
+                                console.log(dispatchEvent); 
+
+                            });
+                    }
+                }
+
+                /**
+                 * 1. Full page load (hard refresh, direct URL, normal navigation)
+                 */
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        getData();
+                    });
+                } else {
+                    // DOM already loaded
+                    getData();
+                }
+
+                /**
+                 * 2. Livewire SPA navigation (wire:navigate)
+                 */
+                document.addEventListener('livewire:navigated', () => {
+                    getData();
+                });
+
+            })();
+ 
+
+
+        </script>
+    @endpush
+
 
 
 </div>

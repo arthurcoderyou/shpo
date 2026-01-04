@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\ProfileInformationRequiredMiddleware;
+use App\Http\Middleware\RCNumberRequirementMiddleware;
 use App\Http\Middleware\RolePermissionWithAlertMiddleware;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\TwoFactorMiddleware;
@@ -22,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.permission.alert' => RolePermissionWithAlertMiddleware::class,
             '2fa' => TwoFactorMiddleware::class,
             'log_user_device' => LogUserDeviceMiddleware::class,
+            'complete_profile_info_required' => ProfileInformationRequiredMiddleware::class,
+            'rc_number_required' => RCNumberRequirementMiddleware::class,
         ]);
 
 

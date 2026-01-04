@@ -9,6 +9,13 @@ use App\Helpers\ProjectDocumentHelpers;
 use App\Models\user;
 
 new class extends Component {
+
+     protected $listeners = [
+        'systemEvent' => '$refresh', 
+        'projectEvent' => '$refresh',
+        'projectDocumentEvent' => '$refresh',
+    ];
+
     // Accept the project via prop
     public Project $project;
 
@@ -84,13 +91,28 @@ new class extends Component {
     }
 
     public function delete($id,$type){
-
+        // dd($id);
         if($type == "project"){
             ProjectHelper::delete($id);
 
         }
         // dd($id);
     }
+
+
+
+    public function submit_project_for_rc_evaluation($id){
+ 
+        ProjectHelper::submit_project_for_rc_evaluation($id);
+ 
+        // dd($id);
+    }
+
+
+    public function force_submit_project_for_rc_evaluation($id){
+        ProjectHelper::submit_project_for_rc_evaluation($id,true);
+    }
+
 
 
     public function returnFormattedDatetime($datetime){
@@ -154,6 +176,8 @@ new class extends Component {
 <div class="px-4 sm:px-6 lg:px-8 py-2 mx-auto grid grid-cols-12 gap-x-2"
     x-data="{
         openDiscussion : false, 
+        openSubscribers : false, 
+        openReferences: false,
     }"
     >
     <!-- Header Card -->
@@ -205,6 +229,36 @@ new class extends Component {
                             <a wire:navigate href="{{ route('project.show',['project' => $project->id]) }}">
                                 {{ $project->name ?? 'Untitled Project' }} 
                             </a>
+
+                            @php
+                                // $status = $project->status ?? 'in_review';
+                                // $map = [
+                                //     'draft'     => 'bg-slate-100 text-slate-700',
+                                //     'submitted' => 'bg-sky-100 text-sky-700',
+                                //     'in_review' => 'bg-amber-100 text-amber-800',
+                                //     'approved'  => 'bg-emerald-100 text-emerald-700',
+                                //     'rejected'  => 'bg-rose-100 text-rose-700',
+                                //     'completed' => 'bg-emerald-100 text-emerald-700',
+                                //     'cancelled' => 'bg-slate-200 text-slate-700',
+                                //     'on_que'    => 'bg-violet-100 text-violet-700',
+                                // ];
+
+                                $status = $project->status;
+                                $config = $this->returnStatusConfig($status); 
+                            
+                                $label = $this->returnFormattedLabel($status);
+                            @endphp
+
+                            <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium 
+                                {{ $config['bg'] ?? 'bg-slate-100' }} 
+                                {{ $config['text'] ?? 'text-slate-700' }} 
+                                {{ $config['ring'] ?? 'ring-slate-700 ' }}
+                                uppercase
+                            ">
+                                <span class="size-1.5 rounded-full bg-current"></span>
+                                {{ $label }}  
+                            </span>
+
                             
                         </h2>
                         
@@ -226,7 +280,38 @@ new class extends Component {
                             <a wire:navigate href="{{ route('project.show',['project' => $project->id]) }}">
                                 {{ $project->name ?? 'Untitled Project' }} 
                             </a>
+ 
                         </h1>
+
+                        @php
+                            // $status = $project->status ?? 'in_review';
+                            // $map = [
+                            //     'draft'     => 'bg-slate-100 text-slate-700',
+                            //     'submitted' => 'bg-sky-100 text-sky-700',
+                            //     'in_review' => 'bg-amber-100 text-amber-800',
+                            //     'approved'  => 'bg-emerald-100 text-emerald-700',
+                            //     'rejected'  => 'bg-rose-100 text-rose-700',
+                            //     'completed' => 'bg-emerald-100 text-emerald-700',
+                            //     'cancelled' => 'bg-slate-200 text-slate-700',
+                            //     'on_que'    => 'bg-violet-100 text-violet-700',
+                            // ];
+
+                            $status = $project->status;
+                            $config = $this->returnStatusConfig($status); 
+                        
+                            $label = $this->returnFormattedLabel($status);
+                        @endphp
+
+                        <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium 
+                            {{ $config['bg'] ?? 'bg-slate-100' }} 
+                            {{ $config['text'] ?? 'text-slate-700' }} 
+                            {{ $config['ring'] ?? 'ring-slate-700 ' }}
+                            uppercase
+                            ">
+                            <span class="size-1.5 rounded-full bg-current"></span>
+                            {{ $label }}
+                        </span>
+ 
 
                         <!-- Type chip -->
                         <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
@@ -243,7 +328,7 @@ new class extends Component {
 
 
                 <!-- If a Project Document is passed, show its name -->
-                @if(!empty($project_document?->document_type->name))
+                {{-- @if(!empty($project_document?->document_type->name))
                 <div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
                     @if($isGlobal)
                         <span class="rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700">
@@ -257,8 +342,85 @@ new class extends Component {
                         <span class="font-medium text-slate-900">{{ $project_document->rc_number ?? 'NOT SET' }}</span>
                     </span>
                 </div>
-                @endif
+                @endif --}}
+
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+
+                    <!-- Lot -->
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+                        <div class="text-xs text-slate-500">Lot Number</div>
+                        <div class="font-semibold text-slate-900">
+                            {{ $project->lot_number ?? 'NOT SET' }}
+                        </div>
+                    </div>
+
+                    <!-- RC -->
+                    <div class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 shadow-sm">
+                        <div class="text-xs text-blue-600">RC Number</div>
+                        <div class="font-semibold text-blue-900">
+                            {{ $project->rc_number ?? 'NOT SET' }}
+                        </div>
+                    </div>
+
+
+                    @if(Auth::user()->can('system access admin') || Auth::user()->can('system access global admin'))
+                        
+
+
+                        @if(!empty($project) && empty($project->rc_number) && $project->status !== "draft" ) 
+
+                        
+                            @php 
+                                $project_reviewer = $project->getCurrentReviewer() ?? null;
+                            @endphp 
+
+                            @if(!empty($project_reviewer))
+                                
+
+                                @if(Auth::user()->can('system access admin') || Auth::user()->can('system access global admin') || Auth::user()->can('system access reviewer'))
+                                    <!-- Current Reviewer -->
+                                    <div class="rounded-xl border border-amber-200 bg-white px-4 py-2 shadow-sm">
+                                        <div class="text-xs text-amber-600">Current Reviewer</div>
+                                        <div class="font-semibold text-amber-900">
+                                            {{ $project_reviewer->user->name ?? 'NOT CLAIMED' }}
+                                        </div>
+                                    </div>
+                                @endif
+
+                                
+                            @endif
+                        @endif
+
+
+                        {{-- @if(!empty($project->project_references))
+                            @foreach ($project->project_references as $reference)
+                            @php
+                            $pr = $reference->referenced_project;
+                            @endphp
+                                <!-- Current Reviewer -->
+                                    <a href="{{ route('project.show',['project' => $pr->id]) }}" class="rounded-xl border border-black bg-white px-4 py-2 shadow-sm">
+                                        <div class="text-xs text-slate-600">Reference</div>
+                                        <div class="font-semibold text-slate-900">
+                                            {{ $pr->name ?? 'NOT SET' }} . <span class="text-slate-500">{{ $pr->rc_number ?? 'NO RC' }}</span>
+                                        </div>
+                                    </a>
+                            @endforeach
+                        @endif --}}
+
+
+ 
+
+                    @endif
+
+
+
+
+
+                </div>
+
             </div>
+
+             
 
             
 
@@ -266,361 +428,219 @@ new class extends Component {
             <!-- Status / Submission lock -->
             <div class="flex flex-col items-start sm:items-end gap-2">
                 <!-- Primary Actions -->
-                <div class="grid grid-cols-2 text-wrap  sm:flex items-center gap-2" x-data="{ open:false }">
-                    {{-- Project options --}}
-                        @php
-                            $actions = [
-                                [
-                                    'display' => auth()->user()->can('project view') || auth()->user()->can('system access global admin'),
-                                    'type' => 'link',
-                                    'linkHref' =>  route('project.show',['project' => $project->id]),
-                                    'linkLabel' => 'View Project'
-                                ],
+                <div class="grid grid-cols-1 text-wrap max-w-xl  lg:flex items-center gap-2" x-data="{ open:false }">
 
+                    <div class="flex space-x-1">
 
-                                [
-                                    'display' => auth()->user()->can('project edit') || auth()->user()->can('system access global admin'),
-                                    'type' => 'link',
-                                    'linkHref' =>  route('project.edit',['project' => $project->id]),
-                                    'linkLabel' => 'Edit Project'
-                                ],
-
-                                [
-                                    'display' => auth()->user()->can('project delete') || auth()->user()->can('system access global admin'),
-                                    'type' => 'button',
-                                    'buttonAction' =>  'delete('.$project->id.',"project")',
-                                    'buttonLabel' => 'Delete Project'
-                                ]
-
-                            ]; 
-                        @endphp
-                        <x-project.dropdown 
-                            class="inline-flex items-center gap-1 rounded-xl border border-blue-200  px-3 py-2 text-sm font-medium text-blue-700 bg-white hover:bg-blue-50"
-
-                            menuLabel="Project"
-                            :actions="$actions"
-
-                            displayTooltip="true"
-                            tooltipText="Click for more project options"
-                        />
-                    {{-- ./ Project options --}}
-
-                     {{-- Project Document options --}}
-                        @php
-                            $actions = [
-                                [
-                                    'display' => auth()->user()->can('project view') || auth()->user()->can('system access global admin'),
-                                    'type' => 'link',
-                                    'linkHref' => route('project.project_documents', ['project' => $project->id]),
-                                    'linkLabel' => 'View Documents',
-                                ],
-                            ];
-
-                            if (!empty($project_document)) {
-                                $actions = array_merge($actions, [
+                    
+                        {{-- Project options --}}
+                            @php
+                                $actions = [
                                     [
-                                        'display' => !empty($project_document) && $canReview,
+                                        'display' => auth()->user()->can('project view') || auth()->user()->can('system access global admin'),
                                         'type' => 'link',
-                                        'linkHref' => route('project.document.reviewer.index', [
-                                            'project' => $project->id,
-                                            'project_document' => $project_document->id,
-                                        ]),
-                                        'linkLabel' => 'View Reviewers',
+                                        'linkHref' =>  route('project.show',['project' => $project->id]),
+                                        'linkLabel' => 'View Project'
                                     ],
 
 
                                     [
-                                        'display' => !empty($project_document) && $canReview,
+                                        'display' => auth()->user()->can('project edit') || auth()->user()->can('system access global admin'),
                                         'type' => 'link',
-                                        'linkHref' => route('project_document.review.flow', [ 
-                                            'project_document' => $project_document->id,
-                                        ]),
-                                        'linkLabel' => 'View Review Flow',
+                                        'linkHref' =>  route('project.edit',['project' => $project->id]),
+                                        'linkLabel' => 'Edit Project'
                                     ],
 
+                                    // [
+                                    //     'display' => auth()->user()->can('project delete') || auth()->user()->can('system access global admin'),
+                                    //     'type' => 'button',
+                                    //     'buttonAction' =>  'delete('.$project->id.',"project")',
+                                    //     'buttonLabel' => 'Delete Project'
+                                    // ]
 
-                                ]);
+                                ]; 
+                            @endphp
+                            <x-project.dropdown 
+                                class="inline-flex items-center gap-1 rounded-xl border border-blue-200  px-3 py-2 text-sm font-medium text-blue-700 bg-white hover:bg-blue-50"
 
+                                menuLabel="Project"
+                                :actions="$actions"
 
+                                displayTooltip="true"
+                                tooltipText="Click for more project options"
+                            />
+                        {{-- ./ Project options --}}
 
+                        {{-- Project Document options --}}
+                            @php
+                                $actions = [
+                                    [
+                                        'display' => auth()->user()->can('project view') || auth()->user()->can('system access global admin'),
+                                        'type' => 'link',
+                                        'linkHref' => route('project.project_documents', ['project' => $project->id]),
+                                        'linkLabel' => 'View Documents',
+                                    ],
+                                ];
 
-                            }
-
-
-
-
-
-                            // $actions = array_merge($actions, [
-                            //     [
-                            //         'display' => auth()->user()->can('project delete') || auth()->user()->can('system access global admin'),
-                            //         'type' => 'button',
-                            //         'buttonAction' => 'delete(' . $project->id . ',"project")',
-                            //         'buttonLabel' => 'Delete Project',
-                            //     ],
-                            // ]);
-                        @endphp
-                        <x-project.dropdown 
-                            class="inline-flex items-center gap-1 rounded-xl border border-yellow-200  px-3 py-2 text-sm font-medium text-yellow-700 bg-white hover:bg-yellow-50"
-
-                            menuLabel="Documents"
-                            :actions="$actions"
-
-                            displayTooltip="true"
-                            tooltipText="Click for more project document options"
-                        />
-                    {{-- ./ Project Document options  --}}
-
-                    {{-- <a href="{{ route('project.project-document.index',['project' => $project->id]) }}"
-                       wire:navigate
-                       class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                        Documents
-                    </a> --}}
-                    <x-project.button-link 
-                        linkLabel="+ New Document"
-                        linkHref="{{ route('project.project-document.create',['project' => $project->id]) }}"
-
-                        displayTooltip="true"
-                        tooltipText="Create a new project document"
-
-                        class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600"
+                                if (!empty($project_document)) {
+                                    $actions = array_merge($actions, [
+                                        [
+                                            'display' => !empty($project_document) && $canReview,
+                                            'type' => 'link',
+                                            'linkHref' => route('project.document.reviewer.index', [
+                                                'project' => $project->id,
+                                                'project_document' => $project_document->id,
+                                            ]),
+                                            'linkLabel' => 'View Reviewers',
+                                        ],
 
 
-                    />  
+                                        // [
+                                        //     'display' => !empty($project_document) && $canReview,
+                                        //     'type' => 'link',
+                                        //     'linkHref' => route('project_document.review.flow', [ 
+                                        //         'project_document' => $project_document->id,
+                                        //     ]),
+                                        //     'linkLabel' => 'View Review Flow',
+                                        // ],
 
-                    {{-- <x-ui.modal.body
-                        permission="project list view"
-                        buttonLabel="+ New Document"
-                        modalTitle="Add New Document"
-                        submitMessage="Save Document" 
-                        class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600"
-                         
- 
-                        displayTooltip
-                        tooltipText="Create a new document"
 
-                        >
-                       
-
-                        <x-ui.document_type.document-type-name-input wire:model.live="document_type_name" />
+                                    ]);
 
 
 
-                    </x-ui.modal.body> --}}
+
+                                }
 
 
 
 
 
+                                // $actions = array_merge($actions, [
+                                //     [
+                                //         'display' => auth()->user()->can('project delete') || auth()->user()->can('system access global admin'),
+                                //         'type' => 'button',
+                                //         'buttonAction' => 'delete(' . $project->id . ',"project")',
+                                //         'buttonLabel' => 'Delete Project',
+                                //     ],
+                                // ]);
+                            @endphp
+                            <x-project.dropdown 
+                                class="inline-flex items-center gap-1 rounded-xl border border-yellow-200  px-3 py-2 text-sm font-medium text-yellow-700 bg-white hover:bg-yellow-50"
+
+                                menuLabel="Documents"
+                                :actions="$actions"
+
+                                displayTooltip="true"
+                                tooltipText="Click for more project document options"
+                            />
+                        {{-- ./ Project Document options  --}}
+
+                        {{-- <a href="{{ route('project.project-document.index',['project' => $project->id]) }}"
+                        wire:navigate
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Documents
+                        </a> --}}
+
+                        @if(  $project->status == "draft" && empty($project->rc_number))
+                            <x-ui.button
+                                type="button"
+                                label="Submit Project"
+                                sr="Click to Submit Project"
+                                {{-- wire:click="submit_project({{ $project->id }})" --}}
+                                onclick="confirm('Are you sure you want to submit this project for administrative review?') || event.stopImmediatePropagation()" 
+                                wire:click.prevent="submit_project_for_rc_evaluation({{ $project->id }})"
+                                displayTooltip
+                                position="top"
+                                tooltipText="Click to Submit Project"
+
+                                class="inline-flex items-center text-nowrap gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600"
 
 
+                            />  
+                        @endif
 
-
-
-                    {{--  
-
-                    <button
-                        type="button"
-                        @click="openDiscussion = true"
-                        class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 transition"
-                    >
-                        <!-- User-add icon -->
-                        <svg class="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M7 8h10M7 12h6m-7 8l-4 1 1-4a9 9 0 1116 3H7z" />
-                        </svg>
-                        Discussions
-                    </button>
-
-                    <!-- ======================== -->
-                    <!-- Discussions -->
-                    <!-- ======================== -->
-                    <div
-                        x-show="openDiscussion"
-                        x-cloak
-                        x-transition.opacity
-                        @keydown.escape.window="openDiscussion = false" 
-                        @click.self="openDiscussion = false"
-                        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-                        aria-modal="true" role="dialog"
-                    >
-                        <!-- Modal Box -->
-                        <div
-                            x-transition
-                            @click.stop
-                            class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
-                        >
-                            <!-- Header -->
-                            <div class="flex items-center justify-between border-b bg-sky-50 px-5 py-3">
-                                <h3 class="text-base font-semibold text-slate-900 flex items-center gap-2">
-                                   <svg class="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor" stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M7 8h10M7 12h6m-7 8l-4 1 1-4a9 9 0 1116 3H7z" />
-                                    </svg>
-                                    Discussions
-                                </h3>
-                                <button
-                                    @click="openDiscussion = false"
-                                    class="text-slate-500 hover:text-slate-700 transition"
-                                >
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                        stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <!-- Body -->
-                            <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
- 
-
-
-
-                                <div  id="discussion" class="  px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
-                                     
-
-                                    @if($project->canPostInDiscussion())
-                                        <livewire:admin.project-discussion.project-discussion-create :project="$project" />
-                                    @endif
-                                </div>
-
-                                <livewire:admin.project-discussion.project-discussion-list :project="$project" />
-
-
-
-
-
-                            </div>
-
-                            <!-- Footer -->
-                            <div class="border-t px-5 py-3 flex justify-end gap-2 bg-slate-50">
-                                <button
+                        @if(auth()->user()->can('system access admin') || auth()->user()->can('system access global admin'))
+                            @if($project->status == "on_que" && empty($project->rc_number))
+                                <x-ui.button
                                     type="button"
-                                    @click="openDiscussion = false"
-                                    class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                                >
-                                    Close
-                                </button>
+                                    label="Force Submit Project"
+                                    sr="Click to Submit Project"
+                                    {{-- wire:click="submit_project({{ $project->id }})" --}}
+                                    onclick="confirm('Are you sure you want to force submit this project for administrative review?') || event.stopImmediatePropagation()" 
+                                    wire:click.prevent="force_submit_project_for_rc_evaluation({{ $project->id }})"
+                                    displayTooltip
+                                    position="top"
+                                    tooltipText="Click to Force Submit Project"
 
-                                 
-                            </div>
-                        </div>
+                                    class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-900"
+
+
+                                />  
+                            @endif
+                        @endif
+
+                        @if(!empty($project->rc_number))
+                        <x-project.button-link 
+                            linkLabel="+ New Doc"
+                            linkHref="{{ route('project.project-document.create',['project' => $project->id]) }}"
+
+                            displayTooltip="true"
+                            tooltipText="Create a new project document"
+
+                            class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600"
+
+
+                        />  
+                        @endif
                     </div>
 
-                    --}}
+                    <div class="flex space-x-1">
+                        <!-- Discussion button and box -->
+                            <x-ui.project.page-header.project-discussion-box  :project="$project" />
+                        <!-- ./ Discussion button and box -->
+
+                        <!-- Project subscribers button and box -->
+                            <x-ui.project.page-header.project-subs-box :project="$project" /> 
+                        <!-- ./ Project subscribers button and box -->
+                        
+
+                        @if(!empty($project->rc_number))
+                            @if(Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('system access admin')    )
+                            <!-- Project References -->
+                                <x-ui.project.page-header.project-reference-box :project="$project" />
+                            <!-- ./ Project References -->
+                            @endif
+                        @endif
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    {{-- @if(!empty($project_document) && $canReview) 
-                        <a href="{{ route('project.document.reviewer.index',[
-                                'project' => $project->id,
-                                'project_document' => $project_document->id
-                            ]) }}"
-                            wire:navigate
-                            class="rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50">
-                            Document Reviewers
-                        </a>
-                    @endif --}}
-
-                    {{-- @if($canEdit)
-                        <a href="{{ route('project.edit',['project' => $project->id]) }}"
-                           wire:navigate
-                           class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
-                            Edit
-                        </a>
-                    @endif --}}
-                    {{-- -
-                    <!-- More Menu -->
-                    <div class="relative" @keydown.escape="open=false" @click.away="open=false">
-                        <button @click="open=!open"
-                                class="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                            More
-                            <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"/>
-                            </svg>
-                        </button>
-
-                        <div x-show="open" x-transition
-                             class="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                            <div class="py-1 text-sm">
-                                 
-                                    @if($canView)
-                                        <a href="{{ route('project.show',['project' => $project->id]) }}"
-                                        wire:navigate
-                                        class="block px-3 py-2 hover:bg-slate-50">
-                                            View Project
-                                        </a>
-                                    @endif
-
-                                    @if($canEdit)
-                                        <a href="{{ route('project.edit',['project' => $project->id]) }}"
-                                        wire:navigate
-                                        class="block px-3 py-2 hover:bg-slate-50">
-                                            Edit Project
-                                        </a>
-                                    @endif
-                                 
-
-                                <div class="my-1 border-t border-slate-200"></div>
-                                 
-                                    <a href="{{ route('project.project-document.create',['project' => $project->id]) }}"
-                                    wire:navigate
-                                    class="block px-3 py-2 hover:bg-slate-50">
-                                        Add Documents
-                                    </a>
-
-                                    <a href="{{ route('project.project-document.index',['project' => $project->id]) }}"
-                                    wire:navigate
-                                    class="block px-3 py-2 hover:bg-slate-50">
-                                        Project Documents
-                                    </a>
-                                 
-                                <div class="my-1 border-t border-slate-200"></div>
-                                @if(!empty($project_document))
-                                 
-                                    <a href="{{ route('project.project-document.show',[
-                                        'project' => $project->id, 
-                                        'project_document' => $project_document->id
-                                    ]) }}"
-                                    wire:navigate
-                                    class="block px-3 py-2 hover:bg-slate-50">
-                                        View Document
-                                    </a>
-
-                                    <a href="{{ route('project.project_document.edit_attachments',[
-                                        'project' => $project->id,
-                                        'project_document' => $project_document->id,
-                                    ]) }}"
-                                    wire:navigate
-                                    class="block px-3 py-2 hover:bg-slate-50">
-                                        Edit Document and Attachments
-                                    </a>
-                                
-                                
-                                <div class="my-1 border-t border-slate-200"></div>
-                                @endif
-
-                                <button class="block w-full px-3 py-2 text-left text-rose-600 hover:bg-rose-50">
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
+                        @if(auth()->user()->can('project delete') || auth()->user()->can('system access global admin'))
+                            <button
+                                type="button" 
+                                onclick="confirm('Are you sure, you want to delete this record?') || event.stopImmediatePropagation()"
+                                wire:click.prevent="delete({{ $project->id }},'project')" 
+                                class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow
+                                hover:bg-red-700
+                                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700
+                                transition"
+                            > 
+                                <!-- Minimal trash icon (clean, non-cartoon) -->
+                                <svg class="w-5 h-5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.6"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    aria-hidden="true">
+                                    <path d="M4 7h16" />
+                                    <path d="M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2" />
+                                    <path d="M7 7l1 12a2 2 0 002 2h4a2 2 0 002-2l1-12" />
+                                </svg>
+                            </button>
+                        @endif
                     </div>
-                     --}}
+ 
                 </div>
 
 
@@ -660,27 +680,15 @@ new class extends Component {
                     </div>
 
 
-
-                    
-                   
-                    
-
-
-
-
-
-
-
+ 
 
                 @endif
-
-
-
+ 
 
             </div>
         </div>
 
-
+        {{-- region Project document information || if project document exist --}}
         @if(!empty($project_document))
             {{-- -if project is not draft  --}}
 
@@ -810,7 +818,7 @@ new class extends Component {
                                 <path d="M10 18a8 8 0 100-16 8 8 0 000 16Zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 10-1.414 1.414L9 13.414l4.707-4.707Z"/>
                             </svg>
                             <span class="font-medium text-slate-700">Review status:</span>
-                            <span class="uppercase tracking-wide">{{ $reviewStatus }}</span>
+                            <span class="uppercase tracking-wide">{{ str_replace('_', ' ', $reviewStatus) }}</span>
                         </div>
                         @endif
                     </div>
@@ -876,7 +884,21 @@ new class extends Component {
 
 
             @endif
+ 
 
         @endif
+        {{-- endregion Project document information || if project document exist --}}
+
     </section>
+
+
+
+
+
+
+
+
+  
+
+
 </div>

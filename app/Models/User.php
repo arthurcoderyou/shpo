@@ -23,23 +23,23 @@ class User extends Authenticatable implements MustVerifyEmail
 
         parent::boot();
         
-        static::created(function ($user) {
+        // static::created(function ($user) {
 
-            $authId = auth::check() ? auth()->user()->id : $user->id;
+        //     $authId = auth::check() ? auth()->user()->id : $user->id;
 
-            event(new  \App\Events\UserCreated($user,$authId)); 
-            // \App\Services\CacheService::updateUserStats(); 
-        });
+        //     event(new  \App\Events\UserCreated($user,$authId)); 
+        //     // \App\Services\CacheService::updateUserStats(); 
+        // });
 
-        static::updated(function ($user) {
-            event(new  \App\Events\UserUpdated($user, auth()->check() ?? auth()->user()->id )); 
-            // \App\Services\CacheService::updateUserStats();
-        });
+        // static::updated(function ($user) {
+        //     event(new  \App\Events\UserUpdated($user, auth()->check() ?? auth()->user()->id )); 
+        //     // \App\Services\CacheService::updateUserStats();
+        // });
 
-        static::deleted(function ($user) {
-            event(new  \App\Events\UserDeleted( $user, auth()->user()->id ));
-            // \App\Services\CacheService::updateUserStats();
-        });
+        // static::deleted(function ($user) {
+        //     event(new  \App\Events\UserDeleted( $user, auth()->user()->id ));
+        //     // \App\Services\CacheService::updateUserStats();
+        // });
     }
 
 
@@ -64,6 +64,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'role_request',
         'otp_code',
         'otp_expires_at',
+        'address',
+        'company',
+        'phone_number',
     ];
 
     /**
