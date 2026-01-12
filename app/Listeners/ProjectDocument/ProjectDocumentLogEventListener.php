@@ -11,7 +11,7 @@ use App\Events\Project\ProjectBroadcastEvent;
 use App\Events\ProjectDocument\ProjectDocumentLogEvent;
 use App\Events\ProjectDocument\ProjectDocumentBroadcastEvent;
 
-class ProjectDocumentLogEventListener
+class ProjectDocumentLogEventListener implements ShouldQueue
 {
     /**
      * Create the event listener.

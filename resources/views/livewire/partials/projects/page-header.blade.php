@@ -182,28 +182,31 @@ new class extends Component {
     >
     <!-- Header Card -->
     <section class="col-span-12 rounded-2xl border border-slate-200 bg-white px-4 py-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+
+
+            <div class="gap-2 lg:gap-0">
                 
 
                 <!-- If a Project Document is passed, show its name -->
                 @if(!empty($project_document?->document_type->name))
 
 
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-semibold text-sky-900">
-
-                            @if (request()->routeIs('project-document.review'))
-                                Document Review on 
-                            @endif
-
-                            @if (request()->routeIs('project_document.review.flow'))
-                                Review Workflow on 
-                            @endif
-
-
+                    <div class="grid lg:flex lg:items-center lg:gap-2">
+                        <h1 class="text-xl font-semibold text-sky-900 grid ">
+                           <span>
+                                @if (request()->routeIs('project-document.review'))
+                                    Document Review on 
+                                @endif
                             
-
+                                @if (request()->routeIs('project_document.review.flow'))
+                                    Review Workflow on 
+                                @endif
+                    
+                            
+                            </span>
+                            
+                            
                             <a href="{{ route('project.project-document.show',[
                                         'project' => $project->id, 
                                         'project_document' => $project_document->id
@@ -215,17 +218,21 @@ new class extends Component {
                             </a>
                             
                         </h1>
-
-                        <!-- Type chip -->
-                        <span class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700">
-                            {{ ucfirst('Project Document') }}
+                        <span>
+                            <!-- Type chip -->
+                            <span class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700">
+                                {{ ucfirst('Project Document') }}
+                            </span>
                         </span>
+                        
                     </div>
  
-                    <div class="mt-1 flex items-center gap-2">
+                    <div class="mt-1 lg:flex lg:items-center lg:gap-2">
                         
 
                         <h2 class="text-sm font-medium text-slate-700 truncate max-w-[70ch]" title="View {{ $project->name }}">
+
+
                             <a wire:navigate href="{{ route('project.show',['project' => $project->id]) }}">
                                 {{ $project->name ?? 'Untitled Project' }} 
                             </a>
@@ -426,7 +433,7 @@ new class extends Component {
 
 
             <!-- Status / Submission lock -->
-            <div class="flex flex-col items-start sm:items-end gap-2">
+            <div class="flex flex-col items-start lg:items-end gap-2">
                 <!-- Primary Actions -->
                 <div class="grid grid-cols-1 text-wrap max-w-xl  lg:flex items-center gap-2" x-data="{ open:false }">
 
@@ -557,7 +564,12 @@ new class extends Component {
                                 class="inline-flex items-center text-nowrap gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600"
 
 
-                            />  
+                            >
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M6 12L3 21l18-9L3 3l3 9zm0 0h6" />
+                                </svg>
+                            </x-ui.button>
                         @endif
 
                         @if(auth()->user()->can('system access admin') || auth()->user()->can('system access global admin'))
@@ -582,7 +594,7 @@ new class extends Component {
 
                         @if(!empty($project->rc_number))
                         <x-project.button-link 
-                            linkLabel="+ New Doc"
+                            linkLabel=""
                             linkHref="{{ route('project.project-document.create',['project' => $project->id]) }}"
 
                             displayTooltip="true"
@@ -591,11 +603,21 @@ new class extends Component {
                             class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600"
 
 
-                        />  
-                        @endif
-                    </div>
+                        >
+                            <svg class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="1.5">
+                                <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
 
-                    <div class="flex space-x-1">
+
+                        </x-project.button-link>  
+                        @endif
+                     
                         <!-- Discussion button and box -->
                             <x-ui.project.page-header.project-discussion-box  :project="$project" />
                         <!-- ./ Discussion button and box -->
@@ -810,19 +832,21 @@ new class extends Component {
                                     @endif
                                 @endif
                                     
-                        </div>
+                         
 
                         @if(!empty($reviewStatus))
-                        <div class="flex items-center gap-1 justify-end">
+                         
                             <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path d="M10 18a8 8 0 100-16 8 8 0 000 16Zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 10-1.414 1.414L9 13.414l4.707-4.707Z"/>
                             </svg>
                             <span class="font-medium text-slate-700">Review status:</span>
                             <span class="uppercase tracking-wide">{{ str_replace('_', ' ', $reviewStatus) }}</span>
-                        </div>
+                        
                         @endif
-                    </div>
-                    <div class="space-y-1 text-[11px] leading-4 text-slate-600 sm:flex sm:justify-between sm:space-x-4 ">
+
+                        </div>
+                    {{-- </div>
+                    <div class="space-y-1 text-[11px] leading-4 text-slate-600 sm:flex sm:justify-between sm:space-x-4 "> --}}
 
                         <div class="flex items-center gap-1 justify-end">
                             <svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">

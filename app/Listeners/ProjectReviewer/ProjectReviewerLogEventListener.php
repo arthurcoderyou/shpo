@@ -11,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Events\ProjectReviewer\ProjectReviewerLogEvent;
 
-class ProjectReviewerLogEventListener
+class ProjectReviewerLogEventListener implements ShouldQueue
 {
     /**
      * Create the event listener.

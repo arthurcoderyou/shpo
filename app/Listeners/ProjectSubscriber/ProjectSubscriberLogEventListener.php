@@ -2,9 +2,9 @@
 
 namespace App\Listeners\ProjectSubscriber;
 
+use App\Models\ProjectSubscriber;
 use App\Models\User;
-use App\Models\ActivityLog;
-use App\Events\Role\RoleLogEvent;
+use App\Models\ActivityLog; 
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Events\ProjectSubscriber\ProjectSubscriberLogEvent;
@@ -22,17 +22,25 @@ class ProjectSubscriberLogEventListener implements ShouldQueue
     /**
      * Handle the event.
      */
-    public function handle(RoleLogEvent $event): void
+    public function handle(ProjectSubscriberLogEvent $event): void
     {
         $message = $event->message;
         $authUser = User::find($event->authId); 
 
-   
-        // project log
+        $projectSubscriber = ProjectSubscriber::find($event->projectSubscriberId); 
+        $project = Project::find($event->projectId); 
+
+        // $projectDocument = ProjectDocument::find($event->projectDocumentId); 
+  
+
+
         ActivityLog::create([
-            'created_by' => $authUser->id,
+            'created_by' => $authUser->id, // add it to the activiy logs of the person this is connected to 
             'log_username' => $authUser->name,
-            'log_action' => $message ,  
+            'log_action' =>  $message ,
+            'project_id' =>  $project->id,   
+            'project_subscriber_id' => $projectSubscriber->id, 
+            // 'project_document_id' => $projectDocument->id ?? null,
         ]);
     }
 }

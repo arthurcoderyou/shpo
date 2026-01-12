@@ -44,7 +44,7 @@ class ProjectReviewerLogEvent  implements ShouldBroadcast, ShouldQueue
     public function broadcastOn(): array
     {
         $channels = [
-            new PrivateChannel('project_reviewer'),
+            // new PrivateChannel('project_reviewer'), // not needed as of the momment
             new PrivateChannel('project'),
             new PrivateChannel('project.' . $this->projectId),
         ];

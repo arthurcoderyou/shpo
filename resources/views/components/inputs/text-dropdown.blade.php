@@ -8,6 +8,9 @@
 
 @php
     $id = $attributes->get('id', $name);
+    // Get the Livewire model name from wire:model="..."
+    $wireModelAttr = $attributes->whereStartsWith('wire:model')->first();
+    $wireModelName = $wireModelAttr ? trim(str_replace(['wire:model=', '"', "'"], '', $wireModelAttr)) : null;
 @endphp
 
 <div
@@ -26,10 +29,27 @@
             );
         },
 
+        syncTyped() {
+            this.value = this.search;
+
+            @if($wireModelName)
+                clearTimeout(this._t);
+                this._t = setTimeout(() => {
+                    this.$wire.set(@js($wireModelName), this.search);
+                }, 250); // adjust debounce as needed
+            @endif
+        },
+
+
         select(option) {
             this.search = option;
             this.value = option;
             this.open = false;
+
+            @if($wireModelName)
+                this.$wire.set(@js($wireModelName), option);
+            @endif
+
         },
     }"
     x-on:click.away="open = false"
@@ -47,16 +67,17 @@
         type="text"
         x-model="search"
         x-on:focus="open = true"
-        x-on:input="open = true"
+        x-on:input="open = true; syncTyped()"
         autocomplete="off"
         name="{{ $name }}"
-        {{ $attributes->whereStartsWith('wire:model') }}
+        {{-- {{ $attributes->whereStartsWith('wire:model') }} --}}
         placeholder="{{ $placeholder }}"
         class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
     >
 
     {{-- Hidden real value (for Laravel / Livewire) --}}
     <input
+        x-ref="hidden"
         type="hidden"
         name="{{ $name }}"
         x-model="value"

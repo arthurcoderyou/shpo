@@ -52,13 +52,25 @@
 
 
                             
-                            <span class="hidden lg:block text-nowrap">
-                                {{ $linkLabel }}
-                            </span>
                             
-                            <span class="block lg:hidden text-xs font-semibold text-center">
-                                {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($linkLabel, 0, 2)) }}
+
+                            <span class="flex items-center space-x-1">
+
+                                @if(!empty($linkLabel))
+                                    <span class="hidden lg:block text-nowrap">
+                                        {{ $linkLabel }}
+                                    </span>
+                                    
+                                    <span class="block lg:hidden text-xs font-semibold text-center">
+                                        {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($linkLabel, 0, 2)) }}
+                                    </span>
+                                @endif
+
+                                {{ $slot }}
+
                             </span>
+
+
 
                         </a>
 

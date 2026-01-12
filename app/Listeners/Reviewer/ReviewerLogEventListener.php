@@ -8,7 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use App\Events\Reviewer\ReviewerLogEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class ReviewerLogEventListener
+class ReviewerLogEventListener implements ShouldQueue
 {
     /**
      * Create the event listener.

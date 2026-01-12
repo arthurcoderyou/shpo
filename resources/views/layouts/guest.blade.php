@@ -26,21 +26,25 @@
 
         <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     </head>
-    <body class="font-sans text-gray-900 antialiased custom-bg "  >
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-500/50 ">
+    <body class="font-sans text-gray-900 antialiased custom-bg  "  >
+
+        
+            <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-500/50 ">
+
+                <div class=" px-4 sm:px-6 lg:px-8">
+                    <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white/80 shadow-md overflow-hidden sm:rounded-lg ">
+
+                        <div class="mb-6">
+                            <a href="/" wire:navigate>
+                                <x-application-logo class="w-auto shrink-0 fill-current text-gray-500" />
+                            </a>
+                        </div>
 
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white/80 shadow-md overflow-hidden sm:rounded-lg ">
-
-                <div class="mb-6">
-                    <a href="/" wire:navigate>
-                        <x-application-logo class="w-auto shrink-0 fill-current text-gray-500" />
-                    </a>
+                        {{ $slot }}
+                    </div>
                 </div>
-
-
-                {{ $slot }}
-            </div>
-        </div>
+            </div> 
+        
     </body>
 </html>

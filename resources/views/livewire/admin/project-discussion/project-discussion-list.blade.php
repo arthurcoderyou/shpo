@@ -1,7 +1,7 @@
 <div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
     
     {{-- @if($project->canPostInDiscussion() && $replyToId) --}}
-        @if(!auth()->user()->hasRole('User'))
+        @if(!auth()->user()->hasRole('Submitter'))
             <div class="flex justify-end mb-4">
                 <fieldset class="flex space-x-4 text-sm text-gray-700">
                     <label class="flex items-center space-x-2">
@@ -147,5 +147,101 @@
             </div>
         </div>
     @endif
+
+
+
+
+    {{-- Do not remove --}}
+    {{-- 
+        Essential for getting the model id from the browser bar 
+        This is to get model id for : 
+        1. Full page load (hard refresh, direct URL, normal navigation)
+        2. Livewire SPA navigation (wire:navigate)
+    --}}
+    @push('scripts')
+        <script>
+
+            (function () {
+
+                function getData(){
+                    window.pageProjectId = @json(optional(request()->route('project'))->id ?? request()->route('project') ?? null);
+                    console.log(window.pageProjectId);
+
+                    window.pageProjectDocumentId = @json(optional(request()->route('project_document'))->id ?? request()->route('project_document') ?? null);
+                    console.log(window.pageProjectDocumentId);
+                    
+
+                    const pageProjectId = window.pageProjectId; // can be null
+                    const pageProjectDocumentId = window.pageProjectDocumentId; // can be null
+
+                    //  Listener for the project discussion events
+                    if (pageProjectId) {
+                        console.log(`listening to : ${pageProjectId}`);
+                        window.Echo.private(`project.project_discussion.${pageProjectId}`)
+                            .listen('.event', (e) => {
+                                console.log('[project model-scoped]');
+
+                                let dispatchEvent = `projectDiscussionEvent.${pageProjectId}`;
+                                Livewire.dispatch(dispatchEvent); 
+
+                                console.log(dispatchEvent); 
+
+                            });
+                    }
+
+                    // Listener for the project document discussion events
+                    if (pageProjectDocumentId) {
+                        console.log(`listening to : ${pageProjectDocumentId}`);
+                        window.Echo.private(`project.project_document.project_discussion.${pageProjectDocumentId}`)
+                            .listen('.event', (e) => {
+                                console.log('[project model-scoped]');
+
+                                let dispatchEvent = `projectDocumentDiscussionEvent.${pageProjectDocumentId}`;
+                                Livewire.dispatch(dispatchEvent); 
+
+                                console.log(dispatchEvent); 
+
+                            });
+                    }
+
+
+
+
+
+
+                }
+
+                /**
+                 * 1. Full page load (hard refresh, direct URL, normal navigation)
+                 */
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        getData();
+                    });
+                } else {
+                    // DOM already loaded
+                    getData();
+                }
+
+                /**
+                 * 2. Livewire SPA navigation (wire:navigate)
+                 */
+                document.addEventListener('livewire:navigated', () => {
+                    getData();
+                });
+
+
+
+
+
+
+
+            })();
+ 
+
+
+        </script>
+    @endpush
+
 
 </div>

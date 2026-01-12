@@ -2,26 +2,53 @@
 
 namespace App\Livewire\Component\Project;
 
+use App\Events\ProjectSubscriber\ProjectSubscriberLogEvent;
 use App\Models\User;
 use App\Models\Project;
 use Livewire\Component;
 use App\Models\ProjectSubscriber;
 use Illuminate\Support\Facades\Auth;
 use App\Events\Project\ProjectLogEvent;
-use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
-use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\ActivityLogHelpers\ProjectLogHelper;  
+use App\Helpers\ActivityLogHelpers\ProjectSubscriberLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectSubscriberNotificationHelper;
 
 class ProjectSubscribersModal extends Component
 {
-    protected $listeners = [
-        'systemEvent' => 'loadSelectedUsers', 
+   
 
-        'projectEvent' => 'loadSelectedUsers',
+     // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+        ];
 
-    ];
+        protected function getListeners(): array
+        {
+
+            $listeners = [
+                "projectSubscriberEvent.{$this->project_id}" => 'loadSelectedUsers',
+            ];
+
+            if(!empty($this->project_document_id)){
+                $listeners = array_merge($listeners, [
+                    "projectDocumentSubscriberEvent.{$this->project_document_id}" => '$refresh',
+                ]);
+
+            }
+
+
+            return array_merge($this->listeners, $listeners);
+        }
+    // ./ dynamic listener
+
+
 
     public Project $project;
     public int $project_id;
+    public int $project_document_id;
+
  
 
 
@@ -160,7 +187,7 @@ class ProjectSubscribersModal extends Component
     public function save()
     {
           
- 
+
 
         //save
         $project = Project::find( $this->project_id);
@@ -185,88 +212,39 @@ class ProjectSubscribersModal extends Component
             }
         }
 
-
+        $authId = Auth::id() ?? null;
 
         // Save Project Subscribers (if any)
         if (!empty($this->selectedUsers)) {
             foreach ($this->selectedUsers as $user) {
-                ProjectSubscriber::create([
+                $project_subscriber = ProjectSubscriber::create([
                     'project_id' => $project->id,
                     'user_id' => $user['id'],
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
                 ]);
+
+                $message =  ProjectSubscriberLogHelper::getActivityMessage('added',$project_subscriber->id,$authId);
+
+
+                 // // log the event 
+                event(new ProjectSubscriberLogEvent(
+                    $message ,
+                    $authId, 
+                    $project_subscriber->id,
+                    $project_subscriber->project_id ?? null, 
+
+
+                ));
+ 
             }
         }
 
 
-
-
- 
-
-
-        $authId = Auth::id() ?? null;
-
-        // Success message from the activity log project helper 
-        $message =  ProjectLogHelper::getProjectActivityMessage('updated',$project->id,$authId);
- 
-        // get the route 
-        $route = ProjectLogHelper::getRoute('updated', $project->id);
         
 
-        // // log the event 
-        event(new ProjectLogEvent(
-            $message ,
-            $authId, 
-
-        ));
-
-           
-
-        /** send system notifications to users */
-            // check  ActivityLogHelper::sendSystemNotificationEvent() function to understand how to user this.
-
-             $users_roles_to_notify = [
-                'admin',
-                'global_admin',
-                // 'reviewer',
-                // 'user'
-            ];  
-
-            // set custom users that will not be notified 
-            $excluded_users = []; 
-            $excluded_users[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
-            // $excluded_users[] = 72; // for testing only
-            // dd($excluded_users);
-
-
-            // check if the auth user that is updating the project is the main submitter, if not, send an update notification to the main submitter
-            $customIds = [];
-            if($authId !== $project->created_by){
-                $customIds[] = $project->created_by;
-
-            }
-
-
-            // notified users without hte popup notification | ideal in notifying the user that triggered the event without the popu
-            $customIdsNotifiedWithoutPopup = [];
-            $customIdsNotifiedWithoutPopup[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
-
-            // dd("good ");
-            ActivityLogHelper::sendSystemNotificationEvent(
-                $users_roles_to_notify,
-                $message,
-                $customIds,
-                'info', // use info, for information type notifications
-                [$excluded_users],
-                $route, // nullable
-                $customIdsNotifiedWithoutPopup
-            );
-        /** ./ send system notifications to users */
+         
  
-
- 
-
 
         // return redirect()->route('project.edit',['project' => $this->project->id])
         //     ->with('alert.success',$message)
@@ -278,6 +256,55 @@ class ProjectSubscribersModal extends Component
 
         // // return redirect()->back()->with('alert.success', $message);
         // return back()->with('alert.success', $message);
+
+         // Success message from the activity log project helper 
+                $message =  ProjectSubscriberLogHelper::getActivityMessage('updated',null,$authId,$project->id);
+
+                // get route
+                $route =  ProjectSubscriberLogHelper::getRoute('updated',null, $project->id);
+
+
+               
+                // send notification
+                    ProjectSubscriberNotificationHelper::sendSystemNotification(
+                        $message,
+                        $route,  
+                    );
+
+                    // log event
+                     // // log the event 
+                    event(new ProjectSubscriberLogEvent(
+                        $message ,
+                        $authId,  
+                        null,
+                        $project->id ?? null, 
+
+
+                    ));
+
+                    // notify the project creator 
+
+                        // check first it the authenticated user is the same as the project creator 
+                        if($project->created_by == $authId){
+                            //get creator id
+                            $creatorId = $project->created_by;
+
+                                // dd("false");
+                                ProjectSubscriberNotificationHelper::sendSystemNotificationForConnectedProjectCreator(
+                                    $message,
+                                    $route, 
+                                    null,
+                                    $authId, 
+                                    $project->id,
+                                ); 
+                        }
+
+                        
+                    // ./ notify the project creator 
+
+                // ./ send notification
+
+
 
         // Fire Livewire browser event for Notyf
         $this->dispatch('notify', type: 'success', message: $message);

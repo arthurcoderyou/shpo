@@ -38,7 +38,8 @@ new #[Layout('layouts.guest')] class extends Component
     }
 }; ?>
 
-<div>
+<div >
+    
 
 
     {{-- <div wire:loading class="loading-overlay">

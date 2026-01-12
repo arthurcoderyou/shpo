@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectSubscriber extends Model
 {
-    use SoftDeletes;
+    // use SoftDeletes;
     // /**
     //  * Run the migrations.
     //  */

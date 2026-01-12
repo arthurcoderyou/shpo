@@ -9,13 +9,39 @@ use App\Models\ProjectReferences;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
 use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Events\ProjectReferences\ProjectReferencesLogEvent;
+use App\Helpers\ActivityLogHelpers\ProjectReferenceLogHelper;
+use App\Helpers\SystemNotificationHelpers\ProjectReferenceNotificationHelper;
 
 class ProjectReferencesModal extends Component
 {
+ 
 
-    protected $listeners = [
-        'systemEvent' => 'loadProjectReferences', 
-    ];
+    // dynamic listener 
+        protected $listeners = [
+            // add custom listeners as well
+            // 'systemUpdate'       => 'handleSystemUpdate',
+            // 'SystemNotification' => 'handleSystemNotification',
+        ];
+
+        protected function getListeners(): array
+        {
+
+            $listeners = [
+                "projectReferenceEvent.{$this->project_id}" => 'loadProjectReferences',
+            ];
+
+            // if(!empty($this->project_document_id)){
+            //     $listeners = array_merge($listeners, [
+            //         "projectDocumentSubscriberEvent.{$this->project_document_id}" => '$refresh',
+            //     ]);
+
+            // }
+
+
+            return array_merge($this->listeners, $listeners);
+        }
+    // ./ dynamic listener
 
     public Project $project;
     public int $project_id;
@@ -414,20 +440,24 @@ class ProjectReferencesModal extends Component
 
 
 
-        // delete existing project document references 
-        if(!empty($project->references)){
-            $project_references = ProjectReferences::where('project_id', $project->id)->get();    
-            // dd($project_references);
+        // // delete existing project document references 
+        // if(!empty($project->references)){
+             
+        //     // dd($project->references);
 
-            // delete project_references
-            if(!empty($project->project_references)){
-                foreach($project->project_references as $reference){
-                    $reference->delete();
-                } 
-            }
-        }
+        //     // delete project_references
+        //     if(!empty($project->references)){
+        //         foreach($project->references as $reference){
+        //             $reference->delete();
+        //         } 
+        //     }
+        // }
 
         // dd($this->selectedProjects);
+
+        $authId = Auth::id() ?? null;
+
+        $updated_selected_project_references = [];
 
         // Save Project References (if any)
         if (!empty($this->selectedProjects)) {
@@ -452,21 +482,49 @@ class ProjectReferencesModal extends Component
                     ->exists();
 
                 if ($exists) {
-                    dd("Here");
-                    // Optional: return message to the user
-                    // return back()->with('alert.error', 'This reference already exists.');
-                    continue;
+                    
+                    \App\Models\ProjectReferences::where('project_id', $projectId)
+                    ->where('referenced_project_id', $referenceId)
+                    ->delete();
                 }
 
-                \App\Models\ProjectReferences::create([
-                    'project_id' => $projectId,
-                    'referenced_project_id' => $referenceId,
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
+                // dd("Here");
+                    // Optional: return message to the user
+                    // return back()->with('alert.error', 'This reference already exists.');
+                   
+                    $project_reference =  \App\Models\ProjectReferences::create([
+                        'project_id' => $projectId,
+                        'referenced_project_id' => $referenceId,
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+
+
+                    $updated_selected_project_references[] =  $project_reference->id;
+
+
+                    $message =  ProjectReferenceLogHelper::getActivityMessage('added',$project_reference->id,$authId);
+
+                    // // log the event 
+                    event(new ProjectReferencesLogEvent(
+                        $message ,
+                        $authId, 
+                        $projectId, 
+
+                    ));
+
+
+
 
 
             }
+
+
+            // delete project references not included
+            \App\Models\ProjectReferences::where('project_id', $projectId)
+                ->whereNotIn('id', $updated_selected_project_references)
+                ->delete();
+
         }
 
 
@@ -478,50 +536,58 @@ class ProjectReferencesModal extends Component
         // send email notification to user 
             $authId = Auth::id() ?? null;
 
-            // Success message from the activity log project helper 
-            $message =  ProjectLogHelper::getProjectActivityMessage('ref-updated',$project->id,$authId);
+            // // Success message from the activity log project helper 
+            // $message =  ProjectLogHelper::getProjectActivityMessage('ref-updated',$project->id,$authId);
     
-            // get the route 
-            $route = ProjectLogHelper::getRoute('ref-updated', $project->id);
+            // // get the route 
+            // $route = ProjectLogHelper::getRoute('ref-updated', $project->id);
              
 
-            /** send system notifications to users */
-                // check  ActivityLogHelper::sendSystemNotificationEvent() function to understand how to user this.
+             // Success message from the activity log project helper 
+                $message =  ProjectReferenceLogHelper::getActivityMessage('updated',null,$authId,$project->id);
 
-                $users_roles_to_notify = [
-                    'admin',
-                    'global_admin',
-                    // 'reviewer',
-                    // 'user'
-                ];  
-
-                // set custom users that will not be notified 
-                $excluded_users = []; 
-                $excluded_users[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
-                $excluded_users[] = $project->created_by ?? null;
-                // $excluded_users[] = 72; // for testing only
-                // dd($excluded_users);
-
-                    // set custom users that will  notified 
-                $included_users = []; 
-                // $included_users[] = $project->created_by ?? null; // exclude the current user to the notified user list 
+                // get route
+                $route =  ProjectReferenceLogHelper::getRoute('updated', $project->id);
 
 
-                // notified users without hte popup notification | ideal in notifying the user that triggered the event without the popu
-                $customIdsNotifiedWithoutPopup = [];
-                $customIdsNotifiedWithoutPopup[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
+               
+                // send notification
+                    ProjectReferenceNotificationHelper::sendSystemNotification(
+                        $message,
+                        $route,  
+                    );
 
-                // dd("good ");
-                ActivityLogHelper::sendSystemNotificationEvent(
-                    $users_roles_to_notify,
-                    $message,
-                    $included_users,
-                    'info', // use info, for information type notifications
-                    [$excluded_users],
-                    $route, // nullable
-                    $customIdsNotifiedWithoutPopup
-                );
-            /** ./ send system notifications to users */
+                    // log event
+                     // // log the event 
+                    event(new ProjectReferencesLogEvent(
+                        $message ,
+                        $authId,  
+                        $project->id
+
+
+                    ));
+
+                    // notify the project creator 
+
+                        // check first it the authenticated user is the same as the project creator 
+                        if($project->created_by == $authId){
+                            //get creator id
+                            $creatorId = $project->created_by;
+
+                                // dd("false");
+                                ProjectReferenceNotificationHelper::sendSystemNotificationForConnectedProjectCreator(
+                                    $message,
+                                    $route, 
+                                    $project->id,
+                                    $authId, 
+                                    
+                                ); 
+                        }
+
+                        
+                    // ./ notify the project creator 
+
+                // ./ send notification
 
 
 

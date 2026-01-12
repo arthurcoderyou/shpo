@@ -136,4 +136,100 @@
         </div>
     </div>
     
+
+
+
+      {{-- Do not remove --}}
+    {{-- 
+        Essential for getting the model id from the browser bar 
+        This is to get model id for : 
+        1. Full page load (hard refresh, direct URL, normal navigation)
+        2. Livewire SPA navigation (wire:navigate)
+    --}}
+    @push('scripts')
+        <script>
+
+            (function () {
+
+                function getData(){
+                    window.pageProjectId = @json(optional(request()->route('project'))->id ?? request()->route('project') ?? null);
+                    console.log(window.pageProjectId);
+
+                    window.pageProjectDocumentId = @json(optional(request()->route('project_document'))->id ?? request()->route('project_document') ?? null);
+                    console.log(window.pageProjectDocumentId);
+                    
+
+                    const pageProjectId = window.pageProjectId; // can be null
+                    const pageProjectDocumentId = window.pageProjectDocumentId; // can be null
+
+                    //  Listener for the project discussion events
+                    if (pageProjectId) {
+                        console.log(`listening to : ${pageProjectId}`);
+                        window.Echo.private(`project.project_reference.${pageProjectId}`)
+                            .listen('.event', (e) => {
+                                console.log('[project model-scoped]');
+
+                                let dispatchEvent = `projectReferenceEvent.${pageProjectId}`;
+                                Livewire.dispatch(dispatchEvent); 
+
+                                console.log(dispatchEvent); 
+
+                            });
+                    }
+
+                    // Listener for the project document discussion events
+                    if (pageProjectDocumentId) {
+                        console.log(`listening to : ${pageProjectDocumentId}`);
+                        window.Echo.private(`project.project_document.project_reference.${pageProjectDocumentId}`)
+                            .listen('.event', (e) => {
+                                console.log('[project model-scoped]');
+
+                                let dispatchEvent = `projectDocumentReferenceEvent.${pageProjectDocumentId}`;
+                                Livewire.dispatch(dispatchEvent); 
+
+                                console.log(dispatchEvent); 
+
+                            });
+                    }
+
+
+
+
+
+
+                }
+
+                /**
+                 * 1. Full page load (hard refresh, direct URL, normal navigation)
+                 */
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        getData();
+                    });
+                } else {
+                    // DOM already loaded
+                    getData();
+                }
+
+                /**
+                 * 2. Livewire SPA navigation (wire:navigate)
+                 */
+                document.addEventListener('livewire:navigated', () => {
+                    getData();
+                });
+
+
+
+
+
+
+
+            })();
+ 
+
+
+        </script>
+    @endpush
+
+
 </div>

@@ -83,17 +83,9 @@ class ProjectShow extends Component
     public $selectedUsers;
 
     public $home_route;
-
-
-    public bool $showGuide = false;
-
     public array $projectReferences;
 
-     
-    public function closeGuide()
-    {
-        $this->showGuide = false;
-    }
+    
     
 
 
@@ -108,29 +100,7 @@ class ProjectShow extends Component
 
     public function loadData(){
 
-        $user = Auth::user();
-        if ($user) {
-            $hasRcOrSubmitted = $user->projects()
-                ->where(function ($q) {
-                    $q->where(function ($q2) {
-                        $q2->whereNotNull('rc_number')
-                           ->where('rc_number', '!=', '');
-                    })
-                    ->orWhere('status', 'submitted');
-                })
-                ->exists();
-
-            // "New" user if they have NO rc_number project AND NO submitted project
-            if (! $hasRcOrSubmitted) {
-                $this->showGuide = true;
-            }
-
-            if($user->can('system access admin') || $user->can('system access global admin') || $user->can('system access reviewer')){
-                 $this->showGuide = false;
-            }
-
-
-        }
+        
 
  
         $project = $this->project ;

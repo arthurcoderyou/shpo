@@ -12,6 +12,7 @@
   // Trigger look (like your reference)
   'linkHref' => null,            // if set, renders <a> instead of <button>
   'class' => 'inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 focus-visible:outline focus-visible:ring',
+  'labelClass' =>"hidden lg:block" 
 ])
 
 @php
@@ -40,14 +41,28 @@
             @focus="open = true" @blur="open = false"
             @keydown.escape.window="open = false"
             {{ $attributes->merge(['class' => $class]) }}>
+        <span class="flex items-center space-x-1">
 
-      
-      <span class="hidden lg:block">
+          <span class="{{ $labelClass }}">
+            {{ $label ?? $slot }}
+          </span>
+
+          {{ $slot }}
+
+        </span>
+          
+
+        
+
+ 
+
+
+      {{-- <span class="hidden lg:block">
           {{ $label ?? $slot }}
       </span>
       
       <span class="block lg:hidden text-xs font-semibold text-center">
-          {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($label, 0, 2)) }}
+          {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($label, 0, 2)) }} --}}
       </span>
       @if($sr)<span class="sr-only">{{ $sr }}</span>@endif
     </button>

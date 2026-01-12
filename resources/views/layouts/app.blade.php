@@ -15,8 +15,7 @@
                 permissions: {!! json_encode(Auth::user()?->getAllPermissions()->pluck('name') ?? []) !!} ,
                 reviewerOfProjects: {!! json_encode(Auth::user()?->reviewed_projects->pluck('id') ?? []) !!},
                 myCreatedProjects: {!! json_encode(Auth::user()?->created_projects->pluck('id') ?? []) !!},
-                // reviewerOfProjects: @json(auth()->user()->reviewed_projects->pluck('id')), // assuming relation exists
-                // myCreatedProjects: @json(auth()->user()->created_projects->pluck('id')), // or custom way
+                 
 
                 
 

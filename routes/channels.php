@@ -165,11 +165,88 @@ Broadcast::channel('system.{id}', function ($user, $id) {
     
 /** @channel ./ reviewer channel */
  
+/** @channel project.project_discussion channel */
+    /** @channel project.project_discussion channel */
+        // model wide
+        Broadcast::channel('project.project_discussion', function ($user) {
+            return Auth::check();
+        });
+
+        // instance specific
+        Broadcast::channel('project.project_discussion.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+        
+    /** @channel ./ project.project_discussion channel */
+
+
+
+    /** @channel project.project_document.project_discussion channel */
+        // model wide
+        Broadcast::channel('project.project_document.project_discussion', function ($user) {
+            return Auth::check();
+        });
+
+        // instance specific
+        Broadcast::channel('project.project_document.project_discussion.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+        
+    /** @channel ./ project.project_document.project_discussion channel */
+
+/** @channel ./  project.project_discussion channel */
+
+
+
+
+/** @channel project.project_subscriber channel */
+    /** @channel project.project_subscriber channel */
+        // model wide
+        Broadcast::channel('project.project_subscriber', function ($user) {
+            return Auth::check();
+        });
+
+        // instance specific
+        Broadcast::channel('project.project_subscriber.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+        
+    /** @channel ./ project.project_subscriber channel */
+
+
+
+    /** @channel project.project_document.project_subscriber channel */
+        // model wide
+        Broadcast::channel('project.project_document.project_subscriber', function ($user) {
+            return Auth::check();
+        });
+
+        // instance specific
+        Broadcast::channel('project.project_document.project_subscriber.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+        
+    /** @channel ./ project.project_document.project_subscriber channel */
+
+/** @channel ./  project.project_subscriber channel */
 
 
 
 
 
+/** @channel project.project_reference channel */
+    /** @channel project.project_reference channel */
+        // model wide
+        Broadcast::channel('project.project_reference', function ($user) {
+            return Auth::check();
+        });
 
+        // instance specific
+        Broadcast::channel('project.project_reference.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+        
+    /** @channel ./ project.project_reference channel */
 
-
+ 
+/** @channel project.project_reference channel */

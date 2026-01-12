@@ -9,10 +9,16 @@
         <!-- Title for questions -->
         @if (!$parent)
             <input type="text" wire:model.defer="title" placeholder="Give your question a title (e.g., Clarification needed on {{ $project->name }})" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-300 placeholder-gray-500">
+            @if($errors->first('title'))
+                <p id="message_title_error" class="mt-1 text-sm text-red-700">{{ $errors->first('title') }}</p>
+            @endif
         @endif
         
         <!-- Body of the question or note -->
         <textarea wire:model.defer="body" required rows="4" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-300 placeholder-gray-500" placeholder="Write your question or note..."></textarea>
+        @if($errors->first('body'))
+            <p id="message_body_error" class="mt-1 text-sm text-red-700">{{ $errors->first('body') }}</p>
+        @endif
         
         <!-- Privacy Option for Admins/Reviewers -->
         @if (!$parent && auth()->user()?->hasAnyPermission(['system access global admin', 'system access admin', 'system access reviewer']))
@@ -23,6 +29,13 @@
                 </label>
             </div>
         @endif
+
+        {{-- <div class="flex items-center space-x-2">
+            <input type="checkbox" wire:model="notify_email" class="text-blue-600">
+            <label for="notify_email" class="text-sm text-gray-600">
+                Notify email
+            </label>
+        </div> --}}
 
         <!-- Submit Button -->
         <div class="flex justify-between items-center">

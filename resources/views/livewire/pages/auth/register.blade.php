@@ -24,7 +24,11 @@ new #[Layout('layouts.guest')] class extends Component
     public string $role_request = 'user'; 
 
     public array $companies = [];
-
+    
+    /**
+     * Returns default information 
+     * @return void         void           Not required to return value
+     */
     public function mount(){
 
 
@@ -50,11 +54,14 @@ new #[Layout('layouts.guest')] class extends Component
             ->pluck('company')
             ->toArray();
 
-
+            
 
     }
 
-
+    /**
+     * Updated company
+     * @return void         void           Not required to return value
+     */
     public function updatedCompany(){
 
         $q = $this->company;
@@ -78,7 +85,7 @@ new #[Layout('layouts.guest')] class extends Component
 
         $this->companies = $query->limit($limit)->pluck('company')->toArray();
 
-
+        
     }
 
 
@@ -89,7 +96,7 @@ new #[Layout('layouts.guest')] class extends Component
     public function register(): void
     {
 
-        // dd($this->role_request);
+        // dd($this->all());
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -102,8 +109,11 @@ new #[Layout('layouts.guest')] class extends Component
         ]);
 
         // Determine role_request automatically based on email
-        $email = strtolower($validated['email']);
-        $role_request = User::getRoleRequestByEmail($email);
+        // $email = strtolower($validated['email']);
+        // $role_request = User::getRoleRequestByEmail($email);
+
+        // using the selected request 
+        $role_request = $validated['role_request'];
 
         $validated['role_request'] = $role_request;
 
@@ -125,7 +135,7 @@ new #[Layout('layouts.guest')] class extends Component
     }
 }; ?>
 
-<div>
+<div >
 
     {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
