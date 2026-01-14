@@ -53,29 +53,28 @@ class BackupDBMail extends Command
 
         foreach($userIds as  $i => $userId ){
 
-            $user = User::where('id',$userId)->first();
-
             
 
-            // if($submission_type = "submission")
-            // try {
-            //     event(new DbBackupEvent( 
-            //         $dbBackup->id,  
-            //         $userId
-            //     ));
-            // } catch (\Throwable $e) {
-            //     // Log the error without interrupting the flow
-            //     Log::error('Failed to dispatch DbBackupEvent event: ' . $e->getMessage(), [
-            //         'dbBackup_id' => $dbBackup->id,
-            //          'userId' => $userId,
-            //         'trace' => $e->getTraceAsString(),
-            //     ]);
-            // }
+            
+ 
+            try {
+                event(new DbBackupEvent( 
+                    $dbBackup->id,  
+                    $userId
+                ));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch DbBackupEvent event: ' . $e->getMessage(), [
+                    'dbBackup_id' => $dbBackup->id,
+                     'userId' => $userId,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
 
-
-             $this->info("Successful email: {$user->email}");
-                Mail::to($user->email)
-                ->later(now()->addSeconds($i * 5), new SendDbBackupMail($dbBackup, $user));
+            // $user = User::where('id',$userId)->first();
+            //  $this->info("Successful email: {$user->email}");
+            //     Mail::to($user->email)
+            //     ->later(now()->addSeconds($i * 5), new SendDbBackupMail($dbBackup, $user));
 
 
 
