@@ -24,6 +24,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 use App\Models\ProjectDocumentReferences;
 use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
 use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Events\ProjectReferences\ProjectReferencesLogEvent;
 use App\Helpers\ActivityLogHelpers\ProjectReferenceLogHelper;
 use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
@@ -518,14 +519,14 @@ class ReviewCreate extends Component
 
 
         // delete existing project document references 
-        if(!empty($project->project_references)){
-            // delete project_references
-            if(!empty($project->project_references)){
-                foreach($project->project_references as $reference){
-                    $reference->delete();
-                } 
-            }
-        }
+        // if(!empty($project->project_references)){
+        //     // delete project_references
+        //     if(!empty($project->project_references)){
+        //         foreach($project->project_references as $reference){
+        //             $reference->delete();
+        //         } 
+        //     }
+        // }
 
 
         // get the user
@@ -535,33 +536,68 @@ class ReviewCreate extends Component
         // Save Project References (if any)
         if (!empty($this->selectedProjects)) {
             foreach ($this->selectedProjects as $selectedProject) {
-                $project_reference = ProjectReferences::create([
-                    'project_id' => $project->id,
-                    'referenced_project_id' => $selectedProject['id'],
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
+                // \App\Models\ProjectReferences::create([
+                //     'project_id' => $project->id,
+                //     'referenced_project_id' => $selectedProject['id'],
+                //     'created_by' => Auth::id(),
+                //     'updated_by' => Auth::id(),
+                // ]);
 
-                // log the instance to the project logs
-                    // we need to log it onto hte project because this is generally the parent model
-                    // // get the message from the helper 
-                    $message = ProjectReferenceLogHelper::getActivityMessage('referenced', $project_reference->id, $authId);
+                // dd($this->selectedProjects);
 
-                    // // get the route
-                    $route = ProjectReferenceLogHelper::getRoute('referenced', $project_reference->id);
+                // dd($selectedProject['id']);
 
-                    // log the event 
-                    event(new ProjectLogEvent(
+                $projectId = $project->id;
+                $referenceId = $selectedProject['id'];
+
+
+                $exists = \App\Models\ProjectReferences::where('project_id', $projectId)
+                    ->where('referenced_project_id', $referenceId)
+                    ->exists();
+
+                if ($exists) {
+                    
+                    \App\Models\ProjectReferences::where('project_id', $projectId)
+                    ->where('referenced_project_id', $referenceId)
+                    ->delete();
+                }
+
+                // dd("Here");
+                    // Optional: return message to the user
+                    // return back()->with('alert.error', 'This reference already exists.');
+                   
+                    $project_reference =  \App\Models\ProjectReferences::create([
+                        'project_id' => $projectId,
+                        'referenced_project_id' => $referenceId,
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                    ]);
+
+
+                    $updated_selected_project_references[] =  $project_reference->id;
+
+
+                    $message =  ProjectReferenceLogHelper::getActivityMessage('added',$project_reference->id,$authId);
+
+                    // // log the event 
+                    event(new ProjectReferencesLogEvent(
                         $message ,
                         $authId, 
-                        $project->id,
+                        $projectId, 
 
                     ));
-                    
-                // ./ log the instance
+
+
+
 
 
             }
+
+
+            // delete project references not included
+            \App\Models\ProjectReferences::where('project_id', $projectId)
+                ->whereNotIn('id', $updated_selected_project_references)
+                ->delete();
         }
 
 

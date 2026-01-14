@@ -51,6 +51,10 @@ Broadcast::channel('system.{id}', function ($user, $id) {
 
  
 
+Broadcast::channel('backup.database', function ($user, $id) {
+    // Only allow the user with this id to listen on this channel
+    return Auth::check();
+});
 
 
 
