@@ -14,8 +14,13 @@ Artisan::command('inspire', function () {
 // Schedule::command(CheckUserInactivity::class)->everyMinute();
 Schedule::command(SubmitQueuedProjectsCommand::class)->everyMinute();
 
-Schedule::command('app:auto-update-project-status')->everyMinute();
+// Schedule::command('app:auto-update-project-status')->everyMinute();
 
-
+// disabled in local development and reenable in live 
+// Schedule::command('backup:database')
+//         ->dailyAt('20:00')
+//         ->withoutOverlapping()
+//         ->onOneServer()
+//         ->runInBackground();
 
 // Schedule::command(SubmitQueuedProjectDocumentsCommand::class)->everyMinute();

@@ -213,35 +213,35 @@ class UserRoleEdit extends Component
         //  dd($hadReviewerPermission && !$hasReviewerPermissionAfter);
         // dd($this->hasConnectedRecords($user));
 
-        // If reviewer permission is being removed, check for connections
-        if ($hadReviewerPermission && !$hasReviewerPermissionAfter) {
-            if ($this->hasConnectedRecords($user,'reviewer')) {
-                // Alert::error('Error', 'Cannot remove reviewer role. This user is connected to existing records.');
-                return redirect()->route('user.index')
-                    ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
-                    ;
-            }
-        }
+        // // If reviewer permission is being removed, check for connections
+        // if ($hadReviewerPermission && !$hasReviewerPermissionAfter) {
+        //     if ($this->hasConnectedRecords($user,'reviewer')) {
+        //         // Alert::error('Error', 'Cannot remove reviewer role. This user is connected to existing records.');
+        //         return redirect()->route('user.index')
+        //             ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
+        //             ;
+        //     }
+        // }
 
-        // If user permission is being removed, check for connections
-        if ($hadUserPermission && !$hasUserPermissionAfter) {
-            if ($this->hasConnectedRecords($user,'user')) {
-                // Alert::error('Error', 'Cannot remove user role. This user is connected to existing records.');
-                return redirect()->route('user.index')
-                ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
-                ;
-            }
-        }
+        // // If user permission is being removed, check for connections
+        // if ($hadUserPermission && !$hasUserPermissionAfter) {
+        //     if ($this->hasConnectedRecords($user,'user')) {
+        //         // Alert::error('Error', 'Cannot remove user role. This user is connected to existing records.');
+        //         return redirect()->route('user.index')
+        //         ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
+        //         ;
+        //     }
+        // }
 
-        // If admin permission is being removed, check for connections
-        if ($hadAdminPermission && !$hasAdminPermissionAfter) {
-            if ($this->hasConnectedRecords($user,'admin')) {
-                // Alert::error('Error', 'Cannot remove admin role. This user is connected to existing records.');
-                return redirect()->route('user.index')
-                ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
-                ;
-            }
-        }
+        // // If admin permission is being removed, check for connections
+        // if ($hadAdminPermission && !$hasAdminPermissionAfter) {
+        //     if ($this->hasConnectedRecords($user,'admin')) {
+        //         // Alert::error('Error', 'Cannot remove admin role. This user is connected to existing records.');
+        //         return redirect()->route('user.index')
+        //         ->with('alert.error','Cannot remove reviewer role. This user is connected to existing records.')
+        //         ;
+        //     }
+        // }
         //  dd("All Gods");
         
 

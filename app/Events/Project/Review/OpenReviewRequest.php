@@ -44,7 +44,7 @@ class OpenReviewRequest implements ShouldBroadcast, ShouldQueue
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('project-document'),
+            new PrivateChannel('project'),
         ];
     }
 

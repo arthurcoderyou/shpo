@@ -10,6 +10,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 class ProjectReviewerController extends Controller
 {
     // index
+    // this is for the project reviewers list  || PROJECT ONLY
     public function index($id){
         $project = Project::findOrFail($id);
 
@@ -50,7 +51,7 @@ class ProjectReviewerController extends Controller
     }
 
 
-
+     // this is for the project DOCUMENT reviewers list  || PROJECT DOCUMENT ONLY
     public function project_reviewer_index($project_document_id){
 
         $project_document = ProjectDocument::findOrFail($project_document_id);

@@ -20,7 +20,7 @@
 
     <x-breadcrumb :items="$items" />
 
-    <livewire:admin.project-document.project-document-list  :route="$route"  :project_id="$project ? $project->id : null" /> 
+    <livewire:admin.project-document.project-document-list  route="project.project_documents"  :project_id="$project ? $project->id : null" /> 
 
     
 

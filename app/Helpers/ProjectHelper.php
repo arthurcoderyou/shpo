@@ -15,6 +15,7 @@ use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Events\Project\ProjectLogEvent;
+use App\Helpers\ProjectDocumentHelpers;
 use App\Helpers\ProjectReviewerHelpers;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Notification;
@@ -420,7 +421,12 @@ class ProjectHelper
 
 
     // submit project for rc evaluation 
-    public static function submit_project_for_rc_evaluation($project_id, $override_on_que_submission = false){
+    public static function submit_project_for_rc_evaluation(
+        $project_id, 
+        $override_on_que_submission = false, 
+        $triggered_by = "project_submission" // checks whether it is triggere by project submission or document submission || choices: [project_submission] : [document_submission]
+        
+        ){
  
         // dd($project_id);
 
@@ -506,9 +512,12 @@ class ProjectHelper
 
             // }
 
-            return redirect()->route('project.show',['project' => $project->id])
-                ->with('alert.error',$message)
+            if($triggered_by == "project_submission"){
+                return redirect()->route('project.show',['project' => $project->id])
+                    ->with('alert.error',$message)
                 ;
+            }
+            
 
 
             
@@ -531,10 +540,13 @@ class ProjectHelper
 
             // }
 
-            return redirect()->route('project.show',['project' => $project->id])
-                 ->with('alert.error',$message)
-            ;
-
+            
+            if($triggered_by == "project_submission"){
+                return redirect()->route('project.show',['project' => $project->id])
+                    ->with('alert.error',$message)
+                ;
+            }
+            
 
              
 
@@ -566,20 +578,22 @@ class ProjectHelper
         // dd("Projects had been submitted");
         // dd($project->project_documents);
 
-        $submission_type = "";
+        $submission_type = "initial_submission";
 
-        $authId = auth()->user()->id;
+        $authId = auth()->user()->id ?? $project->created_by; // either use the authenticated user or the default creator of the project 
         
 
         // get the message from the helper 
         $message = ProjectLogHelper::getActivityMessage('submitted', $project->id, $authId);
+
+        $now = now();
 
         
         // if override admin que submit is true
         if($override_on_que_submission){
 
             // dd("Here");
-            $submission_type = "submission";
+            // $submission_type = "submission";
 
 
             // override submit the project 
@@ -590,6 +604,15 @@ class ProjectHelper
             $project->last_submitted_at = now();
             $project->last_submitted_by = Auth::user()->id;
             $project->save();
+
+
+
+            
+
+            // update project documents 
+
+
+
 
 
             // logging and system notifications
@@ -619,7 +642,7 @@ class ProjectHelper
                 /** ./ send system notifications to users */
             // ./ logging and system notifications
 
-            ProjectHelper::updateDocumentsAndAttachments($project);
+            // ProjectHelper::updateDocumentsAndAttachments($project);
 
         }else{
 
@@ -630,7 +653,7 @@ class ProjectHelper
             // if the project is a draft, create the default values
             if($project->status == "draft"){
 
-                $submission_type = "submission";
+                $submission_type = "initial_submission";
 
 
 
@@ -709,11 +732,19 @@ class ProjectHelper
 
                     // return ProjectHelper::returnHomeRouteBasedOnProject($project);
 
-                    return redirect()->route('project.show',[
-                        'project' => $project->id,
-                    ])
-                    ->with('alert.info',$message)
-                    ;
+                   
+
+
+
+                    if($triggered_by == "project_submission"){
+                        return redirect()->route('project.show',[
+                            'project' => $project->id,
+                        ])
+                        ->with('alert.info',$message)
+                        ;
+                    }
+
+
 
                 }else{
 
@@ -723,13 +754,13 @@ class ProjectHelper
                     $project->status = "submitted";
                     $project->allow_project_submission = false; // do not allow double submission until it is reviewed
                     
-                    $project->updated_at = now();
-                    $project->last_submitted_at = now();
-                    $project->last_submitted_by = Auth::user()->id;
+                    $project->updated_at = $now;
+                    $project->last_submitted_at = $now;
+                    $project->last_submitted_by = $authId;
                     $project->save();
 
 
-                    ProjectHelper::updateDocumentsAndAttachments($project);
+                    // ProjectHelper::updateDocumentsAndAttachments($project);
 
                 }
 
@@ -742,7 +773,126 @@ class ProjectHelper
                 // ProjectHelper::notifyReviewersAndSubscribers($project, $reviewer, $submission_type);
 
              
-            } 
+            }else{
+                // resubmission
+
+                $submission_type = "suplemental_submission";
+
+                // check if project submission restriction is on
+                // que the project for submission if the project is on queue
+                if (!$isProjectSubmissionAllowed && $queuedForNextDay) {
+                    // Find the next available active day
+                    $daysOfWeek = [
+                        'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+                    ];
+
+                    $nextAvailableDay = null;
+                    for ($i = 1; $i <= 7; $i++) {
+                        $nextDay = now()->addDays($i)->format('l');
+                        $isNextActive = ActiveDays::where('day', $nextDay)
+                            ->where('is_active', true)
+                            ->exists();
+                        if ($isNextActive) {
+                            $nextAvailableDay = $nextDay;
+                            break;
+                        }
+                    }
+
+                    $formattedOpen = Carbon::parse($projectTimer->project_submission_open_time)->format('h:i A');
+                    $formattedClose = Carbon::parse($projectTimer->project_submission_close_time)->format('h:i A');
+
+                    $message = "Project submission is currently restricted. Your project has been queued and will be submitted automatically on $nextAvailableDay between $formattedOpen and $formattedClose.";
+
+
+                    // dd("Timer detectected");
+
+                    // update project info
+                    $project->status = "on_que";
+                    $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                    
+                    $project->updated_at = now();
+                    $project->last_submitted_at = now();
+                    $project->last_submitted_by = Auth::user()->id;
+                    $project->save();
+
+                    ProjectHelper::updateDocumentsAndAttachments($project);
+
+
+                    // Alert::info('Project Notice',$message);
+
+                    
+
+                    // logging and system notifications
+                        $authId = Auth::check() ? Auth::id() : null;
+
+                        // get the message from the helper 
+                        $message = ProjectLogHelper::getActivityMessage('on-que', $project->id, $authId);
+
+                        // get the route
+                        $route = ProjectLogHelper::getRoute('on-que', $project->id);
+
+                        // log the event 
+                        event(new ProjectLogEvent(
+                            $message ,
+                            $authId, 
+                            $project->id,
+
+                        ));
+                
+                        /** send system notifications to users */
+                            
+                            ProjectNotificationHelper::sendSystemNotification(
+                                message: $message,
+                                route: $route 
+                            );
+
+                        /** ./ send system notifications to users */
+                    // ./ logging and system notifications
+
+
+
+                    // return ProjectHelper::returnHomeRouteBasedOnProject($project);
+
+                   
+
+
+
+                    if($triggered_by == "project_submission"){
+                        return redirect()->route('project.show',[
+                            'project' => $project->id,
+                        ])
+                        ->with('alert.info',$message)
+                        ;
+                    }
+
+
+
+                }else{
+
+                    // dd("Timer not detectected");
+
+                    // else, submit normally
+                    $project->status = "submitted";
+                    $project->allow_project_submission = false; // do not allow double submission until it is reviewed
+                    
+                    $project->updated_at = $now;
+                    $project->last_submitted_at = $now;
+                    $project->last_submitted_by = $authId;
+                    $project->save();
+
+
+                    // ProjectHelper::updateDocumentsAndAttachments($project);
+
+                }
+
+
+
+
+
+
+
+
+            }
 
         
         
@@ -751,14 +901,36 @@ class ProjectHelper
         // dd("Passed all");
         
 
-        $submission_type = "initial_submission";
+        // $submission_type = "initial_submission";
 
- 
-        ProjectReviewerHelpers::setProjectReviewer($project,$submission_type);
- 
+        if($submission_type == "initial_submission"){
+            ProjectReviewerHelpers::setProjectReviewer($project,$submission_type);
 
+            // ProjectDocumentHelpers::updateProjectDocumentsOnProjectSubmission(
+            //     $project_id, 
+            //     $project->status, 
+            //     $submission_type,
+            //     $project->allow_project_submission,
+            //     $now,
+            //     $authId,
+            // );
         
 
+        }else{
+
+
+            $submission_type = "suplemental_submission";
+
+            // get the current reviewer and update its status to pending
+            $current_project_reviewer = $project->getCurrentReviewer();
+            $current_project_reviewer->review_status = "pending";
+            $current_project_reviewer->save();
+
+        }
+       
+
+
+  
         // when override submission, use the project creator 
         if($override_on_que_submission){
             $authId = $project->created_by;
@@ -787,9 +959,12 @@ class ProjectHelper
             event(new ProjectLogEvent(
                 $message ,
                 $authId, 
-                $project->id,
-
+                $project->id, 
             ));
+
+
+
+            
     
             /** send system notifications to users */
                 
@@ -819,18 +994,24 @@ class ProjectHelper
 
 
 
-        return redirect()->route('project.show',[
-            'project' => $project->id,
-        ])
-        ->with('alert.success',$message);
-        ;
-            
         
+            
+
+         if($triggered_by == "project_submission"){
+            return redirect()->route('project.show',[
+                'project' => $project->id,
+            ])
+            ->with('alert.success',$message);
+            ;
+        }
+
 
     }
 
-
-
+                        
+     
+    
+ 
 
     // STILL IN DEVELOPMENT 
     // this is connected to the project submission of project reviewers
@@ -3013,7 +3194,7 @@ class ProjectHelper
             $authId = Auth::check() ? Auth::id() : null;
 
             // get the message from the helper 
-            $message = ProjectLogHelper::getActivityMessage('deleted', $project->id, $authId);
+            $message = ProjectLogHelper::getActivityMessage('deleted', $project->id, $authId,'all');
 
             // get the route
             $route = ProjectLogHelper::getRoute('deleted', $project->id);
@@ -3036,7 +3217,8 @@ class ProjectHelper
             /** ./ send system notifications to users */
         // ./ logging and system notifications
 
-
+        // get the message from the helper || for submitter 
+        $message = ProjectLogHelper::getActivityMessage('deleted', $project->id, $authId,'submitter');  
 
 
         $project->delete();

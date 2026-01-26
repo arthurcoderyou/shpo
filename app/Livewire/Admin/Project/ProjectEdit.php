@@ -106,6 +106,14 @@ class ProjectEdit extends Component
     public $certificate_of_approval;
     public $notice_of_violation;
 
+    public $company;
+
+    public $installation;
+
+    public $sub_area;
+
+    public $project_size;
+
 
 
     public $project_types = [
@@ -227,6 +235,10 @@ class ProjectEdit extends Component
         $this->certificate_of_approval = $project->certificate_of_approval ;
         $this->notice_of_violation = $project->notice_of_violation ;
 
+        $this->installation = $project->installation ;
+        $this->sub_area = $project->sub_area ;
+        $this->project_size = $project->project_size ;
+
         
 
         $this->location_directions[] =   Project::select(
@@ -270,6 +282,8 @@ class ProjectEdit extends Component
         $this->loadFederalAgencies(); 
 
         $this->loadProjects();
+
+        $this->company = Auth::user()->company;
 
     }
 
@@ -615,6 +629,10 @@ class ProjectEdit extends Component
                 'nullable', 'string', 'required_if:type,Local Government,Federal Government',
             ],
 
+            'company' => [ 
+                'nullable', 'string', 'required_if:type,Private',
+            ],
+
             'type' => [
                 'required'
             ],
@@ -804,7 +822,10 @@ class ProjectEdit extends Component
 
             'agency' => [
                 'nullable', 'string', 'required_if:type,Local Government,Federal Government',
-            ],                                                                                                                         
+            ],              
+             'company' => [
+                'nullable', 'string', 'required_if:type,Private',
+            ],                                                                                                           
 
             'type' => [
                 'required'
@@ -892,12 +913,18 @@ class ProjectEdit extends Component
         $project->certificate_of_approval = $this->certificate_of_approval ;
         $project->notice_of_violation = $this->notice_of_violation ;
 
+        $project->installation = $this->installation ;
+        $project->sub_area = $this->sub_area ;
+        $project->project_size = $this->project_size ;
+
         $project->updated_by = Auth::user()->id;
         $project->updated_at = now();
         $project->save();
 
         
- 
+        $user = User::find(Auth::user()->id);
+        $user->company = $this->company;
+        $user->save();
 
 
         // delete existing subscribers 
@@ -1006,7 +1033,7 @@ class ProjectEdit extends Component
             $authId = Auth::check() ? Auth::id() : null;
 
             // get the message from the helper 
-            $message = ProjectLogHelper::getActivityMessage('updated', $project->id, $authId);
+            $message = ProjectLogHelper::getActivityMessage('updated', $project->id, $authId,'all');
 
             // get the route
             $route = ProjectLogHelper::getRoute('updated', $project->id);
@@ -1031,7 +1058,8 @@ class ProjectEdit extends Component
  
 
  
-
+        // get the message from the helper 
+        $message = ProjectLogHelper::getActivityMessage('updated', $project->id, $authId,'submitter');
 
         return
             // redirect()->route('project.edit',['project' => $this->project->id])

@@ -1,5 +1,32 @@
 <!-- Card Section -->
-<div class="max-w-full px-4 py-10 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 py-10 sm:px-6 lg:px-8  mx-auto"
+
+     x-data="{
+        showModal: false,  
+        handleKeydown(event) {
+            if (event.keyCode == 191) {
+                this.showModal = true; 
+            }
+            if (event.keyCode == 27) {
+                this.showModal = false; 
+                $wire.search = '';
+            }
+
+        },
+    }"
+
+>
+
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.key') }}&libraries=places&callback=initMap"
+        async
+        defer>
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/css/intlTelInput.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js"></script>
+
 
     {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
@@ -60,50 +87,73 @@
                     </div>
 
                     <div class="col-span-12 sm:col-span-4">
-                         
-                        <x-ui.input 
-                            id="address"
-                            name="address"
-                            type="text"
-                            wire:model.live="address"   
-                            label="Address"
-                            required  
-                            placeholder="Enter address" 
-                            :error="$errors->first('address')"
-  
-                        />
+
+                        <x-input-label for="address" :value="__('Address')" />
+                        <div class="relative mt-1 flex rounded-md shadow-sm">
+                            <!-- Prefix Button -->
+                            <button
+                                @click="showModal = true, initMap" type="button"
+                                @keydown.window="handleKeydown" 
+
+                                type="button"
+                                class="inline-flex items-center rounded-l-md border border border-gray-300 bg-gray-50 px-3 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                aria-label="Open map"
+                            >
+                                <!-- Globe Icon -->
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9zm0 0c2.5 2.5 2.5 13.5 0 18m0-18c-2.5 2.5-2.5 13.5 0 18m-9-9h18" />
+                                </svg>
+                            </button>
+
+                            <!-- Address Input -->
+                            <x-text-input
+                                @click="showModal = true, initMap" type="button"
+                                @keydown.window="handleKeydown" 
+
+                                readonly
+                                wire:model="address"
+                                id="address"
+                                name="address"
+                                type="text"
+                                class="block w-full rounded-l-none"
+                                required
+                                autocomplete="address"
+                            />
+                        </div>
 
                     </div>
 
                     <div class="col-span-12 sm:col-span-4">
                          
-                        <x-ui.input 
-                            id="company"
+                       
+                        <x-inputs.text-dropdown
                             name="company"
-                            type="text"
-                            wire:model.live="company"   
                             label="Company"
-                            required  
-                            placeholder="Enter company" 
-                            :error="$errors->first('company')"
-  
+                            :value="$company"
+                            placeholder="Search or select company..."
+                            :options="$companies"    
+                            wire:model.live="company"       
                         />
+
+                        <x-input-error class="mt-2" :messages="$errors->get('company')" />
+            
+
 
                     </div>
 
                     <div class="col-span-12 sm:col-span-4">
                          
-                        <x-ui.input 
-                            id="phone_number"
-                            name="phone_number"
-                            type="text"
-                            wire:model.live="phone_number"   
-                            label="Phone number"
-                            required  
-                            placeholder="Enter phone number" 
-                            :error="$errors->first('phone_number')"
-  
-                        />
+                        <x-input-label for="phone_number" :value="__('Phone number')" />
+ 
+                        <div wire:ignore>
+                            <input id="phone" type="tel"
+                                class="w-full block rounded-lg border-slate-300" />
+                        </div> 
+
+
+                        <x-input-error class="mt-2" :messages="$errors->get('phone_number')" />
+                        <x-input-error class="mt-2" :messages="$errors->get('phone_number_country_code')" />
 
                     </div>
 
@@ -315,6 +365,311 @@
             
         </div>
     <!--  ./ Loaders -->
+
+    
+    <!-- Search location modal-->
+    @teleport('body')
+        <div x-show="showModal" x-trap="showModal" class="relative z-50 " aria-labelledby="modal-title" role="dialog"
+            aria-modal="true">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+            <!-- <div class="fixed inset-0 z-10 w-screen overflow-y-auto py-10"> -->
+            <div class="fixed inset-0 z-50 w-screen overflow-y-auto py-10">
+                <div class="flex justify-center p-4 sm:p-0">
+                    <div
+                        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-7xl">
+                        <div 
+                        {{-- @click.outside="showModal = false"  --}}
+                        class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                            <div class="w-full px-1 pt-1" x-data="{
+                                searchPosts(event) {
+                                    document.getElementById('searchInput').focus();
+                                    event.preventDefault();
+                                }
+                            }">
+                                {{-- <form action="" autocomplete="off">
+                                    <input
+                                    autocomplete="off"
+                                    wire:model.live.throttle.500ms="location_search" type="text" id="searchInput"
+                                    name="searchInput"
+                                    class="block w-full flex-1 py-2 px-3 mt-2 outline-none border-none rounded-md bg-slate-100"
+                                    placeholder="Search for project name ..." @keydown.slash.window="searchPosts" />
+                                </form> --}}
+                                <div class="mt-2 w-full overflow-hidden rounded-md bg-white">
+
+                                     
+                                    <div class=" py-2 px-3 border-b border-slate-200 text-sm font-medium text-slate-500">
+
+                                        Search map <strong>(Click to OK 
+                                            {{-- or out of the box  --}}
+                                            to close dialog
+                                            )</strong>
+
+                                    </div>
+
+                                    
+                                    <div class="  py-2 px-3 hover:bg-slate-100 bg-white border border-gray-200 shadow-sm rounded-xl mb-1"
+                                    {{-- wire:click="saerch_project('{{  $result->id }}')"
+                                    @click="showModal = false" --}}
+                                    >
+                                         
+
+                                        <div>
+                                            <input
+                                            autofocus autocomplete="location"
+                                            wire:model.live="location"
+                                            placeholder="Search location"
+                                            id="search-box" type="text" class="py-2 px-3 pe-11 block w-full border-gray-200 shadow-sm rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  " placeholder="">
+
+                        
+                                            <input type="hidden" id="latitude" wire:model.live="latitude">
+                                            <input type="hidden" id="longitude" wire:model.live="longitude">
+                                        </div>
+
+
+                                        <div class="max-w-full text-wrap ">
+                                            <div>
+                            
+                                                <div id="map" style="height: 500px; width: 100%;" wire:ignore></div>
+                                            {{-- <button wire:click="saveLocation">Save Location</button> --}}
+                                            </div>
+                    
+                    
+                                            <div>
+                                                @error('location')
+                                                    <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                                                @enderror
+                    
+                                            </div>
+
+
+
+
+
+                                        </div>
+
+                                            
+                                        <button  type="button"
+                                            @click="showModal = false" type="button"
+                                            @keydown.window="handleKeydown"
+                                            class="mt-1 py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+                                            OK
+                                        </button> 
+
+                                         
+                                    </div>
+                                             
+
+                                         
+
+    
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endteleport
+    <!-- ./ Search location modal-->
+
+
+
+    {{-- - script to run the geolocation --}}
+    <script>
+        let map, marker, searchBox;
+
+       
+
+
+        function initMap() {
+
+            // check if the user has address already  
+ 
+
+            const defaultCenter = { lat: 13.4443, lng: 144.7937 }; // Fallback (Guam)
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultCenter,
+                zoom: 11,
+                // mapTypeId: google.maps.MapTypeId.SATELLITE // ✅ Default to Satellite view
+            });
+
+            marker = new google.maps.Marker({
+                position: map.getCenter(),
+                map: map,
+                draggable: true
+            });
+
+            const input = document.getElementById("search-box");
+            searchBox = new google.maps.places.SearchBox(input);
+
+
+            // =========================   
+            // 📍 Use Browser Geolocation
+            // =========================
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const currentLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                        };
+
+                        map.setCenter(currentLocation);
+                        marker.setPosition(currentLocation);
+
+                        // 🔄 Reverse geocode immediately
+                        geocoder.geocode(
+                            { location: currentLocation },
+                            function (results, status) {
+                                if (status === "OK" && results[0]) {
+                                    const locationName = results[0].formatted_address;
+
+                                    // ✅ Set default Livewire address
+                                    @this.set('address', locationName);
+
+                                    // ✅ Update the search box text
+                                    input.value = locationName;
+
+
+                                    console.log("Initial address set:", locationName);
+                                } else {
+                                    console.error("Initial geocoder failed:", status);
+                                }
+                            }
+                        );
+
+
+                    },
+                    (error) => {
+                        console.warn('Geolocation denied or unavailable:', error.message);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0,
+                    }
+                );
+            }
+
+           
+ 
+
+            searchBox.addListener("places_changed", function () {
+                let places = searchBox.getPlaces();
+                if (places.length == 0) return;
+
+                let place = places[0];
+                map.setCenter(place.geometry.location);
+                marker.setPosition(place.geometry.location);
+
+                let fullAddress = place.formatted_address || place.name; // Use full address if available
+
+                @this.set('address', fullAddress); // ✅ Use full address instead of just name
+
+                console.log("Updated Location:", fullAddress);
+            });
+
+
+            const geocoder = new google.maps.Geocoder();
+
+            marker.addListener("dragend", function () {
+                let lat = marker.getPosition().lat();
+                let lng = marker.getPosition().lng();
+
+                // Reverse geocode to get location name
+                geocoder.geocode({ location: { lat, lng } }, function (results, status) {
+                    if (status === "OK" && results[0]) {
+                        let locationName = results[0].formatted_address;
+
+                        // Send data to Livewire 
+                        @this.set('address', locationName);
+
+                        // ✅ Update the search box text
+                        input.value = locationName;
+
+                        console.log("Updated address:", locationName);
+                    } else {
+                        console.error("Geocoder failed: " + status);
+                    }
+                });
+            });
+        }
+
+        window.onload = initMap;
+
+         
+    </script>
+    {{-- ./ - script to run the geolocation --}}
+
+
+    <script>
+    document.addEventListener('livewire:navigated', initPhone);
+    document.addEventListener('DOMContentLoaded', initPhone);
+
+    function initPhone() {
+        const input = document.querySelector('#phone');
+        if (!input || input.dataset.ready) return;
+        input.dataset.ready = "1";
+ 
+
+        const iti = window.intlTelInput(input, { 
+            initialCountry: "auto",
+
+            geoIpLookup: function (callback) {
+               
+
+                // Example provider: ipapi.co (simple). You can swap providers.
+                fetch('https://ipapi.co/json/')
+                    .then(res => res.json())
+                    .then(data => {
+                        const iso2 = (data && data.country_code) ? data.country_code.toLowerCase() : 'ph';
+                        callback(iso2);
+                    })
+                    .catch(() => callback('ph'));
+            },
+
+            separateDialCode: false,
+            nationalMode: false,
+            autoPlaceholder: "polite",
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js",
+        });
+
+      
+
+        // Sync initial state to Livewire once (after plugin is ready)
+        setTimeout(syncToLivewire, 0);
+
+        function syncToLivewire() {
+            const data = iti.getSelectedCountryData() || {};
+            const iso2 = (data.iso2 || '').toUpperCase() || null;
+
+            let e164 = null;
+            try {
+                e164 = iti.getNumber(window.intlTelInputUtils.numberFormat.E164);
+            } catch (e) {
+                e164 = null;
+            }
+
+            if (!input.value || input.value.trim() === '') e164 = null;
+
+            @this.set('phone_number_country_code', iso2);
+            @this.set('phone_number', e164);
+        }
+
+        input.addEventListener('countrychange', syncToLivewire);
+        input.addEventListener('blur', syncToLivewire);
+
+        let t = null;
+        input.addEventListener('input', () => {
+            clearTimeout(t);
+            t = setTimeout(syncToLivewire, 250);
+        });
+    }
+    </script>
+
 
 
 </div>

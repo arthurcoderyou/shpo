@@ -51,6 +51,12 @@ class RoleList extends Component
 
     public $role_count;
 
+    public function resetFilters(){
+        $this->search = '';
+        $this->sort_by = '';
+    }
+
+
     // Method to delete selected records
     public function deleteSelected()
     {

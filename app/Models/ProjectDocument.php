@@ -792,7 +792,7 @@ class ProjectDocument extends Model
                 // submission is not allowed
                 // review status is pending
 
-                if($user->hasPermissionTo('system access user')){
+                if($user->hasPermissionTo('system access user') && request()->routeIs('project-document.index')){
                     return $q
                         ->where('allow_project_submission', false)
                         ->whereHas('project_reviewers', function ($query) use ($userId) {
@@ -851,7 +851,7 @@ class ProjectDocument extends Model
                 // changes_requested
                 // submission is allowed
                 // review status is changes requested 
-                if($user->hasPermissionTo('system access user')){
+                if($user->hasPermissionTo('system access user')  && request()->routeIs('project-document.index') ){
                     return $q->where('created_by',$userId)
                         ->where('allow_project_submission', true)
                         ->whereHas('project_reviewers', function ($query) use ($userId) {
@@ -878,7 +878,7 @@ class ProjectDocument extends Model
             default:
                 // Default to just pass it back
 
-                if(Auth::user()->hasPermissionTo('system access user')){
+                if(Auth::user()->hasPermissionTo('system access user')  && request()->routeIs('project-document.index') ){
                     return $q->ownedBy($userId);
                 }else{
                     return $q;
@@ -902,7 +902,7 @@ class ProjectDocument extends Model
         $query = $query->applyReviewStatusBasedFilters($review_status);
 
 
-        if(Auth::user()->hasPermissionTo('system access user')){
+        if(Auth::user()->hasPermissionTo('system access user') && request()->routeIs('project-document.index')){
              $query = $query->where('created_by',Auth::user()->id);
             
         }
@@ -1046,6 +1046,20 @@ class ProjectDocument extends Model
 
                     // dd("Here");
                 }
+
+                // dd( $query);
+                $query->where('id','>',0);
+                
+                break;
+
+             case 'project-document.index.all':
+                // submitter
+                // Owned project documents
+                // if(Auth::user()->hasPermissionTo('system access user')){
+                //     $query->where('created_by', $userId);
+
+                //     // dd("Here");
+                // }
 
                 // dd( $query);
                 $query->where('id','>',0);

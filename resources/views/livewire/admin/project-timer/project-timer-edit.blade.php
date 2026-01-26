@@ -1,5 +1,5 @@
 <!-- Card Section -->
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8  mx-auto">
+<div class="max-w-full px-4 py-6 sm:px-6 lg:px-8  mx-auto">
 
     {{-- <div wire:loading class="loading-overlay">
         <div style="color: #64d6e2" class="la-ball-clip-rotate-pulse la-3x preloader">
@@ -234,6 +234,11 @@
                             Update
                         </button>
                     @endif
+
+                    <x-ui.table.reset-button wireClick="resetFilters" >
+                        Reset
+                    </x-ui.table.reset-button>
+
 
 
                     {{-- <!-- Project subscribers button and box -->

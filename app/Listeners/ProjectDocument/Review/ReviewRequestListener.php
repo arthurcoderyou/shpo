@@ -41,8 +41,13 @@ class ReviewRequestListener implements ShouldQueue
         $project = Project::find($project_reviewer->project_id);
         $user = User::find($project_reviewer->user_id);
 
-        $reviewUrl = route('project-document.index',[
-            'review_status' => 'pending'
+        // $reviewUrl = route('project-document.index',[
+        //     'review_status' => 'pending'
+        // ]);
+
+        $reviewUrl = route('project-document.review',[
+            'project' => $project->id,
+            'project_document' => $project_document->id,
         ]);
 
         // if mail is true 

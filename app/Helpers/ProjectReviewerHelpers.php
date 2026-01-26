@@ -151,12 +151,18 @@ class ProjectReviewerHelpers
 
             if(!empty($project->rc_number) && !empty($firstProjectReview)){
 
+                // get the reviewer for the first project review 
+                $firstProjectReviewReviewer = ProjectReviewer::where('id',$firstProjectReview->project_reviewer_id)->first();
+
+
+
                 $project_document->rc_number = $project->rc_number;
                 $project_document->save();
 
                 $firstProjectDocumentReviewer = ProjectReviewer::where('project_document_id', $project_document->id)
                     ->where('project_id', $project->id)
                     ->first();
+                $firstProjectDocumentReviewer->user_id = $firstProjectReviewReviewer->user_id; // make sure that the user id on the first rc review is matching here 
                 $firstProjectDocumentReviewer->review_status = "reviewed";
                 $firstProjectDocumentReviewer->save();
 
@@ -431,15 +437,15 @@ class ProjectReviewerHelpers
                 }
             }else{ // string $submission_type = 'suplemental_submission'
                 
-                try {
-                event(new FollowupReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
-                } catch (\Throwable $e) {
-                    // Log the error without interrupting the flow
-                    Log::error('Failed to dispatch FollowupReviewRequest event: ' . $e->getMessage(), [
-                        'project_reviewer_id' => $current_reviewer->id,
-                        'trace' => $e->getTraceAsString(),
-                    ]);
-                }
+                // try {
+                    event(new \App\Events\Project\Review\FollowupReviewRequest( $current_reviewer->id, $auth_user_id, true, true));
+                // } catch (\Throwable $e) {
+                //     // Log the error without interrupting the flow
+                //     Log::error('Failed to dispatch \App\Events\Project\Review\FollowupReviewRequest event: ' . $e->getMessage(), [
+                //         'project_reviewer_id' => $current_reviewer->id,
+                //         'trace' => $e->getTraceAsString(),
+                //     ]);
+                // }
 
 
             }

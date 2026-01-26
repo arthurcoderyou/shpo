@@ -29,9 +29,7 @@ class DocumentTypeList extends Component
     public $selected_records = [];
     public $selectAll = false;
 
-    public $count = 0;
-
-    public $file;
+    public $count = 0; 
  
     public $name;
 
@@ -54,7 +52,14 @@ class DocumentTypeList extends Component
     public array $assigned = [];
  
  
+    public function resetFilters(){
+        $this->search = '';
+        $this->sort_by = ''; 
+    
+        $this->name = ''; 
+        $this->loadData();
 
+    }
 
 
     public function mount(){

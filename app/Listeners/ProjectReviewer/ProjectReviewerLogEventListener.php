@@ -29,7 +29,7 @@ class ProjectReviewerLogEventListener implements ShouldQueue
         $message = $event->message;
         $authUser = User::find($event->authId); 
 
-        $projectReviewer = ProjectReviewer::find($event->projectReviewerId); 
+        // $projectReviewer = ProjectReviewer::find($event->projectReviewerId); 
         $project = Project::find($event->projectId); 
 
         $projectDocument = ProjectDocument::find($event->projectDocumentId); 
@@ -39,7 +39,7 @@ class ProjectReviewerLogEventListener implements ShouldQueue
             'created_by' => $authUser->id,
             'log_username' => $authUser->name,
             'log_action' => $message , 
-            'project_reviewer_id' => $projectReviewer->id, 
+            // 'project_reviewer_id' => $projectReviewer->id, 
             'project_id' =>  $project->id ?? null,
             'project_document_id' =>  $projectDocument->id ?? null,
         ]); 

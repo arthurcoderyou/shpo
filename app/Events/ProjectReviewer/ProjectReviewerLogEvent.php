@@ -17,7 +17,7 @@ class ProjectReviewerLogEvent  implements ShouldBroadcast, ShouldQueue
 
     public string $message; 
     public int $authId;
-    public int $projectReviewerId;
+    // public int $projectReviewerId;
     public int $projectId;
     /** OPTIONAL */
     public ?int $projectDocumentId;
@@ -27,11 +27,15 @@ class ProjectReviewerLogEvent  implements ShouldBroadcast, ShouldQueue
     /**
      * Create a new event instance.
      */
-    public function __construct(string  $message,int $authId ,int  $projectReviewerId,int  $projectId, ?int $projectDocumentId = null)
+    public function __construct(string  $message,int $authId ,
+    
+    // int  $projectReviewerId,
+    
+    int  $projectId, ?int $projectDocumentId = null)
     {    
         $this->message = $message; 
         $this->authId = $authId; 
-        $this->projectReviewerId = $projectReviewerId;
+        // $this->projectReviewerId = $projectReviewerId;
         $this->projectId = $projectId;
         $this->projectDocumentId = $projectDocumentId;
     }
@@ -42,17 +46,21 @@ class ProjectReviewerLogEvent  implements ShouldBroadcast, ShouldQueue
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
     public function broadcastOn(): array
-    {
-        $channels = [
-            // new PrivateChannel('project_reviewer'), // not needed as of the momment
-            new PrivateChannel('project'),
-            new PrivateChannel('project.' . $this->projectId),
-        ];
+    {    
+        
+        $channels =  [];
+
+        // Only add document channels if a document is present
+        if (is_null($this->projectDocumentId)) {
+            // $channels[] = new PrivateChannel('project_document');
+            $channels[] = new PrivateChannel('project.project_reviewer.' . $this->projectId);
+        }
+ 
 
         // Only add document channels if a document is present
         if (!is_null($this->projectDocumentId)) {
-            $channels[] = new PrivateChannel('project_document');
-            $channels[] = new PrivateChannel('project_document.' . $this->projectDocumentId);
+            // $channels[] = new PrivateChannel('project_document');
+            $channels[] = new PrivateChannel('project.project_document.project_reviewer.' . $this->projectDocumentId);
         }
 
 

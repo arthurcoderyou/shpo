@@ -20,6 +20,6 @@
 
     {{-- <livewire:admin.project.project-document.project-document-list :project_id="$project->id"   />  --}}
  
-    <livewire:admin.project-document.project-document-list :project_id="$project->id"  route="project.project-document.index"  /> 
+    <livewire:admin.project-document.project-document-list :project_id="$project->id"  route="project.project_documents"  /> 
 
 </x-app-layout>

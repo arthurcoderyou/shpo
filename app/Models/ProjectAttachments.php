@@ -53,6 +53,9 @@ class ProjectAttachments extends Model
 
         'sha256',
 
+        'size_bytes',
+
+
 
 
         'created_by',

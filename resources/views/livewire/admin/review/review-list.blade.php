@@ -142,17 +142,10 @@
                             Delete ({{ $count }})
                         </button>
                      @endif --}}
-                        @if(request()->routeIs('review.index'))
-                            <a
-                                href="{{ route('review.index') }}"
-                                wire:navigate
-                                class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-orange-500 text-white shadow-sm hover:bg-orange-900 hover:text-orange-600 hover:border-orange-500 focus:outline-orange-500 focus:text-orange-500 focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none " >
-                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#ffffff" d="M370.7 133.3C339.5 104 298.9 88 255.8 88c-77.5 .1-144.3 53.2-162.8 126.9-1.3 5.4-6.1 9.2-11.7 9.2H24.1c-7.5 0-13.2-6.8-11.8-14.2C33.9 94.9 134.8 8 256 8c66.4 0 126.8 26.1 171.3 68.7L463 41C478.1 25.9 504 36.6 504 57.9V192c0 13.3-10.7 24-24 24H345.9c-21.4 0-32.1-25.9-17-41l41.8-41.7zM32 296h134.1c21.4 0 32.1 25.9 17 41l-41.8 41.8c31.3 29.3 71.8 45.3 114.9 45.3 77.4-.1 144.3-53.1 162.8-126.8 1.3-5.4 6.1-9.2 11.7-9.2h57.3c7.5 0 13.2 6.8 11.8 14.2C478.1 417.1 377.2 504 256 504c-66.4 0-126.8-26.1-171.3-68.7L49 471C33.9 486.1 8 475.4 8 454.1V320c0-13.3 10.7-24 24-24z"/></svg>
-                            </a> 
-                        @endif
+                       
                             
                     {{-- @if( !empty($project_id)  )  --}}
-                        <button
+                        {{-- <button
                              
                             wire:click="generatePdf"
                             {{ count($selected_records) == 0 ? 'disabled' : '' }}
@@ -161,10 +154,10 @@
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M216 0h80c13.3 0 24 10.7 24 24v168h87.7c17.8 0 26.7 21.5 14.1 34.1L269.7 378.3c-7.5 7.5-19.8 7.5-27.3 0L90.1 226.1c-12.6-12.6-3.7-34.1 14.1-34.1H192V24c0-13.3 10.7-24 24-24zm296 376v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"/></svg>
 
                             PDF 
-                        </button>
+                        </button> --}}
                      {{-- @endif --}}
 
-                        
+                    <x-ui.table.reset-button class="px-3 py-1.5" wireClick="resetFilters" />
                 </div>
                 </div>
             </div>
@@ -416,7 +409,7 @@
                                         
                                     </div>
 
-
+                                    @if(!empty($review->project_document_id))
                                     <!-- Document status badge -->
                                     <div class="mb-1">
                                         <div class="flex items-center gap-1">
@@ -432,8 +425,9 @@
                                         </div> 
                                         
                                     </div>
+                                    @endif
 
-  
+                                    @if(Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('system access reviewer') )
                                     <!-- Reviewer block -->
                                     <div class="space-y-1 text-[11px] leading-4 text-slate-600">
 
@@ -550,7 +544,7 @@
                                                 @endif
                                             @endforeach
                                         </div> --}}
-
+                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('system access reviewer') )
                                         <div>
                                             <ul class="  flex flex-col gap-y-3">
                                                 <li class="flex items-center gap-x-2.5">
@@ -563,11 +557,13 @@
                                             
                                             </ul>
                                         </div>
+                                        @endif
 
                                             
 
 
                                     </div>
+                                    @endif
                                                  
  
     
@@ -599,7 +595,11 @@
                                                         @elseif ($review->review_status == "reviewed")
                                                             <span class="font-bold text-green-500">Reviewed</span>
                                                         @endif
-                                                        at {{ \Carbon\Carbon::parse($review->created_at)->format('d M, h:i A') }} by {{ $review->creator ? $review->creator->name : '' }}
+                                                        at {{ \Carbon\Carbon::parse($review->created_at)->format('d M, h:i A') }}
+                                                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('system access reviewer') )
+                                                        by {{ $review->creator ? $review->creator->name : '' }}
+                                                        @endif
+
                                                     </p> 
                                                 </div>
                                             </div>
@@ -614,7 +614,9 @@
                                                     <p class="text-sm text-gray-700">{{ $review->project_review }}</p>
                                                 </div>
                                             
-                                                @if(!empty($review) && $review->review_status == "rejected")
+                                                @if(!empty($review)
+                                                    //  && $review->review_status == "rejected"
+                                                     )
                                                     {{-- Attachments --}}
                                                     @php
                                                     $groups = collect($review->attachments ?? [])
@@ -623,93 +625,93 @@
                                                     @endphp
 
                                                     @if($groups->isNotEmpty())
-                                                    <div class="mt-4">
-                                                        <label class="inline-block text-sm font-medium text-gray-800">Attachments</label>
+                                                        <div class="mt-4">
+                                                            <label class="inline-block text-sm font-medium text-gray-800">Attachments</label>
 
-                                                        <div class="hs-accordion-group divide-y divide-gray-100 rounded-xl border border-gray-200 mt-2">
-                                                        @foreach($groups as $date => $attachments)
-                                                            @php
-                                                            $idx = $loop->iteration;
-                                                            $accordionId = "att-{$idx}";
-                                                            $panelId = "att-panel-{$idx}";
-                                                            @endphp
+                                                            <div class="hs-accordion-group divide-y divide-gray-100 rounded-xl border border-gray-200 mt-2">
+                                                            @foreach($groups as $date => $attachments)
+                                                                @php
+                                                                $idx = $loop->iteration;
+                                                                $accordionId = "att-{$idx}";
+                                                                $panelId = "att-panel-{$idx}-{$review->id}";
+                                                                @endphp
 
-                                                            <div class="hs-accordion" id="{{ $accordionId }}">
-                                                            <button
-                                                                type="button"
-                                                                class="hs-accordion-toggle w-full px-4 py-3 flex items-center justify-between text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
-                                                                aria-controls="{{ $panelId }}"
-                                                            >
-                                                                <span class="inline-flex items-center gap-x-2">
-                                                                {{-- plus/minus icon swap --}}
-                                                                <svg class="hs-accordion-active:hidden block size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5v14" />
-                                                                </svg>
-                                                                <svg class="hs-accordion-active:block hidden size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
-                                                                </svg>
-                                                                {{ $date }}
-                                                                </span>
-                                                            </button>
+                                                                <div class="hs-accordion" id="{{ $accordionId }}">
+                                                                    <button
+                                                                        type="button"
+                                                                        class="hs-accordion-toggle w-full px-4 py-3 flex items-center justify-between text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                                                        aria-controls="{{ $panelId }}"
+                                                                    >
+                                                                        <span class="inline-flex items-center gap-x-2">
+                                                                        {{-- plus/minus icon swap --}}
+                                                                        <svg class="hs-accordion-active:hidden block size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5v14" />
+                                                                        </svg>
+                                                                        <svg class="hs-accordion-active:block hidden size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
+                                                                        </svg>
+                                                                        {{ $date }}
+                                                                        </span>
+                                                                    </button>
 
-                                                            <div id="{{ $panelId }}" class="hs-accordion-content hidden overflow-hidden transition-[height] duration-300">
-                                                                <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                                @foreach($attachments as $file)
-                                                                    @php
-                                                                    $fileId   = $file->id;
-                                                                    $fileName = basename($file->attachment);
-                                                                    $fileUrl  = asset('storage/uploads/review_attachments/' . $file->attachment);
-                                                                    @endphp
+                                                                    <div id="{{ $panelId }}" class="hs-accordion-content hidden overflow-hidden transition-[height] duration-300">
+                                                                        <div class="p-4 grid grid-cols-1   gap-3">
+                                                                            @foreach($attachments as $file)
+                                                                                @php
+                                                                                $fileId   = $file->id;
+                                                                                $fileName = basename($file->attachment);
+                                                                                $fileUrl  = asset('storage/uploads/'.$review->id.'/' . $file->attachment);
+                                                                                @endphp
 
-                                                                    <div class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg p-2">
-                                                                    <div class="flex items-center gap-3 min-w-0">
-                                                                        @if(isImageMimeForReview($fileName))
-                                                                        <div class="w-14 h-14 flex-none overflow-hidden rounded-md bg-gray-50">
-                                                                            <img src="{{ $fileUrl }}" alt="{{ $fileName }}" class="w-full h-full object-cover">
-                                                                        </div>
-                                                                        @else
-                                                                        <div class="w-14 h-14 flex items-center justify-center bg-gray-100 rounded-md">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625A3.375 3.375 0 0016.125 8.25h-1.5A1.125 1.125 0 0113.5 7.125v-1.5A3.375 3.375 0 0010.125 2.25H5.625A1.125 1.125 0 004.5 3.375v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9" />
-                                                                            </svg>
-                                                                        </div>
-                                                                        @endif
+                                                                                <div class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg p-2">
+                                                                                <div class="flex items-center gap-3 min-w-0">
+                                                                                    {{-- @if(isImageMimeForReview($fileName))
+                                                                                    <div class="w-14 h-14 flex-none overflow-hidden rounded-md bg-gray-50">
+                                                                                        <img src="{{ $fileUrl }}" alt="{{ $fileName }}" class="w-full h-full object-cover">
+                                                                                    </div>
+                                                                                    @else --}}
+                                                                                    <div class="w-14 h-14 flex items-center justify-center bg-gray-100 rounded-md">
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625A3.375 3.375 0 0016.125 8.25h-1.5A1.125 1.125 0 0113.5 7.125v-1.5A3.375 3.375 0 0010.125 2.25H5.625A1.125 1.125 0 004.5 3.375v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9" />
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                    {{-- @endif --}}
 
-                                                                        <div class="flex flex-col gap-0.5 min-w-0">
-                                                                        <div class="truncate text-sm font-medium text-slate-900">{{ $fileName }}</div>
-                                                                        {{-- (optional) file size, type, etc. --}}
+                                                                                    <div class="flex flex-col gap-0.5 min-w-0">
+                                                                                    <div class="truncate text-sm font-medium text-slate-900">{{ $fileName }}</div>
+                                                                                    {{-- (optional) file size, type, etc. --}}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div class="flex items-center gap-3">
+                                                                                    <a href="{{ $fileUrl }}" download="{{ $fileName }}" class="inline-flex p-2 rounded hover:bg-gray-100" title="Download">
+                                                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352z"/></svg>
+                                                                                    </a>
+
+                                                                                    @if(Auth::user()->hasRole('Admin'))
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        class="inline-flex p-2 rounded hover:bg-gray-100 text-black"
+                                                                                        onclick="confirm('Are you sure you want to remove this attachment?') || event.stopImmediatePropagation()"
+                                                                                        wire:click.prevent="removeUploadedAttachment({{ $fileId }})"
+                                                                                        title="Remove"
+                                                                                    >
+                                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                                                        <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
+                                                                                        </svg>
+                                                                                    </button>
+                                                                                    @endif
+                                                                                </div>
+                                                                                </div>
+                                                                            @endforeach
                                                                         </div>
                                                                     </div>
-
-                                                                    <div class="flex items-center gap-3">
-                                                                        <a href="{{ $fileUrl }}" download="{{ $fileName }}" class="inline-flex p-2 rounded hover:bg-gray-100" title="Download">
-                                                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 242.7-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7 288 32zM64 352c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-101.5 0-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352 64 352z"/></svg>
-                                                                        </a>
-
-                                                                        @if(Auth::user()->hasRole('Admin'))
-                                                                        <button
-                                                                            type="button"
-                                                                            class="inline-flex p-2 rounded hover:bg-gray-100 text-black"
-                                                                            onclick="confirm('Are you sure you want to remove this attachment?') || event.stopImmediatePropagation()"
-                                                                            wire:click.prevent="removeUploadedAttachment({{ $fileId }})"
-                                                                            title="Remove"
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                                                            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
-                                                                            </svg>
-                                                                        </button>
-                                                                        @endif
-                                                                    </div>
-                                                                    </div>
-                                                                @endforeach
                                                                 </div>
+                                                            @endforeach
                                                             </div>
-                                                            </div>
-                                                        @endforeach
                                                         </div>
-                                                    </div>
                                                     @else
-                                                    <p class="mt-3 text-sm text-gray-500">No attachments.</p>
+                                                        <p class="mt-3 text-sm text-gray-500">No attachments.</p>
                                                     @endif
 
 
@@ -796,58 +798,59 @@
                                                 
                                                 
 
-                                                 
-                                                @if($review->project->status !== "approved" && $review->review_status == "approved" && !empty( $next_reviewer->user ) && !empty(  $review->project ) )
-                                                <!-- Profile -->
-                                                <div class="  p-2  ">
-                                                    
-                                                    
-                                                    <div class="grow">
-                                                        <h1 class="text-sm font-medium text-gray-800 ">
-                                                            Next Reviewer: {{ $next_reviewer->user->name ? $next_reviewer->user->name : '' }}
-                                                        </h1>
+                                                @if(Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('system access reviewer') )
+                                                    @if($review->project->status !== "approved" && $review->review_status == "approved" && !empty( $next_reviewer->user ) && !empty(  $review->project ) )
+                                                    <!-- Profile -->
+                                                    <div class="  p-2  ">
                                                         
-                                                       
-                                                        <span class="block text-sm text-gray-500 ">
-                                                            Review Status: 
-                                                            @if($next_reviewer->review_status == "approved")
-                                                                <span class="font-bold text-lime-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
-                                                            @elseif($next_reviewer->review_status == "rejected")
-                                                                <span class="font-bold text-red-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
-
-                                                            @else 
-                                                                <span class="font-bold text-yellow-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
-
-                                                            @endif
+                                                        
+                                                        <div class="grow">
+                                                            <h1 class="text-sm font-medium text-gray-800 ">
+                                                                Next Reviewer: {{ $next_reviewer->user->name ? $next_reviewer->user->name : '' }}
+                                                            </h1>
                                                             
-                                                        </span>
-
-                                                        <span class="block text-sm text-gray-500   ">
-                                                            @if($next_reviewer->review_status == "pending") <!-- if review status is pending, it means the review due date must be seen here -->
-                                                                Expected <span class="font-bold text-blue-800 ">review</span> on or before <br>  
-                                                                <strong>
-                                                                    {{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}
-                                                                </strong> 
-                                                            @endif
-                                                        </span>
-
- 
-                                                        <ul class="mt-2 flex flex-col gap-y-3">
-                                                            <li class="flex items-center gap-x-2.5">
-                                                                <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                                                <a class="text-[13px] text-gray-500 underline hover:text-gray-800 hover:decoration-2 focus:outline-none focus:decoration-2  " href="mailto:{{ $review->reviewer->email }}">
-                                                                    {{ $next_reviewer->user->email }}
-                                                                </a>
-                                                            </li>
                                                         
+                                                            <span class="block text-sm text-gray-500 ">
+                                                                Review Status: 
+                                                                @if($next_reviewer->review_status == "approved")
+                                                                    <span class="font-bold text-lime-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
+                                                                @elseif($next_reviewer->review_status == "rejected")
+                                                                    <span class="font-bold text-red-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
+
+                                                                @else 
+                                                                    <span class="font-bold text-yellow-500">{{ ucfirst($next_reviewer->review_status) }} </span> 
+
+                                                                @endif
+                                                                
+                                                            </span>
+
+                                                            <span class="block text-sm text-gray-500   ">
+                                                                @if($next_reviewer->review_status == "pending") <!-- if review status is pending, it means the review due date must be seen here -->
+                                                                    Expected <span class="font-bold text-blue-800 ">review</span> on or before <br>  
+                                                                    <strong>
+                                                                        {{ \Carbon\Carbon::parse($project->reviewer_due_date)->format('M d, Y h:i A') }}
+                                                                    </strong> 
+                                                                @endif
+                                                            </span>
+
+    
+                                                            <ul class="mt-2 flex flex-col gap-y-3">
+                                                                <li class="flex items-center gap-x-2.5">
+                                                                    <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                                                    <a class="text-[13px] text-gray-500 underline hover:text-gray-800 hover:decoration-2 focus:outline-none focus:decoration-2  " href="mailto:{{ $review->reviewer->email }}">
+                                                                        {{ $next_reviewer->user->email }}
+                                                                    </a>
+                                                                </li>
+                                                            
+                                                            
+                                                            </ul>
+
                                                         
-                                                        </ul>
 
-                                                    
-
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <!-- End Profile -->
+                                                    <!-- End Profile -->
+                                                    @endif
                                                 @endif
 
 
@@ -1180,6 +1183,48 @@
     @endteleport
     <!-- ./ Project document list modal -->
 
+
+
+    <!-- Loaders -->
+          <!-- Floating Loading Notification -->
+        <div 
+            wire:loading 
+        class="fixed top-4 right-4 z-50 w-[22rem] max-w-[calc(100vw-2rem)]
+                rounded-2xl border border-slate-200 bg-white shadow-lg"
+        role="status"
+        aria-live="polite"
+        >
+            <div class="flex items-start gap-3 p-4">
+                <!-- Spinner -->
+                <svg class="h-5 w-5 mt-0.5 animate-spin text-slate-600 shrink-0"
+                    viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10"
+                        stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z" />
+                </svg>
+
+                <!-- Text + Progress -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-slate-900">
+                        Loading data…
+                    </div>
+                    <div class="mt-0.5 text-xs text-slate-600">
+                        Fetching the latest records. Please wait.
+                    </div>
+
+                    <!-- Indeterminate Progress Bar -->
+                    <div class="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                        class="absolute inset-y-0 left-0 w-1/3 rounded-full bg-slate-400"
+                        style="animation: indeterminate-bar 1.2s ease-in-out infinite;"
+                        ></div> 
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- Loaders -->
 
 
     <!--  Loaders -->

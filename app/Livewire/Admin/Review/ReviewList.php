@@ -65,6 +65,28 @@ class ReviewList extends Component
 
     public $routeIsIndex = false;
 
+    public $single_project_page = false; 
+    public function resetFilters($project_id = null){
+        $this->search = '';
+        $this->sort_by = ''; 
+
+        $this->document_status = null; 
+        $this->review_status = null;
+
+        $this->document_type_id = null; 
+
+        if($this->single_project_page == false){
+            $this->project_id = null;
+            $this->project = null;
+            $this->project_search = null; 
+        }
+           
+
+  
+ 
+    }
+
+
     public function mount($id = null, $project_document_id = null){
 
 
@@ -96,6 +118,9 @@ class ReviewList extends Component
 
 
         }else{
+
+            $this->single_project_page = true;
+
             $project = Project::find($id);
             $this->project =  $project;
             $this->project_id = $id;

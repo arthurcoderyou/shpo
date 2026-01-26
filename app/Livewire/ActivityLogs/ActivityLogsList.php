@@ -33,7 +33,10 @@ class ActivityLogsList extends Component
         'systemEvent' => '$refresh',
     ]; 
 
-
+    public function resetFilters(){
+        $this->search = '';
+        $this->sort_by = '';
+    }
 
      // Method to delete selected records
      public function deleteSelected()
@@ -108,6 +111,9 @@ class ActivityLogsList extends Component
 
 
 
+    
+
+
     public function render()
     {
 
@@ -138,7 +144,7 @@ class ActivityLogsList extends Component
             $search = $this->search;
 
 
-            $activity_logs = $activity_logs->orWhere(function($query) use ($search){
+            $activity_logs = $activity_logs->where(function($query) use ($search){
                 $query =  $query->where('activity_logs.log_action','LIKE','%'.$search.'%')
                     ->orWhere('activity_logs.log_username','LIKE','%'.$search.'%');
                     

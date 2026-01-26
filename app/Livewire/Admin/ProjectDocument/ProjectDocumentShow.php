@@ -16,6 +16,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 use App\Events\ProjectDocument\ProjectDocumentLogEvent;
 use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
 use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
+use Illuminate\Support\Facades\Artisan;
 
 class ProjectDocumentShow extends Component
 {
@@ -71,8 +72,7 @@ class ProjectDocumentShow extends Component
         /** ./ Delete Confirmation */
 
     /** ./ Actions with Password Confirmation panel */
-
-
+ 
     public $project_id;
     public $project_document_id;
 
@@ -465,6 +465,27 @@ class ProjectDocumentShow extends Component
     }
     
 
+    public function getLocalPublicPath(array $attachment): string
+    {
+        return trim($attachment['path'], '/').'/'.$attachment['stored_name'];
+    }
+
+    public function isLocalAvailable(array $attachment): bool
+    {
+        return Storage::disk('public')->exists($this->getLocalPublicPath($attachment));
+    }
+
+
+    public function fetchFromFtp(int $attachmentId): void
+    {
+        // mark as "loading" in the component for UI
+        // $this->loading[$attachmentId] = true;
+
+        // dispatch a queued job
+        Artisan::call('backup:attachment-to-public', [
+            'id' => $attachmentId,
+        ]);
+    }
 
     public function render()
     {

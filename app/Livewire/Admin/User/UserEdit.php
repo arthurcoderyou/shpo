@@ -43,7 +43,10 @@ class UserEdit extends Component
     public string $email = '';
     public string $address = '';
     public string $company = '';
-    public string $phone_number = '';
+    public ?string $phone_number = '';
+
+    public ?string $phone_number_country_code = '';
+
     public string $password = '';
     public string $password_confirmation = '';
 
@@ -58,6 +61,9 @@ class UserEdit extends Component
  
     // public $role_empty = false;
 
+    public array $companies = [];
+
+
     public function mount($id){
         $user = User::findOrFail($id);
         $this->user_id = $user->id;
@@ -67,6 +73,18 @@ class UserEdit extends Component
     // load the default data of the form
     public function loadData(){ 
 
+        $limit = (int) 20;
+        $this->companies = User::query()
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->select('company')
+            ->groupBy('company')
+            ->orderBy('company')
+            ->limit($limit)
+            ->pluck('company')
+            ->toArray();
+
+
         $user = User::findOrFail($this->user_id);
          
         $this->name = $user->name;
@@ -74,10 +92,39 @@ class UserEdit extends Component
         $this->address = $user->address ?? '';
         $this->company = $user->company ?? '';
         $this->phone_number = $user->phone_number ?? '';
+        $this->phone_number_country_code = $user->phone_number_country_code ?? '';
         $this->user_id = $user->id;
          
  
     }
+
+
+    public function updatedCompany(){
+
+        $q = $this->company;
+        $limit = (int) 20;
+
+        // $limit = max(5, min($limit, 50)); // safety clamp
+
+        $query = User::query()
+            ->select('company')
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->groupBy('company')
+            ->orderBy('company');
+
+        if ($this->company !== '') {
+            // For index usage, prefix search is better:
+            $query = $query->where('company', 'like', $q . '%');
+            // If you prefer contains: '%' . $q . '%', but index benefit is less.
+        }
+ 
+
+        $this->companies = $query->limit($limit)->pluck('company')->toArray();
+
+
+    }
+
 
 
 
@@ -101,6 +148,7 @@ class UserEdit extends Component
             'address' => ['required', 'string'], 
             'company' => ['required', 'string'], 
             'phone_number' => ['required', 'string'],
+            'phone_number_country_code' => ['required', 'string', 'max:255'],
              
         ]);
 
@@ -119,6 +167,7 @@ class UserEdit extends Component
             'address' => ['required', 'string'], 
             'company' => ['required', 'string'], 
             'phone_number' => ['required', 'string'],
+            'phone_number_country_code' => ['required', 'string', 'max:255'],
             // 'role' => ['required'] 
         ]);
 
@@ -140,6 +189,9 @@ class UserEdit extends Component
         $user->company = $this->company;
 
         $user->phone_number = $this->phone_number;
+        $user->phone_number_country_code = $this->phone_number_country_code;
+
+        
 
         if(!empty($this->password)){
 

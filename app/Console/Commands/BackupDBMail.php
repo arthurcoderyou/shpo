@@ -52,10 +52,7 @@ class BackupDBMail extends Command
         // dd($userIds);
 
         foreach($userIds as  $i => $userId ){
-
-            
-
-            
+ 
  
             try {
                 event(new DbBackupEvent( 

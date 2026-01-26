@@ -53,7 +53,7 @@
                             </select>
                         </div>
 
-                        @if(Auth::user()->can('system access global admin') || Auth::user()->can('activity log delete'))
+                        @if(Auth::user()->can('system access global admin')  )
                             <button
                                 onclick="confirm('Are you sure, you want to delete this records?') || event.stopImmediatePropagation()"
                                 wire:click.prevent="deleteSelected"
@@ -63,6 +63,9 @@
                                 Delete ({{ $count }})
                             </button>
                         @endif
+
+                        <x-ui.table.reset-button wireClick="resetFilters" />
+                        
 
 
                     </div>

@@ -57,7 +57,7 @@
 
     {{-- <livewire:admin.review.review-list :id="$project->id" />  --}}
         
-    <div  id="discussion" class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
+    <div  id="discussion" class="max-w-full px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
         {{-- Section Title --}}
         <div class="  border-b pb-4">
             <h2 class="text-2xl text-center font-semibold text-gray-800">Project Discussions</h2>

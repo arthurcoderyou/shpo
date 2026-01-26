@@ -24,3 +24,5 @@ yarn-error.log
 /resources/views/livewire/admin/project 
 /project_and_notes
 /resources/views/livewire/admin/project-document 
+/resources/views/livewire/profile
+

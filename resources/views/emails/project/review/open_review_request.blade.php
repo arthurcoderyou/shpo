@@ -10,7 +10,7 @@ An open review exists for the following project.
 
 @isset($reviewUrl)
 @component('mail::button', ['url' => $reviewUrl])
-Open Review List
+Open Review
 @endcomponent
 @endisset
 

@@ -46,9 +46,10 @@ class ProjectLogHelper
      * @param  string       $event        'created', 'updated', 'deleted', 'reviewed'
      * @param  int          $projectId    project id
      * @param  int          $authId       auth id 
+     * @param string        $message_target =  [all , submitter]
      * @return void         void           Not required to return value
      */
-    public static function getActivityMessage(string $event, int $projectId, int $authId): string{ 
+    public static function getActivityMessage(string $event, int $projectId, int $authId, string $message_target = "all"): string{ 
 
         // get the project
         $project = Project::find($projectId);
@@ -57,23 +58,56 @@ class ProjectLogHelper
 
         $projectName = $project->name ?? 'Project unnamed';
         $userName = $authUser->name ?? 'User unnamed';
-        
+
+        $isSubmitter = $message_target === 'submitter';
 
         // return message based on the event
         return match($event) {
-            'created' => "Project '{$projectName}' has been created by '{$userName}' successfully.",
-            'updated' => "Project '{$projectName}' has been updated by '{$userName}' successfully.",
-            'deleted' => "Project '{$projectName}' has been deleted by '{$userName}' successfully.",
-            'reviewed' => "Project '{$projectName}' has been reviewed by '{$userName}' successfully.",
-            'submitted' => "Project '{$projectName}' has been submitted by '{$userName}' successfully.",
-            'on-que' => "Project '{$projectName}' has been queued and will be automatically submitted by the system on the next working day.",
-            'auto-submit' => "Project '{$projectName}' has been automatically submitted by the system successfully.",
-            'force-submit' => "Project '{$projectName}' has been force submitted by '{$userName}' successfully.",
-            'open-review-claimed' => "Project '{$projectName}' open-review request has been claimed by '{$userName}' successfully.",
-            'your-open-review-claimed' => "Your project '{$projectName}' has entered the review stage and is currently under evaluation.", 
-            'rc-reviewed' => "Project '{$projectName}' has been reviewed by '{$userName}' successfully.",
-            'ref-updated' => "Project '{$projectName}' references has been updated by '{$userName}' successfully.",
-            default => "Action completed for project '{$projectName}'."
+
+            'created' => $isSubmitter
+                ? "Project '{$projectName}' has been created successfully."
+                : "Project '{$projectName}' has been created by '{$userName}' successfully.",
+
+            'updated' => $isSubmitter
+                ? "Project '{$projectName}' has been updated successfully."
+                : "Project '{$projectName}' has been updated by '{$userName}' successfully.",
+
+            'deleted' => $isSubmitter
+                ? "Project '{$projectName}' has been deleted."
+                : "Project '{$projectName}' has been deleted by '{$userName}' successfully.",
+
+            'submitted' => $isSubmitter
+                ? "Project '{$projectName}' has been submitted successfully."
+                : "Project '{$projectName}' has been submitted by '{$userName}' successfully.",
+
+            'reviewed', 'rc-reviewed' => $isSubmitter
+                ? "Project '{$projectName}' has been reviewed."
+                : "Project '{$projectName}' has been reviewed by '{$userName}' successfully.",
+
+            'on-que' => $isSubmitter
+                ? "Project '{$projectName}' has been queued and will be automatically submitted on the next working day."
+                : "Project '{$projectName}' has been queued and will be automatically submitted by the system on the next working day.",
+
+            'auto-submit' => $isSubmitter
+                ? "Project '{$projectName}' has been automatically submitted by the system."
+                : "Project '{$projectName}' has been automatically submitted by the system successfully.",
+
+            'force-submit' => $isSubmitter
+                ? "Project '{$projectName}' has been submitted by the system."
+                : "Project '{$projectName}' has been force submitted by '{$userName}' successfully.",
+
+            'open-review-claimed' => $isSubmitter
+                ? "Project '{$projectName}' has entered the review stage and is currently under evaluation."
+                : "Project '{$projectName}' open-review request has been claimed by '{$userName}' successfully.",
+
+            'ref-updated' => $isSubmitter
+                ? "Project '{$projectName}' references have been updated."
+                : "Project '{$projectName}' references have been updated by '{$userName}' successfully.",
+
+            default => $isSubmitter
+                ? "An action has been completed for your project '{$projectName}'."
+                : "An action has been completed for project '{$projectName}'.",
+  
         };
  
     }
@@ -87,7 +121,7 @@ class ProjectLogHelper
      * @return void         void            Not required to return value
      * */
 
-    public static function getRoute(string $event, int $projectId, int $authId = null): string{
+    public static function getRoute(string $event, int $projectId, int $authId = null, array $extraParams = []): string{
 
         // get the record
         $project = Project::find($projectId);
@@ -161,7 +195,8 @@ class ProjectLogHelper
             'open-review-claimed' => route('project.review',['project' => $project->id]),
             'your-open-review-claimed' => route('project.show',['project' => $project->id]),
             'rc-reviewed' => route('project.show',['project' => $project->id]),
-            'deleted' =>  $homeRoute,  
+            'deleted' =>  $homeRoute ,  
+            'project-list' =>  $homeRoute ,  
 
             default =>  route('project.index')
         };

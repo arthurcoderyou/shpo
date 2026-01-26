@@ -123,7 +123,27 @@ class ProjectDocumentList extends Component
 
     public $count_on_que = 0;
 
+    public $single_project_page = false; 
 
+    public function resetFilters($project_id = null){
+        $this->search = '';
+        $this->sort_by = ''; 
+
+        $this->document_status = null; 
+        $this->review_status = null;
+
+        $this->document_type_id = null; 
+
+        if($this->single_project_page == false){
+            $this->project_id = null;
+            $this->project = null;
+            $this->project_search = null; 
+        }
+           
+
+  
+ 
+    }
  
     public function mount($route = 'project.index', $project_id = null, $project_document_id = null ){
 
@@ -136,7 +156,11 @@ class ProjectDocumentList extends Component
         // }   
         
 
-        if(request()->routeIs('project.project_documents')){
+        if($route == "project.project_documents" || $route == "project.show"){
+
+            $this->single_project_page = true;
+
+            // dd("Here");
 
             // $project_id = request()
             // $this->project_id = request()->query('project_id', ''); // Default to empty string if not set
@@ -213,6 +237,8 @@ class ProjectDocumentList extends Component
 
         if($route == "project.project-document.index"){
             $this->home_route = route('project.project-document.index',['project' => $this->project_id]);
+        }elseif($route == "project.show"){
+            $this->home_route = route('project.show',['project' => $this->project_id]);
         }else{
             $this->home_route = route($route);
         }
@@ -1121,7 +1147,10 @@ class ProjectDocumentList extends Component
 
 
 
-        } else if(Auth::user()->hasPermissionTo('system access user')){
+        }
+        
+        
+        if(Auth::user()->hasPermissionTo('system access user') && request()->routeIs('project-document.index')){
 
             if($this->route == "project-document.index.changes-requested"){
                 $docs = $docs->applyRouteBasedFilters($this->route);

@@ -90,6 +90,28 @@ class ReviewerList extends Component
     public array $user_admin_options = [];
 
 
+    public function resetFilters(){
+        $this->selected_user_id = null;
+        $this->period_unit = "day";
+        $this->period_value = 0;
+
+        $this->selectedByType = [];
+
+        // Set default current type
+        $this->currentTypeId = DocumentType::orderBy('order','asc')->first()->id ?? null;       // the first document on the array will be the default current document 
+
+        if(request()->has('document_type_id')){
+            $this->currentTypeId = request()->get('document_type_id');
+            
+        }
+
+ 
+
+        $this->loadData();
+
+    }
+
+
     public function mount()
     {
         
@@ -246,7 +268,7 @@ class ReviewerList extends Component
                         $assigned[] = [
                             'row_uid'      => (string) Str::uuid(),
                             'slot_type'    => 'open',
-                            'slot_role'    => $reviewer->slot_role ?? 'reviewer',
+                            'slot_role'    => $reviewer->slot_role ?? 'admin',
                             'user_id'      => null,
                             'name'         => null,
                             'roles'        => [],
@@ -266,7 +288,7 @@ class ReviewerList extends Component
                 $assigned[] = [
                     'row_uid'      => (string) Str::uuid(),
                     'slot_type'    => 'open',
-                    'slot_role'    => 'reviewer',     // or something from config
+                    'slot_role'    => 'admin',     // or something from config
                     'user_id'      => null,
                     'name'         => null,
                     'roles'        => [],

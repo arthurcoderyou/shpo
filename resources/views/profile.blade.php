@@ -1,5 +1,5 @@
 <x-app-layout>
-     
+        
 
     <x-breadcrumb :items="[
         ['label' => 'Home', 'url' => route('dashboard'), ], 

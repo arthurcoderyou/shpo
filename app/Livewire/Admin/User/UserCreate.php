@@ -17,6 +17,9 @@ use App\Helpers\ActivityLogHelpers\UserLogHelper;
 use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Helpers\SystemNotificationHelpers\UserNotificationHelper;
 
+use libphonenumber\PhoneNumberUtil;
+use libphonenumber\NumberParseException;
+
 class UserCreate extends Component
 {
 
@@ -27,7 +30,9 @@ class UserCreate extends Component
 
     public string $company = '';
 
-    public string $phone_number = '';
+    public ?string $phone_number = '';
+    public ?string $phone_number_country_code = '';
+
     public string $password = '';
     public string $password_confirmation = '';
 
@@ -39,7 +44,60 @@ class UserCreate extends Component
 
 
     public $password_hidden = 1;
+
+    public array $companies = [];
  
+
+    /**
+     * Mount the component.
+     */
+    public function mount(): void
+    {
+        
+ 
+        $limit = (int) 20;
+        $this->companies = User::query()
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->select('company')
+            ->groupBy('company')
+            ->orderBy('company')
+            ->limit($limit)
+            ->pluck('company')
+            ->toArray();
+
+        
+    }
+
+
+    public function updatedCompany(){
+
+        $q = $this->company;
+        $limit = (int) 20;
+
+        // $limit = max(5, min($limit, 50)); // safety clamp
+
+        $query = User::query()
+            ->select('company')
+            ->whereNotNull('company')
+            ->where('company', '!=', '')
+            ->groupBy('company')
+            ->orderBy('company');
+
+        if ($this->company !== '') {
+            // For index usage, prefix search is better:
+            $query = $query->where('company', 'like', $q . '%');
+            // If you prefer contains: '%' . $q . '%', but index benefit is less.
+        }
+ 
+
+        $this->companies = $query->limit($limit)->pluck('company')->toArray();
+
+
+    }
+
+
+
 
 
     //show password to text toggle
@@ -88,11 +146,34 @@ class UserCreate extends Component
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
             'address' => ['required', 'string'], 
             'company' => ['required', 'string'], 
-            'phone_number' => ['required', 'string'],
+            'phone_number' => ['required', 'string', 'max:255'],
+            'phone_number_country_code' => ['required', 'string', 'max:255'],
 
             // 'role' => ['required']
             // 'selectedRoles' => 'required|array|min:1',
         ]);
+
+
+        $phoneUtil = PhoneNumberUtil::getInstance();
+
+        try {
+            $phoneProto = $phoneUtil->parse(
+                $this->phone_number,
+                strtoupper($this->phone_number_country_code) // AF, PH, US
+            );
+
+            if (! $phoneUtil->isValidNumberForRegion(
+                $phoneProto,
+                strtoupper($this->phone_number_country_code)
+            )) {
+                throw new \Exception('Invalid phone number for selected country.');
+            }
+
+        } catch (NumberParseException|\Exception $e) {
+            $this->addError('phone_number', 'The phone number does not match the selected country.');
+            return;
+        }
+
 
 
         // dd($this->selectedRoles);
@@ -105,6 +186,7 @@ class UserCreate extends Component
         $user->company = $this->company; 
         $user->address = $this->address;
         $user->phone_number = $this->phone_number;
+        $user->phone_number_country_code = $this->phone_number_country_code;
         $user->email_verified_at = now();
         $user->password = $password;
         $user->created_by = Auth::user()->id;

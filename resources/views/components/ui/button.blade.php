@@ -12,7 +12,9 @@
   // Trigger look (like your reference)
   'linkHref' => null,            // if set, renders <a> instead of <button>
   'class' => 'inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 focus-visible:outline focus-visible:ring',
-  'labelClass' =>"hidden lg:block" 
+  'labelClass' =>"hidden lg:block" ,
+
+  'wireNavigate' => true,
 ])
 
 @php
@@ -27,7 +29,9 @@
 <div x-data="{ open:false }" class="relative inline-flex items-center align-middle">
   @if($linkHref)
     <a href="{{ $linkHref }}"
+      @if($wireNavigate == true)
       wire:navigate
+      @endif
        @mouseenter="open = true" @mouseleave="open = false"
        @focus="open = true" @blur="open = false"
        @keydown.escape.window="open = false"

@@ -152,7 +152,7 @@
                                                         </a>
                                                         --}}
 
-
+                                                        @if($this->isLocalAvailable($attachment))
                                                         <a href="{{ $local_url }}" 
                                                          
                                                         download="{{ $filename }}"
@@ -160,6 +160,25 @@
                                                             
                                                             <x-svg.download  class="size-4 shrink-0" />
                                                         </a>
+                                                        @else
+                                                            <button
+                                                                type="button"
+                                                                wire:click="fetchFromFtp({{ $attachment['id'] }})"
+                                                                wire:loading.attr="disabled"
+                                                                wire:target="fetchFromFtp({{ $attachment['id'] }})"
+                                                                class="px-3 py-2 text-xs font-medium text-center text-white bg-sky-600 rounded-lg hover:bg-sky-700 focus:ring-4 focus:outline-none focus:ring-sky-300 disabled:opacity-60 flex justify-between space-x-2">
+                                                                <span wire:loading.remove wire:target="fetchFromFtp({{ $attachment['id'] }})">Fetch</span>
+
+                                                                <span wire:loading wire:target="fetchFromFtp({{ $attachment['id'] }})" class="inline-flex items-center gap-2">
+                                                                    <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                                                    </svg>
+                                                                    Loading…
+                                                                </span>
+                                                            </button>
+
+                                                        @endif
 
 
                                                     </div>
@@ -228,7 +247,7 @@
                 <form class="text-end" wire:submit="submit">
 
                     
-                    @if($project_document->status !== "approved")
+                    @if($project_document->status !== "approved" )
 
                         @if(
                             Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || 

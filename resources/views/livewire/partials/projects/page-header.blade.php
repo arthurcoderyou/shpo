@@ -216,6 +216,11 @@ new class extends Component {
                             > 
                                 {{ $project_document->document_type->name ?? 'Untitle Document' }}
                             </a>
+
+
+                            
+
+
                             
                         </h1>
                         <span>
@@ -225,6 +230,35 @@ new class extends Component {
                             </span>
                         </span>
                         
+                        @php
+                            // $status = $project->status ?? 'in_review';
+                            // $map = [
+                            //     'draft'     => 'bg-slate-100 text-slate-700',
+                            //     'submitted' => 'bg-sky-100 text-sky-700',
+                            //     'in_review' => 'bg-amber-100 text-amber-800',
+                            //     'approved'  => 'bg-emerald-100 text-emerald-700',
+                            //     'rejected'  => 'bg-rose-100 text-rose-700',
+                            //     'completed' => 'bg-emerald-100 text-emerald-700',
+                            //     'cancelled' => 'bg-slate-200 text-slate-700',
+                            //     'on_que'    => 'bg-violet-100 text-violet-700',
+                            // ];
+
+                            $status = $project_document->status;
+                            $config = $this->returnStatusConfig($status); 
+                        
+                            $label = $this->returnFormattedLabel($status);
+                        @endphp
+
+                        <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium 
+                            {{ $config['bg'] ?? 'bg-slate-100' }} 
+                            {{ $config['text'] ?? 'text-slate-700' }} 
+                            {{ $config['ring'] ?? 'ring-slate-700 ' }}
+                            uppercase
+                        ">
+                            <span class="size-1.5 rounded-full bg-current"></span>
+                            {{ $label }}  
+                        </span>
+
                     </div>
  
                     <div class="mt-1 lg:flex lg:items-center lg:gap-2">
@@ -458,6 +492,14 @@ new class extends Component {
                                         'linkLabel' => 'Edit Project'
                                     ],
 
+                                    [
+                                        'display' => auth()->user()->can('system access reviewer') || auth()->user()->can('system access admin') || auth()->user()->can('system access global admin'),
+                                        'type' => 'link',
+                                        'linkHref' =>  route('project.reviewer.index',['project' => $project->id]),
+                                        'linkLabel' => 'Project Reviewers'
+                                    ],
+
+
                                     // [
                                     //     'display' => auth()->user()->can('project delete') || auth()->user()->can('system access global admin'),
                                     //     'type' => 'button',
@@ -476,6 +518,76 @@ new class extends Component {
                                 displayTooltip="true"
                                 tooltipText="Click for more project options"
                             />
+
+
+                            @if( 
+                                // ( $project->status == "draft" && empty($project->rc_number)) || 
+                                
+                                $project->allow_project_submission == true
+                                &&
+                                $project->created_by == Auth::user()->id 
+                                &&
+                                empty($project->rc_number)
+
+
+                            ) 
+
+                                @php    
+                                    $message =  'Are you sure you want to submit this project for administrative review?';
+                                    if(!empty($project->project_documents) && count($project->project_documents) > 0){
+                                        $message =  'Are you sure you want to submit this project for administrative review? This action will also submit all of your created project documents ';
+                                    }
+
+
+                                @endphp 
+
+                                <x-ui.button
+                                    type="button"
+                                    label="Submit Project"
+                                    sr="Click to Submit Project"
+                                    {{-- wire:click="submit_project({{ $project->id }})" --}}
+                                    onclick="confirm('{{ $message }}') || event.stopImmediatePropagation()" 
+                                    wire:click.prevent="submit_project_for_rc_evaluation({{ $project->id }})"
+                                    displayTooltip
+                                    position="top"
+                                    tooltipText="Click to Submit Project"
+
+                                    class="inline-flex items-center text-nowrap gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600"
+
+
+                                >
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M6 12L3 21l18-9L3 3l3 9zm0 0h6" />
+                                    </svg>
+                                </x-ui.button>
+                            @endif
+
+                            @if(auth()->user()->can('system access admin') || auth()->user()->can('system access global admin'))
+                                @if(
+                                    $project->status == "on_que" && empty($project->rc_number)
+                                
+                                )
+                                    <x-ui.button
+                                        type="button"
+                                        label="Force Submit Project"
+                                        sr="Click to Submit Project"
+                                        {{-- wire:click="submit_project({{ $project->id }})" --}}
+                                        onclick="confirm('Are you sure you want to force submit this project for administrative review?') || event.stopImmediatePropagation()" 
+                                        wire:click.prevent="force_submit_project_for_rc_evaluation({{ $project->id }})"
+                                        displayTooltip
+                                        position="top"
+                                        tooltipText="Click to Force Submit Project"
+
+                                        class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-900"
+
+
+                                    />  
+                                @endif
+                            @endif
+
+
+
                         {{-- ./ Project options --}}
 
                         {{-- Project Document options --}}
@@ -489,35 +601,35 @@ new class extends Component {
                                     ],
                                 ];
 
-                                if (!empty($project_document)) {
-                                    $actions = array_merge($actions, [
-                                        [
-                                            'display' => !empty($project_document) && $canReview,
-                                            'type' => 'link',
-                                            'linkHref' => route('project.document.reviewer.index', [
-                                                'project' => $project->id,
-                                                'project_document' => $project_document->id,
-                                            ]),
-                                            'linkLabel' => 'View Reviewers',
-                                        ],
+                                // if (!empty($project_document)) {
+                                //     $actions = array_merge($actions, [
+                                //         [
+                                //             'display' => !empty($project_document) && $canReview,
+                                //             'type' => 'link',
+                                //             'linkHref' => route('project.document.reviewer.index', [
+                                //                 'project' => $project->id,
+                                //                 'project_document' => $project_document->id,
+                                //             ]),
+                                //             'linkLabel' => 'View Document Reviewers',
+                                //         ],
 
 
-                                        // [
-                                        //     'display' => !empty($project_document) && $canReview,
-                                        //     'type' => 'link',
-                                        //     'linkHref' => route('project_document.review.flow', [ 
-                                        //         'project_document' => $project_document->id,
-                                        //     ]),
-                                        //     'linkLabel' => 'View Review Flow',
-                                        // ],
+                                //         // [
+                                //         //     'display' => !empty($project_document) && $canReview,
+                                //         //     'type' => 'link',
+                                //         //     'linkHref' => route('project_document.review.flow', [ 
+                                //         //         'project_document' => $project_document->id,
+                                //         //     ]),
+                                //         //     'linkLabel' => 'View Review Flow',
+                                //         // ],
 
 
-                                    ]);
+                                //     ]);
 
 
 
 
-                                }
+                                // }
 
 
 
@@ -540,7 +652,61 @@ new class extends Component {
 
                                 displayTooltip="true"
                                 tooltipText="Click for more project document options"
-                            />
+                            />  
+
+                            @if(auth()->user()->can('system access admin') || auth()->user()->can('system access global admin'))
+                                @if( 
+                                    !empty($project_document) && 
+                                    $project_document->status == "on_que"  
+                                
+                                )
+                                    <x-ui.button
+                                        type="button"
+                                        label="Force Submit Project Document"
+                                        sr="Click to Force Submit Project Document"
+                                        {{-- wire:click="submit_project({{ $project->id }})" --}}
+                                        onclick="confirm('Are you sure you want to force submit this project for administrative review?') || event.stopImmediatePropagation()" 
+                                        wire:click.prevent="force_submit_project_for_rc_evaluation({{ $project->id }})"
+                                        displayTooltip
+                                        position="top"
+                                        tooltipText="Click to Force Submit Project Document"
+
+                                        class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-900"
+
+
+                                    />  
+                                @endif
+                            @endif
+
+
+
+                            {{-- @if(!empty($project->rc_number)) --}}
+                            <x-project.button-link 
+                                linkLabel=""
+                                linkHref="{{ route('project.project-document.create',['project' => $project->id]) }}"
+
+                                displayTooltip="true"
+                                tooltipText="Create a new project document"
+
+                                class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600"
+
+
+                            >
+                                <svg class="w-5 h-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+
+
+                            </x-project.button-link>  
+                            {{-- @endif --}}
+
+
                         {{-- ./ Project Document options  --}}
 
                         {{-- <a href="{{ route('project.project-document.index',['project' => $project->id]) }}"
@@ -549,74 +715,8 @@ new class extends Component {
                             Documents
                         </a> --}}
 
-                        @if(  $project->status == "draft" && empty($project->rc_number))
-                            <x-ui.button
-                                type="button"
-                                label="Submit Project"
-                                sr="Click to Submit Project"
-                                {{-- wire:click="submit_project({{ $project->id }})" --}}
-                                onclick="confirm('Are you sure you want to submit this project for administrative review?') || event.stopImmediatePropagation()" 
-                                wire:click.prevent="submit_project_for_rc_evaluation({{ $project->id }})"
-                                displayTooltip
-                                position="top"
-                                tooltipText="Click to Submit Project"
-
-                                class="inline-flex items-center text-nowrap gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600"
-
-
-                            >
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M6 12L3 21l18-9L3 3l3 9zm0 0h6" />
-                                </svg>
-                            </x-ui.button>
-                        @endif
-
-                        @if(auth()->user()->can('system access admin') || auth()->user()->can('system access global admin'))
-                            @if($project->status == "on_que" && empty($project->rc_number))
-                                <x-ui.button
-                                    type="button"
-                                    label="Force Submit Project"
-                                    sr="Click to Submit Project"
-                                    {{-- wire:click="submit_project({{ $project->id }})" --}}
-                                    onclick="confirm('Are you sure you want to force submit this project for administrative review?') || event.stopImmediatePropagation()" 
-                                    wire:click.prevent="force_submit_project_for_rc_evaluation({{ $project->id }})"
-                                    displayTooltip
-                                    position="top"
-                                    tooltipText="Click to Force Submit Project"
-
-                                    class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-900"
-
-
-                                />  
-                            @endif
-                        @endif
-
-                        @if(!empty($project->rc_number))
-                        <x-project.button-link 
-                            linkLabel=""
-                            linkHref="{{ route('project.project-document.create',['project' => $project->id]) }}"
-
-                            displayTooltip="true"
-                            tooltipText="Create a new project document"
-
-                            class="inline-flex items-center gap-1 rounded-xl border border-white  px-3 py-2 text-sm font-medium text-white bg-yellow-500 hover:bg-yellow-600"
-
-
-                        >
-                            <svg class="w-5 h-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                stroke-width="1.5">
-                                <path stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-
-
-                        </x-project.button-link>  
-                        @endif
+                        
+                        
                      
                         <!-- Discussion button and box -->
                             <x-ui.project.page-header.project-discussion-box  :project="$project" />

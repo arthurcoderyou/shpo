@@ -1,4 +1,4 @@
-<div class="max-w-[85rem] px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
+<div class="max-w-full px-4 py-6 sm:px-6 lg:px-8 mx-auto space-y-6">
     
     {{-- @if($project->canPostInDiscussion() && $replyToId) --}}
         @if(!auth()->user()->hasRole('Submitter'))

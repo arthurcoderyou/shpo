@@ -52,6 +52,23 @@ class ReviewCreate extends Component
         // 'reviewerDeleted' => '$refresh',
         
     ];
+
+    protected function getListeners(): array
+    {
+        $listeners = $this->listeners;
+
+        // if (!empty($this->project_id)) {
+        //     $listeners["projectReviewerEvent.{$this->project_id}"] = 'loadData';
+        // }
+
+        if (!empty($this->project_document_id)) {
+            $listeners["projectDocumentReviewerEvent.{$this->project_document_id}"] = '$refresh';
+        }
+
+        return $listeners;
+    }
+
+
     /** Actions with Password Confirmation panel */
         public $passwordConfirm = '';
         public $passwordError = null;
@@ -95,6 +112,9 @@ class ReviewCreate extends Component
     public $project;
 
     public $project_document;
+
+    public $project_id; 
+    public $project_document_id;
 
     public $attachments = []; // Initialize with one phone field 
 
@@ -158,6 +178,9 @@ class ReviewCreate extends Component
 
         $this->project = Project::findOrFail($id);
         $this->project_document = ProjectDocument::findOrFail($project_document_id);
+
+        $this->project_id = $this->project->id;
+        $this->project_document_id = $this->project_document->id;
 
         // // Generate the project number
         // if(empty($this->project->rc_number)){ 
@@ -1158,8 +1181,6 @@ class ReviewCreate extends Component
             );
 
         /** ./ send system notifications to users */
-
-
 
  
 

@@ -40,8 +40,12 @@ class FollowupReviewRequestListener  implements ShouldQueue
         $project = Project::find($project_reviewer->project_id);
         $user = User::find($project_reviewer->user_id);
 
-        $reviewUrl = route('project-document.index',[
-            'review_status' => 'pending'
+        // $reviewUrl = route('project-document.index',[
+        //     'review_status' => 'pending'
+        // ]);
+        $reviewUrl = route('project-document.review',[
+            'project' => $project->id,
+            'project_document' => $project_document->id,
         ]);
 
         // if mail is true 
@@ -54,8 +58,7 @@ class FollowupReviewRequestListener  implements ShouldQueue
             } catch (\Throwable $e) {
                 // Log the error without interrupting the flow
                 Log::error('Failed to dispatch FollowupReviewRequestMail mail: ' . $e->getMessage(), [
-                    'project_reviewer_id' => $project_reviewer->id,
-                    'project_document_id' => $project_document->id,
+                    'project_reviewer_id' => $project_reviewer->id ?? null, 
                     'project_id' => $project->id,
                     'trace' => $e->getTraceAsString(),
                 ]);

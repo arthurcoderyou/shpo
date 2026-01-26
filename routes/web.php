@@ -260,13 +260,20 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
             # ./ project
 
             # project document
-                Route::middleware(['rc_number_required'])->group(function(){
+                // Route::middleware(['rc_number_required'])->group(function(){
 
                 
                     // list of project documents with or without project
                     Route::get('project_document/{project?}/{project_document?}',[ProjectDocumentController::class, 'index'])
                         ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
                         ->name('project-document.index'); // for users to see projects pending updates and resubmission
+
+                    // list of project documents with or without project
+                    Route::get('project_document_all/{project?}/{project_document?}',[ProjectDocumentController::class, 'index'])
+                        ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:system access admin,permission:system access reviewer,permission:project document create']) 
+                        ->name('project-document.index.all'); // for users to see projects pending updates and resubmission
+
+
 
                     // list of open project documents with or without project
                     Route::get('project_document_open_review/{project?}/{project_document?}',[ProjectDocumentController::class, 'index_open_review'])
@@ -319,7 +326,7 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
                     Route::get('project/{project}/project_document_edit_attachments/{project_document}/',[ProjectDocumentController::class, 'edit'])
                         ->middleware(['role.permission.alert:role:,permission:system access global admin,permission:project document edit']) 
                         ->name('project.project_document.edit_attachments'); // for users to see projects pending updates and resubmission
-                });
+                // });
             # ./ project document 
  
             # reviewer

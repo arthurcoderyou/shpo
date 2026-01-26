@@ -46,6 +46,14 @@ class ProjectTimerEdit extends Component
     protected $listeners = ['projectTimerEvent' => 'loadData'];
     
 
+    public function resetFilters(){
+
+        $this->loadData();
+
+        $this->days = [];
+        $this->days = ActiveDays::all()->keyBy('id')->toArray();
+
+    }
 
 
     public function mount(){
@@ -107,6 +115,8 @@ class ProjectTimerEdit extends Component
 
         $this->loadDaysOfTheWeek();
         $this->days = ActiveDays::all()->keyBy('id')->toArray();
+
+        $this->getAllDaysActiveProperty();
     }
 
 

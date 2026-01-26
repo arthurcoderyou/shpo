@@ -29,6 +29,24 @@ class ProjectDocumentReview extends Component
         // 'projectDocumentDeleted' => '$refresh',
     ];
 
+
+    protected function getListeners(): array
+    {
+        $listeners = $this->listeners;
+
+        // if (!empty($this->project_id)) {
+        //     $listeners["projectReviewerEvent.{$this->project_id}"] = 'loadData';
+        // }
+
+        if (!empty($this->project_document_id)) {
+            $listeners["projectDocumentReviewerEvent.{$this->project_document_id}"] = '$refresh';
+        }
+
+        return $listeners;
+    }
+
+
+
     /** Actions with Password Confirmation panel */
         public $passwordConfirm = '';
         public $passwordError = null;

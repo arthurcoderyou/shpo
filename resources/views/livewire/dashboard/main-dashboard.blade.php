@@ -1026,7 +1026,7 @@
 
 
 
-
+    {{-- - 
 
     <div
     x-data="{ open: @entangle('showGuide') }"
@@ -1036,9 +1036,9 @@
         }
     "
 >
-    {{-- Page content here --}}
+    <!-- Page content here -->
 
-    {{-- MODAL OVERLAY --}}
+    <!-- MODAL OVERLAY -->
     <div
         x-show="open"
         x-transition
@@ -1047,7 +1047,7 @@
     >
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-lg p-6 sm:p-7 space-y-5">
 
-            {{-- Header --}}
+            <!-- Header -->
             <div class="space-y-2">
                 <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
                     <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-600 text-xl">
@@ -1061,9 +1061,9 @@
                 </p>
             </div>
 
-            {{-- HORIZONTAL 3-STEP PROGRESS --}}
+            <!-- HORIZONTAL 3-STEP PROGRESS -->
             <div class="flex items-center gap-3">
-                {{-- Step 1 --}}
+                <!-- Step 1 -->
                 <div class="flex items-center gap-2">
                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
                         1
@@ -1075,7 +1075,7 @@
 
                 <div class="flex-1 h-px bg-slate-200"></div>
 
-                {{-- Step 2 --}}
+                <!-- Step 2 -->
                 <div class="flex items-center gap-2">
                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
                         2
@@ -1087,7 +1087,7 @@
 
                 <div class="flex-1 h-px bg-slate-200"></div>
 
-                {{-- Step 3 --}}
+                <!-- Step 3 -->
                 <div class="flex items-center gap-2">
                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
                         3
@@ -1098,9 +1098,9 @@
                 </div>
             </div>
 
-            {{-- Detailed step descriptions --}}
+            <!-- Detailed step descriptions -->
             <div class="space-y-4 mt-1">
-                {{-- Step 1 --}}
+                <!-- Step 1 -->
                 <div class="space-y-1">
                     <h3 class="text-sm font-semibold text-slate-800">
                         Step 1: Create your first project
@@ -1110,7 +1110,7 @@
                     </p>
                 </div>
 
-                {{-- Step 2 --}}
+                <!-- Step 2 -->
                 <div class="space-y-1">
                     <h3 class="text-sm font-semibold text-slate-800">
                         Step 2: Complete the project details
@@ -1121,7 +1121,7 @@
                     </p>
                 </div>
 
-                {{-- Step 3 --}}
+                <!-- Step 3 -->
                 <div class="space-y-1">
                     <h3 class="text-sm font-semibold text-slate-800">
                         Step 3: Submit the project for admin review
@@ -1137,7 +1137,7 @@
                 Once you’ve created and submitted your first project, this guide will no longer appear.
             </p>
 
-            {{-- Actions --}}
+            <!-- Actions -->
             <div class="flex justify-end gap-3 pt-2">
                 <button
                     type="button"
@@ -1163,7 +1163,7 @@
         </div>
     </div>
 </div>
-
+    --}}
 
 
 

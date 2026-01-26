@@ -81,6 +81,12 @@ class ProjectCreate extends Component
     public $certificate_of_approval = false;
     public $notice_of_violation = false;
 
+    public $company;
+
+    public $installation;
+    public $sub_area;
+    public $project_size;
+
 
     public $project_types = [
         'Local Government' => 'Local Government',
@@ -237,7 +243,7 @@ class ProjectCreate extends Component
 
         $this->documentTypes = DocumentType::orderBy('order','ASC')->get(); 
 
-  
+        $this->company = Auth::user()->company ?? '';
 
     }
 
@@ -504,6 +510,10 @@ class ProjectCreate extends Component
                 'nullable', 'string', 'required_if:type,Local Government,Federal Government',
             ],
 
+            'company' => [
+                'nullable', 'string', 'required_if:type,Private',
+            ],
+
             'type' => [
                 'required'
             ],
@@ -635,6 +645,10 @@ class ProjectCreate extends Component
                 'nullable', 'string', 'required_if:type,Local Government,Federal Government',
             ],
 
+            'company' => [
+                'nullable', 'string', 'required_if:type,Private',
+            ], 
+
             'type' => [
                 'required'
             ],
@@ -719,21 +733,28 @@ class ProjectCreate extends Component
             'burials_discovered_onsite' => $this->burials_discovered_onsite,
             'certificate_of_approval' => $this->certificate_of_approval,
             'notice_of_violation' => $this->notice_of_violation,
+
+
+            'installation'  => $this->installation,
+            'sub_area'  => $this->sub_area,
+            'project_size'  => $this->project_size,
  
 
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
         ]); 
 
-  
-
+   
+        $user = User::find(Auth::user()->id);
+        $user->company = $this->company;
+        $user->save();
            
 
         // logging and system notifications
             $authId = Auth::check() ? Auth::id() : null;
 
-            // get the message from the helper 
-            $message = ProjectLogHelper::getActivityMessage('created', $project->id, $authId);
+            // get the message from the helper || message for all
+            $message = ProjectLogHelper::getActivityMessage('created', $project->id, $authId,'all');
 
             // get the route
             $route = ProjectLogHelper::getRoute('created', $project->id);
@@ -775,7 +796,8 @@ class ProjectCreate extends Component
 
 
 
-
+        // get the message from the helper || message for submitter
+        $message = ProjectLogHelper::getActivityMessage('created', $project->id, $authId,'submitter');
         // Alert::success('Success','Project created successfully');
         return 
         // redirect()->route('project.show',['project'=> $project->id])

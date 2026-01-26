@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailables\Address; 
 use Illuminate\Mail\Mailables\Headers; 
 
+
 class ReviewedMail extends Mailable
 {
     use Queueable, SerializesModels;
@@ -90,16 +91,7 @@ class ReviewedMail extends Mailable
 
         return new Headers(text: $text);
     }
-
-    /**
-     * Attachments (none by default).
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
-    }
+ 
 
 
      /**
@@ -121,5 +113,11 @@ class ReviewedMail extends Mailable
 
         return [$formatted, $tz];
     }
+
+
+
+   
+
+
 
 }

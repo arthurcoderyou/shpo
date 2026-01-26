@@ -140,7 +140,7 @@
                     @if(Auth::user()->can('system access global admin')  || Auth::user()->can('user create'))
                     <x-ui.button 
                             id="create-user" 
-                            
+                            :wireNavigate="false"
                             sr="Create new user" 
                             :linkHref="route('user.create')" {{-- to make it as a link --}}
 
@@ -153,6 +153,12 @@
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#ffffff" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg>
                         </x-ui.button>
                     @endif
+
+                    <x-ui.table.reset-button wireClick="resetFilters" />
+
+
+
+
                 </div>
                 </div>
             </div>
@@ -260,7 +266,7 @@
                                                 'href'  => route('user.edit', ['user' => $user->id]),
                                                 'icon'  => 'edit', // you can tweak
                                                 'attrs' => [
-                                                    'wire:navigate' => true,
+                                                    'wire:navigate' => false,
                                                 ],      
                                             ],
                                             [
@@ -294,10 +300,13 @@
                                 <td class="size-auto whitespace-nowrap">
                                     <div class="px-2 py-2">
                                         <div class="flex items-center gap-x-3">
-                                        <div class="grow">
-                                            <span class="block text-sm font-semibold text-gray-800 ">{{ $user->name }}</span>
-                                            <span class="block text-sm text-gray-500 ">{{ $user->email }}</span>
-                                        </div>
+                                            <div class="grow">
+                                                <span class="block text-sm font-semibold text-gray-800 ">{{ $user->name }}</span>
+                                                <strong  class="block text-sm font-semibold text-gray-600 ">{{ $user->company }}</strong>
+                                                <span class="block text-sm text-gray-500 ">{{ $user->email }}</span>
+                                                <span class="block text-sm text-gray-500 ">{{ $user->phone_number }}</span>
+                                                <span class="block text-sm text-gray-500 ">{{ $user->address }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>

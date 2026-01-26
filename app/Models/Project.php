@@ -96,6 +96,16 @@ class Project extends Model
         'burials_discovered_onsite',
         'certificate_of_approval',
         'notice_of_violation',
+
+
+        'installation',
+        'sub_area',
+        'project_size'
+
+
+
+
+
     ];
 
     // Automatically generate the project number
@@ -522,6 +532,7 @@ class Project extends Model
     public function getCurrentReviewer()
     {
         return $this->project_reviewers() 
+            ->whereNull('project_document_id')
             ->where('status', true)  // find the first active reviewer
             ->orderBy('order')
             ->first(); // Return the User model of the reviewer
@@ -1361,7 +1372,7 @@ class Project extends Model
         $query = $query->applyReviewStatusBasedFilters($review_status);
 
 
-        if(Auth::user()->hasPermissionTo('system access user')){
+        if(Auth::user()->hasPermissionTo('system access user') && request()->routeIs('project.index')){ // also check if it is on the users project list only
              $query = $query->where('created_by',Auth::user()->id);
             
         }
@@ -1396,7 +1407,7 @@ class Project extends Model
                 // submission is not allowed
                 // review status is pending
 
-                if($user->hasPermissionTo('system access user')){
+                if($user->hasPermissionTo('system access user') && request()->routeIs('project.index')){
                     return $q
                         ->where('allow_project_submission', false)
                         ->whereHas('project_reviewers', function ($query) use ($userId) {
@@ -1443,21 +1454,44 @@ class Project extends Model
                 // review status is rejected
 
                 // dd("Here");
-                return $q
-                    ->where('allow_project_submission', false)
-                    ->whereHas('project_reviewers', function ($query) use ($userId) {
-                        $query->where('status', true)
-                        ->where('slot_type', 'open')
-                        // to know if it is claimed
-                        ->whereNull('user_id')
-                        ->where('review_status', 'pending');
-                    });
+                
+
+
+                if($user->hasPermissionTo('system access user') && request()->routeIs('project.index')){
+                     
+
+                    return $q->where('created_by',$userId)
+                        ->where('allow_project_submission', false)
+                        ->whereHas('project_reviewers', function ($query) use ($userId) {
+                            $query->where('status', true)
+                            ->where('slot_type', 'open')
+                            // to know if it is claimed
+                            ->whereNull('user_id')
+                            ->where('review_status', 'pending');
+                        });
+
+                }elseif( $user->hasPermissionTo('system access admin') || $user->hasPermissionTo('system access reviewer') ){
+                    
+                    return $q
+                        ->where('allow_project_submission', false)
+                        ->whereHas('project_reviewers', function ($query) use ($userId) {
+                            $query->where('status', true)
+                            ->where('slot_type', 'open')
+                            // to know if it is claimed
+                            ->whereNull('user_id')
+                            ->where('review_status', 'pending');
+                        });
+
+
+                }
+ 
+
 
             case 'changes_requested':
                 // changes_requested
                 // submission is allowed
                 // review status is changes requested 
-                if($user->hasPermissionTo('system access user')){
+                if($user->hasPermissionTo('system access user') && request()->routeIs('project.index')){
                     return $q->where('created_by',$userId)
                         ->where('allow_project_submission', true)
                         ->whereHas('project_reviewers', function ($query) use ($userId) {
@@ -1479,7 +1513,7 @@ class Project extends Model
             default:
                 // Default to just pass it back
 
-                if(Auth::user()->hasPermissionTo('system access user')){
+                if(Auth::user()->hasPermissionTo('system access user') && request()->routeIs('project.index') ){
                     return $q->ownedBy($userId);
                 }else{
                     return $q;

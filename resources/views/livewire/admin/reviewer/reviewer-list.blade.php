@@ -279,12 +279,15 @@
     </div> --}}
 
 
-    <div class="col-span-6 md:col-span-2">
+    <div class="col-span-6 md:col-span-2 flex gap-2">
       <!-- Add selected to the main assigned reviewers list -->
       <button type="button" wire:click="addSelected"
               class="w-full text-nowrap py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700">
         Add to Table
       </button>
+
+      <x-ui.table.reset-button wireClick="resetFilters" />
+      
     </div>
     @endif
 
@@ -438,10 +441,10 @@
       class="divide-y divide-slate-200">
         @forelse($assigned as $row)
 
-            @php
-                $isFirst = $loop->first;
-                $isLast = $loop->last;
-            @endphp
+          @php
+              $isFirst = $loop->first;
+              $isLast = $loop->last;
+          @endphp
 
 
 

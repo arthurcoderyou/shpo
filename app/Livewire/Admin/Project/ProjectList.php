@@ -93,8 +93,8 @@ class ProjectList extends Component
     public $type;
 
     public $project_types = [
-        'Local',
-        'Federal',
+        'Local Government',
+        'Federal Government',
         'Private'
     ];
 
@@ -115,6 +115,24 @@ class ProjectList extends Component
      
 
     public $pending_rc_number = false; 
+
+
+    public function resetFilters(){
+
+        $this->search = '';
+        $this->sort_by = ''; 
+   
+
+        $this->project_status = null; 
+  
+ 
+
+        $this->type = null;
+  
+
+        $this->pending_rc_number = false; 
+
+    }
 
 
  
@@ -346,152 +364,9 @@ class ProjectList extends Component
 
 
 
-    public function delete($id){
-        $project = Project::find($id);
-
-        if( Auth::user()->can('system access global admin') || Auth::user()->can('system access admin') || Auth::user()->can('project delete override')  ){
-        }else{
- 
-            if($project->status !== "draft"  ){
-                Alert::error('Error','Project is not draft. It cannot be deleted. Please contact administrator if you want to delete the project ');
-
-                $route = ProjectHelper::returnHomeProjectRoute($project);
-
-                return redirect($route);
-            }
-
-            
-        }
-            
-
-
-        // $project->status == "draft" && Auth::user()->id == $project->created_by
-
-
-
-
-        // delete project connected records 
-        
-            //delete project reviewers 
-            if(!empty($project->project_reviewers)){
-                foreach($project->project_reviewers as $reviewer){
-                    $reviewer->delete();
-                } 
-            }
-
-            //delete project reviews 
-            if(!empty($project->project_reviews)){
-                foreach($project->project_reviews as $review){
-                    $review->delete();
-                } 
-            }
-
-            //delete project documents 
-            if(!empty($project->project_documents)){
-                foreach($project->project_documents as $document){
-
-                    // delete project attachments for each project document 
-                    if(!empty($document->project_attachments)){
-                        foreach($document->project_attachments as $attachment){
-                            // Construct the full file path
-                            $filePath = "public/uploads/project_attachments/{$attachment->attachment}";
-
-                            // Check if the file exists in storage and delete it
-                            if (Storage::exists($filePath)) {
-                                Storage::delete($filePath);
-                            }
-
-                            // Delete the record from the database
-                            $attachment->delete();
-                        }
-
-
-                    }
-
-
-
-                    $document->delete();
-                } 
-            }
-
-            // delete project subscribers
-            if(!empty($project->project_subscribers)){
-                foreach($project->project_subscribers as $subcriber){
-                    $subcriber->delete();
-                } 
-            }
-        
-        // ./ delete project connected records 
-
-
- 
-
-        // logging and system notifications
-            $authId = Auth::check() ? Auth::id() : null;
-
-            // get the message from the helper 
-            $message = ProjectLogHelper::getActivityMessage('deleted', $project->id, $authId);
-
-            // get the route
-            $route = ProjectLogHelper::getRoute('deleted', $project->id);
-
-            // log the event 
-            event(new ProjectLogEvent(
-                $message ,
-                $authId, 
-                $project->id ?? null,
-
-            ));
-    
-            /** send system notifications to users */
-                
-                ProjectNotificationHelper::sendSystemNotification(
-                    message: $message,
-                    route: $route 
-                );
-
-            /** ./ send system notifications to users */
-        // ./ logging and system notifications
-
-
-
-
-
-        $project->delete();
-
-
-        // ActivityLog::create([
-        //     'log_action' => "Project \"".$project->name."\" deleted ",
-        //     'log_username' => Auth::user()->name,
-        //     'created_by' => Auth::user()->id,
-        // ]);
-
-
-
-
-        // Alert::success('Success','Project deleted successfully');
-        // return redirect()->route('project.index');
-
-        // if($project->created_by == auth()->user()->id){
-        //     return redirect()->route('project.index');
-
-        // }else{
-
-        //     return redirect()->route('project.index');
-        // }'
-
-        
-
-
-
-        // return ProjectHelper::returnHomeRouteBasedOnProject($project);
-        $route = ProjectHelper::returnHomeProjectRoute($project);
-
-        return redirect($route)
-            ->with('alert.success',$message)
-            ; 
-
-
+    public function delete($id){ 
+   
+        ProjectHelper::delete($id); 
 
     }
 
@@ -903,9 +778,9 @@ class ProjectList extends Component
         if($this->pending_rc_number == true){
             // dd($this->pending_rc_number);
             $query->whereNull('rc_number')
-                ->where(function ($q) {
-                    $q->doesntHave('project_documents');
-                })
+                // ->where(function ($q) {
+                //     $q->doesntHave('project_documents');
+                // })
                 ->whereNot('status','draft');
 
         }

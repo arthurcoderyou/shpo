@@ -11,6 +11,7 @@ use App\Models\ActivityLog;
 use Illuminate\Support\Arr;
 use App\Models\DocumentType;
 use App\Models\ProjectTimer;
+use App\Helpers\ProjectHelper;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
 use Illuminate\Support\Facades\Log;
@@ -47,7 +48,8 @@ class ProjectDocumentHelpers
 
     public static function submit_project_document($project_document_id, $override_on_que_submission = false){
         
- 
+  
+
         $errors = ProjectDocumentHelpers::checkProjectDocumentRequirements();
         $errorMessages = [];
 
@@ -112,6 +114,49 @@ class ProjectDocumentHelpers
  
         $project_document = ProjectDocument::find($project_document_id);
         $project = Project::find($project_document->project_id);
+        
+
+        
+
+
+        if(empty($project->rc_number)){
+
+
+            // dd("Here");
+
+            $message = "";
+
+            // check if there is a current reviewer and review rpoject on the rpoject now 
+            $currect_project_reviewer = $project->getCurrentReviewer();
+            if(empty( $currect_project_reviewer) 
+                // || $currect_project_reviewer->review_status !== "reviewed"
+            
+            ){
+                // disable submission on hte rpoject document
+
+                $project_document->status = "submitted";
+                $project_document->allow_project_submission = false;
+                $project_document->save();
+                // return redirect()->back();
+                ProjectHelper::submit_project_for_rc_evaluation($project->id);
+
+
+            }
+            
+
+            // just return
+            
+
+            $message = "Your project does not yet have an RC Number. It has been submitted for RC evaluation and is currently under review. Project document submission is temporarily disabled until the RC review is completed.";
+
+
+            return redirect()->route('project.project-document.show',[
+                'project' => $project->id,
+                'project_document' => $project_document->id
+            ])
+            ->with('alert.info',$message)
+            ;
+        }
          
 
         if (!empty($errorMessages)) {
@@ -189,10 +234,26 @@ class ProjectDocumentHelpers
         }
  
 
+
+
+ 
+
+
+
+
+
+
+
+
+
+
         $submission_type = "initial_submission";
 
 
         // dd("All Goods");
+
+
+ 
 
         
         // if override admin que submit is true
@@ -206,6 +267,7 @@ class ProjectDocumentHelpers
                 false
             );
 
+ 
         }else{ 
 
             // SUBMISSION OF NEW PROJECT DOCUMENTS 
@@ -240,6 +302,12 @@ class ProjectDocumentHelpers
                     $message = "Project document submission is currently restricted. Your project has been queued and will be submitted automatically on $nextAvailableDay between $formattedOpen and $formattedClose.";
 
  
+
+                    // disable submission on hte rpoject document
+                    $project_document->status = "on_que";
+                    $project_document->allow_project_submission = false;
+                    $project_document->save();
+                    // return redirect()->back();
 
  
 
@@ -278,10 +346,7 @@ class ProjectDocumentHelpers
                         /** ./ send system notifications to users */
                     // ./ logging and system notifications
 
-
-
-
-
+ 
 
                     // Alert::info('Project Document Notice',$message); 
                     return redirect()->route('project.project-document.show',[
@@ -295,6 +360,11 @@ class ProjectDocumentHelpers
 
                 }else{
                     // else, submit normally
+
+                    $project_document->status = "submitted";
+                    $project_document->allow_project_submission = false;
+                    $project_document->save();
+                    // return redirect()->back();
 
                     // update project document
                     ProjectDocumentHelpers::updateDocumentAndAttachments(
@@ -346,6 +416,11 @@ class ProjectDocumentHelpers
                  
  
                 $submission_type = "supplemental_submission";
+
+                $project_document->status = "submitted";
+                $project_document->allow_project_submission = false;
+                $project_document->save();
+                // return redirect()->back();
                 
                  
                 // update project document
@@ -506,6 +581,150 @@ class ProjectDocumentHelpers
 
 
 
+ 
+
+
+    public static function submit_project_document_based_on_project_rc($project_document_id){
+        
+  
+ 
+        $project_document = ProjectDocument::find($project_document_id);
+        $project = Project::find($project_document->project_id);
+ 
+        // dd("All Goods");
+
+        $submission_type = "initial_submission";
+            
+        // update project document
+        ProjectDocumentHelpers::updateDocumentAndAttachments(
+            $project_document,
+            "submitted", 
+            false
+        );
+
+ 
+ 
+
+        // dd( $submission_type);
+        // if all are good, then we move on to the setup of the document reviewers 
+
+        if($submission_type == "initial_submission"){
+
+            // set the project document reviewers
+            ProjectReviewerHelpers::setProjectDocumentReviewers($project_document, $submission_type);
+
+
+            try {
+                event(new \App\Events\ProjectDocument\Submitted(
+                    $project_document->id, 
+                    Auth::user()->id,
+                    true,
+                    true));
+            } catch (\Throwable $e) {
+                // Log the error without interrupting the flow
+                Log::error('Failed to dispatch Submitted event: ' . $e->getMessage(), [
+                    'project_id' => $project->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+
+            // set the project document reviewers
+            ProjectReviewerHelpers::sendNotificationOnReviewerListUpdate($project_document);
+
+            // send notification to the current reviewer
+            ProjectReviewerHelpers::sendReviewNotificationToReviewer($project_document, $submission_type);
+
+
+
+        } 
+
+        // update project submission and review timers 
+        $project_timer = ProjectTimer::first();
+
+        if(!empty($project_timer)){
+            $reviewer_response_duration =  $project_timer->reviewer_response_duration ?? null;
+            $reviewer_response_duration_type =  $project_timer->reviewer_response_duration_type ?? null;
+            $submitter_response_duration =   $project_timer->submitter_response_duration ?? null;
+            $submitter_response_duration_type = $project_timer->submitter_response_duration_type ?? null;
+
+
+            $project_document->reviewer_response_duration = $reviewer_response_duration;
+            $project_document->reviewer_response_duration_type = $reviewer_response_duration_type;
+            // after updating the project, update the due date timers
+            $project_document->reviewer_due_date = Project::calculateDueDate(now(),$reviewer_response_duration_type, $reviewer_response_duration );
+
+
+            $project_document->submitter_response_duration = $submitter_response_duration;
+            $project_document->submitter_response_duration_type = $submitter_response_duration_type;  
+            // $project_document->submitter_due_date = Project::calculateDueDate(now(),$project_document->submitter_response_duration_type, $project_document->submitter_response_duration );
+            $project_document->submitter_due_date = Project::calculateDueDate(now(),$submitter_response_duration_type, $submitter_response_duration );
+    
+            $project_document->save();
+
+
+        }
+
+
+
+         // logging and system notifications
+            $authId = Auth::id() ?? null;
+            $projectId = $project_document->project_id; 
+
+            // logging for the project document 
+                // Success message from the activity log project helper
+                $message =  ProjectDocumentLogHelper::getActivityMessage('submitted',$project_document->id,$authId);
+        
+                // get the route 
+                $route = ProjectDocumentLogHelper::getRoute('submitted', $project_document->id);
+                
+
+                // // log the event 
+                event(new ProjectDocumentLogEvent(
+                    $message ,
+                    $authId, 
+                    $projectId,
+                    $project_document->id,
+
+                ));
+            // ./ logging for the project document  
+            
+
+            /** send system notifications to users */
+                /** send system notifications to users */
+                    
+                    ProjectDocumentNotificationHelper::sendSystemNotification(
+                        message: $message,
+                        route: $route 
+                    );
+
+                /** ./ send system notifications to users */
+            /** ./ send system notifications to users */
+        // ./ logging and system notifications
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /** Project Submission restriction  */
@@ -587,6 +806,91 @@ class ProjectDocumentHelpers
          
 
     }
+
+ 
+    /**
+     * Update project document based on project submission
+     * @param  string       $message      message 
+     * @param  string       $route        route to redirect
+     * @param  int          $authId       auth id 
+     * @return void         void          Not required to return value
+     */
+    public static function updateProjectDocumentsOnProjectSubmission(
+        $project_id, 
+        $status, 
+        $submission_type = "initial_submission",
+        $allow_project_submission,
+        $now,
+        $auth_id,
+
+    ){
+
+        
+        $project = Project::find($project_id);
+
+
+
+        if(empty($project->project_documents)){
+            
+            foreach($project->project_documents as $project_document){
+
+                // update project document
+                // override submit the project document
+                $project_document->status = $status;
+                $project_document->allow_project_submission = $allow_project_submission; // do not allow double submission until it is reviewed
+                $project_document->updated_at = $now;
+                $project_document->last_submitted_at = $now;
+                $project_document->last_submitted_by = Auth::user()->id ?? $project->created_by;
+                $project_document->save(); 
+
+
+                // Update only the new attachments
+                $project_document->project_attachments()
+                    ->whereNull('last_submitted_at')
+                    ->whereNull('last_submitted_by')
+                    ->update([
+                        'last_submitted_at' => $project_document->last_submitted_at,
+                        'last_submitted_by' => $project_document->last_submitted_by,
+                    ]);
+
+
+                // logging for the project document 
+                    // Success message from the activity log project helper
+                    $message =  ProjectDocumentLogHelper::getActivityMessage('submitted',$project_document->id,$auth_id);
+            
+                    // get the route 
+                    $route = ProjectDocumentLogHelper::getRoute('submitted', $project_document->id);
+                    
+
+                    // // log the event 
+                    event(new ProjectDocumentLogEvent(
+                        $message ,
+                        $auth_id, 
+                        $project_id,
+                        $project_document->id,
+
+                    ));
+                // ./ logging for the project document  
+
+
+                // set the project document reviewers
+                ProjectReviewerHelpers::setProjectDocumentReviewers($project_document, $submission_type);
+
+
+
+
+
+            }
+            
+
+        }
+
+ 
+
+    }
+
+
+
 
 
 
@@ -1286,7 +1590,7 @@ class ProjectDocumentHelpers
             'completed' => ['label' => 'Completed', 'bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'ring' => 'ring-indigo-200'],
             'cancelled' => ['label' => 'Cancelled', 'bg' => 'bg-gray-50', 'text' => 'text-gray-800', 'ring' => 'ring-gray-200'],
             'reviewed' => ['label' => 'Reviewed', 'bg' => 'bg-green-50', 'text' => 'text-green-800', 'ring' => 'ring-green-200'],
-            'changes_requested' => ['label' => 'Changes Requested', 'bg' => 'bg-yellow-50', 'text' => 'text-yellow-800', 'ring' => 'ring-yellow-200'],
+            'changes_requested' => ['label' => 'Changes Requested', 'bg' => 'bg-yellow-800', 'text' => 'text-white', 'ring' => 'ring-yellow-200'],
             'on_que' => ['label' => 'On Queue', 'bg' => 'bg-slate-100', 'text' => 'text-slate-500', 'ring' => 'ring-slate-200'],
         ];
 

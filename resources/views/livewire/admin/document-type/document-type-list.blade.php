@@ -41,12 +41,15 @@
         
 
     
-        <div class="col-span-6 md:col-span-2">
+        <div class="col-span-6 md:col-span-2 flex gap-2">
             <!-- Add selected to the main assigned reviewers list -->
             <button type="button" wire:click="save()"
                     class="w-full text-nowrap py-2.5 inline-flex items-center justify-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
                 Save All
             </button>
+
+            <x-ui.table.reset-button wireClick="resetFilters" />
+
         </div>
         
 

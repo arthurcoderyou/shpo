@@ -38,28 +38,31 @@ class ReviewRequestListener implements ShouldQueue
 
 
         $reviewUrl = "";
-        if($project->created_by == $user->id && $user->can('project list view')){
+        // if($project->created_by == $user->id && $user->can('project list view')){
 
-             $reviewUrl = route('project.index',[
-                 'review_status' => 'pending',
-                'pending_rc_number' => true,
-             ]);
-        }elseif($user->can('project list view all') || $user->can('system access global admin')){
-           $reviewUrl = route('project.index.all',[
-             'review_status' => 'pending',
-                'pending_rc_number' => true,
-           ]);
-        }elseif($user->can('project list view all no drafts')){
-             $reviewUrl = route('project.index.all.no-drafts',[
-                 'review_status' => 'pending',
-                'pending_rc_number' => true,
-            ]);
-        }else{
-            $reviewUrl =  route('dashboard',[
-                 'review_status' => 'pending',
-                'pending_rc_number' => true,
-            ]);
-        }   
+        //      $reviewUrl = route('project.index',[
+        //          'review_status' => 'pending',
+        //         'pending_rc_number' => true,
+        //      ]);
+        // }elseif($user->can('project list view all') || $user->can('system access global admin')){
+        //    $reviewUrl = route('project.index.all',[
+        //      'review_status' => 'pending',
+        //         'pending_rc_number' => true,
+        //    ]);
+        // }elseif($user->can('project list view all no drafts')){
+        //      $reviewUrl = route('project.index.all.no-drafts',[
+        //          'review_status' => 'pending',
+        //         'pending_rc_number' => true,
+        //     ]);
+        // }else{
+        //     $reviewUrl =  route('dashboard',[
+        //          'review_status' => 'pending',
+        //         'pending_rc_number' => true,
+        //     ]);
+        // }   
+
+
+        $reviewUrl = route('project.review',['project' => $project->id]);
 
  
         // if mail is true 

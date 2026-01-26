@@ -254,3 +254,25 @@ Broadcast::channel('backup.database', function ($user, $id) {
 
  
 /** @channel project.project_reference channel */
+
+/** @channel project.project_reference channel */
+    /** @channel project.project_reference channel */
+        // // model wide
+        // Broadcast::channel('project.project_reference', function ($user) {
+        //     return Auth::check();
+        // });
+
+        // instance specific
+        Broadcast::channel('project.project_reviewer.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+
+        // instance specific
+        Broadcast::channel('project.project_document.project_reviewer.{modelId}', function ($user, $modelId) {
+            return Auth::check();
+        });
+        
+    /** @channel ./ project.project_reference channel */
+
+ 
+/** @channel project.project_reference channel */

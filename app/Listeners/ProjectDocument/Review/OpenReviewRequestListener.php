@@ -43,8 +43,13 @@ class OpenReviewRequestListener implements ShouldQueue
         $project = Project::find($project_reviewer->project_id); 
         $user = User::find($event->notify_user_id);
 
-        $reviewUrl = route('project-document.index',[
-            'review_status' => 'open_review',
+        // $reviewUrl = route('project-document.index',[
+        //     'review_status' => 'open_review',
+        // ]);
+
+        $reviewUrl = route('project-document.review',[
+            'project' => $project->id,
+            'project_document' => $project_document->id,
         ]);
 
         // if mail is true 

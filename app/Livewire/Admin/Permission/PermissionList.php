@@ -54,7 +54,11 @@ class PermissionList extends Component
     public $permission_count;
 
 
-
+    public function resetFilters(){
+        $this->search = '';
+        $this->sort_by = '';
+        $this->module = '';
+    }
 
     // Method to delete selected records
     public function deleteSelected()
@@ -270,6 +274,8 @@ class PermissionList extends Component
             // dd($module_permissions);
 
             $module_options = []; // options 
+
+            $module_options[0] = "Select a module";
 
             foreach($module_permissions as $module => $module_permissions){
                 $module_options[ $module] =  $module; 

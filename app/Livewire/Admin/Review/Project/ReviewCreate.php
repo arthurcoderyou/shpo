@@ -20,11 +20,15 @@ use Illuminate\Support\Facades\Hash;
 use App\Events\Project\ProjectLogEvent;
 use App\Helpers\ProjectDocumentHelpers;
 use App\Helpers\ProjectReviewerHelpers;
+use Illuminate\Support\Facades\Storage; 
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Models\ProjectDocumentReferences;
+use App\Helpers\ActivityLogHelpers\ReviewLogHelper;
 use App\Helpers\ActivityLogHelpers\ProjectLogHelper;
 use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
+use App\Helpers\ActivityLogHelpers\ReviewerLogHelper;
 use App\Events\ProjectReferences\ProjectReferencesLogEvent;
+
 use App\Helpers\ActivityLogHelpers\ProjectReferenceLogHelper;
 use App\Helpers\SystemNotificationHelpers\ProjectNotificationHelper;
 
@@ -36,7 +40,7 @@ class ReviewCreate extends Component
         public $passwordConfirm = '';
         public $passwordError = null;
          
-        public $review_status;
+        public $review_status = null;
 
         /** Delete Confirmation  */
             public $confirmingReview = false; // closes the confirmation delete panel
@@ -125,12 +129,14 @@ class ReviewCreate extends Component
        
         public $signatureData = null; // data:image/png;base64,...
  
+    public $project_id;
     
     public function mount($id){
 
      
 
         $this->project = Project::findOrFail($id); 
+        $this->project_id = $this->project->id;
 
         // // Generate the project number
         // if(empty($this->project->rc_number)){ 
@@ -202,7 +208,7 @@ class ReviewCreate extends Component
 
         $this->project_reviewer = $this->project->getCurrentReviewer() ?? null;
  
-
+        // dd($this->review_status);
 
     }
 
@@ -450,14 +456,18 @@ class ReviewCreate extends Component
         $project = Project::find($this->project->id);  // get the current project document 
         $project_reviewer = $project->getCurrentReviewer(); // get the current reviewer
 
+        // dd($project->project_documents);
+        // dd($this->review_status);
+
 
         // dd($project_reviewer);
  
 
         $this->validate([
             'rc_number' => [
-                'required',
+                'nullable',
                 'string',
+                'required_if:review_status,reviewed',
                 // Rule::unique('project_documents', 'rc_number'), // Ensure rc_number is unique
                 //  Rule::unique('projects')
                 //     ->where(fn ($query) => $query
@@ -473,11 +483,11 @@ class ReviewCreate extends Component
 
 
         // dd("All goods");
-        if(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1){
-            // the review is automatically approved if the first reviewer had save and confirmed that the project is approved in the initial review
-            $this->review_status = "reviewed";
+        // if(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1){
+        //     // the review is automatically approved if the first reviewer had save and confirmed that the project is approved in the initial review
+        //     $this->review_status = "reviewed";
 
-        }
+        // }
 
         // dd(empty($project_reviewer) ||  (!empty($project_reviewer) && $project_reviewer->user_id !== Auth::user()->id) ); 
         // dd(!empty($project_reviewer) && $project_reviewer->user_id == Auth::user()->id && $project_reviewer->order == 1);
@@ -487,7 +497,13 @@ class ReviewCreate extends Component
         $project->rc_number = $this->rc_number;
         $project->updated_at = now();
         $project->updated_by = Auth::user()->id; 
-        $project->status = "reviewed";
+        
+        
+        $project->allow_project_submission = true; // re-allow the project resubmission
+        $project->status = $this->review_status;
+
+
+
         // $project->allotted_review_time_hours = $this->allotted_review_time_hours;
         
 
@@ -702,36 +718,123 @@ class ReviewCreate extends Component
                 $review->updated_at = now();
                 $review->save();
 
-                // add review attachments
+                // add review attachments 
                 if (!empty($this->attachments)) {
+
+                    $now = Carbon::now(); 
+                    $disk = 'public';
+
+
                     foreach ($this->attachments as $file) {
-                
-                        // Generate a unique file name
-                        $fileName = Carbon::now()->timestamp . '-' . $review->id . '-' . uniqid() . '.' . $file['extension'];
-                
-                        // Move the file manually from temporary storage
-                        $sourcePath = $file['path'];
-                        $destinationPath = storage_path("app/public/uploads/review_attachments/{$fileName}");
-                
-                        // Ensure the directory exists
-                        if (!file_exists(dirname($destinationPath))) {
-                            mkdir(dirname($destinationPath), 0777, true);
-                        }
-                
-                        // Move the file to the destination
-                        if (file_exists($sourcePath)) {
-                            rename($sourcePath, $destinationPath);
+                         // Generate a unique file name
+                        $fileName = Carbon::now()->timestamp
+                            . '-' . $review->id
+                            . '-' . uniqid()
+                            . '.' . $file['extension'];
+
+                        // Source and destination
+                        $sourcePath = $file['path']; // full temp path
+                        $destinationPath = "uploads/review_attachments/{$review->id}";
+
+                        $dir = "uploads/review_attachments/{$review->id}/{$fileName}";
+
+
+                         // Case 1: Livewire/HTTP-uploaded file objects
+                        if ($file instanceof TemporaryUploadedFile || $file instanceof \Illuminate\Http\UploadedFile) {
+                            $originalName = $file->getClientOriginalName();
+                            $ext   = strtolower($file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION));
+                            $mime  = $file->getMimeType();
+                            $size  = $file->getSize() ?? 0;
+                            $tmpPath = $file->getRealPath();
+
+                            $storedName = $now->format('Ymd_His').'-'.$originalName;
+                            // $file->storeAs($dir, $storedName, $disk);
+
+
+                            /*
+                            |------------------------------------------------------------
+                            | Move file into storage/app/public/uploads/review_attachments
+                            |------------------------------------------------------------
+                            */
+                            Storage::disk('public')->put(
+                                $destinationPath,
+                                file_get_contents($sourcePath)
+                            );
+
+
+
+                        // Case 2: Your code supplied an array (e.g., from a custom uploader)
+                        } elseif (is_array($file)) {
+                            // Try to read conventional keys; adjust as needed
+                            $originalName = $file['name'] ?? 'attachment';
+                            $tmpPath      = $file['tmp_path'] ?? $file['path'] ?? null;
+
+                            if (!$tmpPath || !is_readable($tmpPath)) {
+                                Log::warning('Skipping attachment with missing/unreadable tmp path', ['file' => $file]);
+                                continue;
+                            }
+
+                            $ext  = strtolower($file['extension'] ?? pathinfo($originalName, PATHINFO_EXTENSION));
+                            $mime = $file['mime'] ?? @mime_content_type($tmpPath) ?: null;
+                            $size = $file['size'] ?? @filesize($tmpPath) ?: 0;
+
+                            $storedName = $now->format('Ymd_His').'-'.$originalName;
+                            // Copy the file into your target disk/folder
+                            Storage::disk($disk)->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
                         } else {
-                            // Log or handle the error (file might not exist at the temporary path)
+                            // Unknown type; skip
+                            Log::warning('Skipping unsupported attachment type', ['type' => gettype($file)]);
                             continue;
                         }
-                
+
+
+
+
+
+                        // Optional integrity/dimensions
+                        $sha256 = (isset($tmpPath) && is_readable($tmpPath)) ? @hash_file('sha256', $tmpPath) : null;
+                        $width = $height = null;
+                        if ($mime && str_starts_with(strtolower($mime), 'image/') && isset($tmpPath) && is_readable($tmpPath)) {
+                            try { [$width, $height] = getimagesize($tmpPath) ?: [null, null]; } catch (\Throwable $e) {}
+                        }
+
+
+
+
+                       
+
+                        // Make sure the source exists
+                        if (!file_exists($sourcePath)) {
+                            continue;
+                        }
+
+                        
+
+                        // Optional: delete temp file after successful move
+                        @unlink($sourcePath);
+
                         // Save to the database
                         ReviewAttachments::create([
-                            'attachment' => $fileName,
-                            'review_id' => $review->id,
-                            'created_by' => Auth::user()->id,
-                            'updated_by' => Auth::user()->id,
+                            'attachment'  => $originalName,
+                            'review_id'   => $review->id,
+                            'created_by'  => Auth::id(),
+                            'updated_by'  => Auth::id(),
+
+                            'original_name'        => $originalName,
+                            'stored_name'           => $storedName,      // or 'stored_name' if that’s your column
+                            'disk'                 => $disk,
+                            'path'                 => $dir,
+                            'mime_type'            => $mime,
+                            'extension'            => $ext,
+                            'width'                => $width,
+                            'height'               => $height,
+                            'duration_seconds'     => null,
+                            'sha256'               => $sha256,
+
+                            'size_bytes'           => $size ,  
+
+
                         ]);
                     }
                 }
@@ -748,10 +851,12 @@ class ReviewCreate extends Component
             // logging and system notifications
                 $authId = Auth::check() ? Auth::id() : null;
 
-                event(new \App\Events\Project\Reviewed($project->id,$authId , true, true));
-
-                // get the message from the helper 
-                $message = ProjectLogHelper::getActivityMessage('rc-reviewed', $project->id, $authId);
+                // event(new \App\Events\Project\Reviewed($project->id,$authId , true, true));
+                // send the successful project review 
+                event(new \App\Events\Project\ProjectRCNumberReviewed($review->id,$authId , true, true));
+                
+                // get the message from the helper  
+                $message = ReviewLogHelper::getActivityMessage('rc-reviewed', $review->id, $authId,'general');
 
                 // get the route
                 $route = ProjectLogHelper::getRoute('rc-reviewed', $project->id);
@@ -777,6 +882,11 @@ class ReviewCreate extends Component
                         $customIds = [];
                         $customIds[] = $project->created_by;
 
+                         // get the message from the helper 
+                        $message = ReviewLogHelper::getActivityMessage('rc-reviewed', $review->id, $authId,'submitter');
+
+
+
                         ProjectNotificationHelper::sendSystemNotificationCustomIds(
                             message: $message,
                             route: $route ,
@@ -793,7 +903,27 @@ class ReviewCreate extends Component
 
 
             
+            // check if the project now has project rc_number
+            if(!empty($project->rc_number) && $this->review_status == "reviewed"){
+                // now check for project documents
+                if(!empty($project->project_documents)){
 
+                    foreach($project->project_documents as $project_document){
+
+                        if($project_document->status !== "approved"){
+
+                            // submit project documents
+
+                            ProjectDocumentHelpers::submit_project_document_based_on_project_rc($project_document->id);
+
+                        }
+
+                    }
+                }
+
+
+
+            }
 
 
 
@@ -810,6 +940,12 @@ class ReviewCreate extends Component
         }
 
          
+
+        
+
+
+
+
  
         // Alert::success('Success', $message);
         return redirect()->route('project.show',[

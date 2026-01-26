@@ -40,7 +40,7 @@ class SubmittedListener implements ShouldQueue
         $authId = $event->authId;
 
         // get the message from the helper 
-        $message = ProjectLogHelper::getProjectActivityMessage('submitted', $project->id, $authId);
+        $message = ProjectLogHelper::getActivityMessage('submitted', $project->id, $authId);
          
         
         // dd($authId);

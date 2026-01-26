@@ -47,7 +47,7 @@ class ProfileInformationRequiredMiddleware
 
 
          // check if user has completed profile information 
-        if(!empty(Auth::user()->email) && !empty(Auth::user()->address) && !empty(Auth::user()->company) && !empty(Auth::user()->phone_number)){
+        if(!empty(Auth::user()->email) && !empty(Auth::user()->address) && !empty(Auth::user()->company) && !empty(Auth::user()->phone_number) && !empty(Auth::user()->phone_number_country_code) ){
              return $next($request);
         }
 

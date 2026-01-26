@@ -125,6 +125,20 @@
         <style> 
             @keyframes progress { 0%{transform:translateX(-100%)} 50%{transform:translateX(60%)} 100%{transform:translateX(180%)} }
             @keyframes spin-slow { to { transform: rotate(360deg) } }
+
+            
+            /* Make the intl-tel-input wrapper full width */
+            .iti {
+                width: 100%;
+                display: block;
+            }
+
+            /* Ensure the actual input fills the wrapper */
+            .iti input.iti__tel-input,
+            .iti input[type="tel"] {
+                width: 100%;
+            }
+
         </style>
 
         <!-- Scripts -->

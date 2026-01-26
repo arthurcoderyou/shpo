@@ -52,7 +52,7 @@ class ProjectDiscussionLogEvent implements ShouldBroadcast, ShouldQueue
         // Only add document channels if a document is present
         if (!is_null($this->projectDocumentId)) {
             $channels[] = new PrivateChannel('project.project_document.project_discussion');
-            $channels[] = new PrivateChannel('project.project_document.project_discussion..' . $this->projectDocumentId);
+            $channels[] = new PrivateChannel('project.project_document.project_discussion.' . $this->projectDocumentId);
         }
 
 

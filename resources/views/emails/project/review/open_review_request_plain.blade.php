@@ -6,7 +6,7 @@ Project: {{ $project->name ?? '—' }}
 Submitted: {{ $submittedAt }} ({{ $submittedAtTz }}) 
 
 @isset($reviewUrl)
-Open Review List: {{ $reviewUrl }}
+Open Review: {{ $reviewUrl }}
 @endisset
 
 By claiming, your name will appear as the active reviewer and review timestamps will be recorded.

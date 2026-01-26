@@ -90,6 +90,15 @@ class UserList extends Component
     ];
 
 
+    public function resetFilters(){
+        $this->search = '';
+        $this->sort_by = '';
+        $this->selected_role = ''; 
+        $this->role_request = '';
+        $this->user_status_filter = 'active'; // options: active, deactivated, all
+    }
+
+
     public function mount(){
         $this->selected_role = request()->query('selected_role', ''); // Default to empty string if not set
         $this->role_request = request()->query('role_request', ''); // Default to empty string if not set
@@ -106,7 +115,7 @@ class UserList extends Component
 
         $this->roles = $roles->get();
 
-
+        $this->role_options[0] =  "Select a role";
         foreach($this->roles as $role){
 
             $this->role_options[$role->id] =  $role->name;
@@ -463,7 +472,11 @@ class UserList extends Component
             $search = $this->search;
             $users->where(function ($query) use ($search) {
                 $query->where('users.name', 'LIKE', '%' . $search . '%')
-                    ->orWhere('users.email', 'LIKE', '%' . $search . '%');
+                    ->orWhere('users.email', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.phone_number', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.company', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.address', 'LIKE', '%' . $search . '%')
+                    ;
             });
         }
 

@@ -197,6 +197,8 @@ class ProjectDocumentCreate extends Component
     
     public function save(){
 
+    // dd("Here");
+
         // $this->validate([
         //     'attachments.*' => File::types([
         //             'jpg','jpeg','png',
@@ -319,6 +321,9 @@ class ProjectDocumentCreate extends Component
                     'height'               => $height,
                     'duration_seconds'     => null,
                     'sha256'               => $sha256,
+
+                    'size_bytes'           => $size ,
+
                     'created_by'           => Auth::id(),
                     'updated_by'           => Auth::id(),
                     'created_at'           => $now,

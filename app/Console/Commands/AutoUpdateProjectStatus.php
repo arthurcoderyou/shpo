@@ -24,6 +24,7 @@ class AutoUpdateProjectStatus extends Command
         $scanned = 0;
 
         Project::query()
+            ->whereNot('status','draft')
             ->whereHas('project_documents') // only projects that have docs
             ->select(['id', 'status'])
             ->orderBy('id')

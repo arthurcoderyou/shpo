@@ -32,7 +32,7 @@ class ProjectDocumentLogEventListener implements ShouldQueue
         $projectDocument = ProjectDocument::find($event->projectDocumentId); 
 
         // 🔄 Sync project status based on documents
-        $projectDocument->syncProjectStatusFromDocuments(); 
+        // $projectDocument->syncProjectStatusFromDocuments(); 
 
    
         // project log

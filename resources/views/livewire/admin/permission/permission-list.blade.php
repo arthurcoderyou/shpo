@@ -10,7 +10,7 @@
     <!-- Card -->
     <div class="flex flex-col">
         <div class="-m-1.5 overflow-x-auto">
-            <div class="p-1.5 max-w-screen inline-block align-middle">
+            <div class="p-1.5 max-w-full ">
                 <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden ">
                 <!-- Header -->
                 <div class=" px-3 py-2 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 text-nowrap">
@@ -78,8 +78,7 @@
                         </x-ui.button>
 
 
-                        
-
+                        <x-ui.table.reset-button wireClick="resetFilters" />
 
                     </div>
                     </div>

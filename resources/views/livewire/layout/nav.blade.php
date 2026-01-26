@@ -598,7 +598,7 @@ new class extends Component
                                             'system access reviewer',
                                             // 'system access global admin', 
                                             // 'system access admin',
-                                            'system access user',
+                                            // 'system access user',
                                         ]
                                     ],
                                     'count' => Project::countProjects('project.index.all') ?? 0, // shows 0 if none
@@ -628,7 +628,7 @@ new class extends Component
                                 ],
                                 [
                                     'label' => 'All Project Documents', 
-                                    'route' => 'project-document.index',    
+                                    'route' => 'project-document.index.all',    
                                     'auth' => true,
                                     'require' => [ 
                                         'permissions_any' => [
@@ -638,7 +638,7 @@ new class extends Component
                                         ],
                                     ],
                                     
-                                    'count' => $projects_count = ProjectDocument::countProjectDocuments('project-document.index') ?? 0, // shows 0 if none
+                                    'count' => $projects_count = ProjectDocument::countProjectDocuments('project-document.index.all') ?? 0, // shows 0 if none
                                     
                                 ],
 
@@ -701,21 +701,21 @@ new class extends Component
                                 ],
 
 
-                                [
-                                    'label' => 'Re-review Requests', 
-                                    'route' => 're-review.index',    
-                                    'auth' => true,
-                                    'require' => [ 
-                                        'permissions_any' => [
-                                            'system access global admin', 
-                                            'system access admin', 
+                                // [
+                                //     'label' => 'Re-review Requests', 
+                                //     'route' => 're-review.index',    
+                                //     'auth' => true,
+                                //     'require' => [ 
+                                //         'permissions_any' => [
+                                //             'system access global admin', 
+                                //             'system access admin', 
                                             
-                                            'review list view',             // module: Review
-                                        ],
-                                    ],
+                                //             'review list view',             // module: Review
+                                //         ],
+                                //     ],
                                     
                                     
-                                ],
+                                // ],
                                  
                             ], 
                             'require' => [
@@ -945,8 +945,9 @@ new class extends Component
                         // 'permissions_any' => [
                         //     'system access global admin', 
                         // ],
-                        'modules_any' => [
-                            'Project Own'
+                        'permissions_any' => [
+                            'system access user', 
+                            'role list view', 
                         ],
                     ],
                 ],  // ./ YOUR PROJECT MANAGEMENT
