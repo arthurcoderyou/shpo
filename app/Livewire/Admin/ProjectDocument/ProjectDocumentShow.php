@@ -130,7 +130,7 @@ class ProjectDocumentShow extends Component
 
 
 
-
+        // dd($project_document_id);
 
         // dd("All good ");
         ProjectDocumentHelpers::submit_project_document($project_document_id);

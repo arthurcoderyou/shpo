@@ -62,7 +62,7 @@ class ProjectReview extends Component
     public $home_route;
     public function mount($id){
 
-
+        
         $project = Project::find($id);
         $this->project = $project;
 

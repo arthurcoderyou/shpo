@@ -127,28 +127,35 @@ class ProjectDocumentHelpers
             $message = "";
 
             // check if there is a current reviewer and review rpoject on the rpoject now 
-            $currect_project_reviewer = $project->getCurrentReviewer();
-            if(empty( $currect_project_reviewer) 
-                // || $currect_project_reviewer->review_status !== "reviewed"
-            
-            ){
+            // $currect_project_reviewer = $project->getCurrentReviewer();
+            // if(empty( $currect_project_reviewer) 
+            //     // || $currect_project_reviewer->review_status !== "reviewed"
+               
+            // ){
+                // 
+                // dd("There is a current project reviewer");
+
                 // disable submission on hte rpoject document
 
                 $project_document->status = "submitted";
                 $project_document->allow_project_submission = false;
                 $project_document->save();
                 // return redirect()->back();
-                ProjectHelper::submit_project_for_rc_evaluation($project->id);
+                ProjectHelper::submit_project_for_rc_evaluation($project->id, false, "document_submission");
 
 
-            }
+            // }
+
+            // 
+            // dd("All nothing");
             
 
             // just return
             
 
-            $message = "Your project does not yet have an RC Number. It has been submitted for RC evaluation and is currently under review. Project document submission is temporarily disabled until the RC review is completed.";
+            // $message = "Your project does not yet have an RC Number. It has been submitted for RC evaluation and is currently under review. Project document submission is temporarily disabled until the RC review is completed.";
 
+            $message = "Your project update had been submitted. ";
 
             return redirect()->route('project.project-document.show',[
                 'project' => $project->id,

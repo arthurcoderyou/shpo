@@ -168,6 +168,16 @@ class ProjectReviewer extends Model
          
     }
 
+    static public function getLastProjectReview(ProjectReviewer $project_reviewer){
+
+        return Review::where(function (\Illuminate\Database\Eloquent\Builder $q) use ($project_reviewer) {
+            $q->where('project_reviewer_id', $project_reviewer->id);
+        })
+        ->orderByDesc('id')
+        ->first();
+         
+    }
+
     static public function getLastSubmitterDocumentReview(ProjectDocument $project_document,ProjectReviewer $project_reviewer){
 
         return Review::where(function (\Illuminate\Database\Eloquent\Builder $q) use ($project_reviewer) {

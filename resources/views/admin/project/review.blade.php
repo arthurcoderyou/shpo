@@ -34,7 +34,7 @@
     @endphp 
 
      <x-breadcrumb :items="[
-        ['label' => 'Home', 'url' => route('dashboard'), ],
+        ['label' => 'Home HERE', 'url' => route('dashboard'), ],
         ['label' => 'Projects', 'url' => $url],
         ['label' => 'Review Project', 'url' => '#'],
     ]" />
@@ -42,6 +42,7 @@
  
     <livewire:partials.projects.page-header :project="$project"  /> 
 
+   
 
 
     <!-- Check if the current auth user is the active reviewer-->
@@ -49,6 +50,8 @@
     {{-- @if($project->getCurrentReviewer()->user_id == auth()->user()->id) --}}
         <livewire:admin.review.project.review-create :id="$project->id" /> 
     {{-- @endif --}}
+
+     <livewire:admin.project-document.project-document-list :project_id="$project->id"  route="project.show"  /> 
 
     
     <livewire:admin.review.review-list :id="$project->id" /> 
