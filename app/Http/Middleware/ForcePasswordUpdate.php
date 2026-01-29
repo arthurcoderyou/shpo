@@ -24,14 +24,14 @@ class ForcePasswordUpdate
             $user = Auth::user();
 
             // If the user has the permission system access admin or system access global admin, skip 2FA
-            if ($user->can('system access admin') ) {
-                return $next($request);
-            }
+            // if ($user->can('system access admin') ) {
+            //     return $next($request);
+            // }
 
-             // If the user has the role system access admin or system access global admin, skip 2FA
-             if ($user->can('system access global admin') ) {
-                return $next($request);
-            }
+            //  // If the user has the role system access admin or system access global admin, skip 2FA
+            //  if ($user->can('system access global admin') ) {
+            //     return $next($request);
+            // }
  
             // If the user does not have 2FA verified, redirect to verification page
             if ($user->updated_own_password == false) {
