@@ -75,8 +75,17 @@ class ReviewComponent extends Component
 
 
     public function checkIfLastInReviewerList(){
-        $isLastReviewer = ProjectReviewer::where('project_document_id',  $this->project_document->id)
+
+        if(!empty($this->project_document)){
+            $isLastReviewer = ProjectReviewer::where('project_document_id',  $this->project_document->id)
             ->max('order') ===  $this->project_reviewer->order;
+        }else{
+            $isLastReviewer = ProjectReviewer::where('project_id',  $this->project->id)
+                ->whereNull('project_document_id')
+            ->max('order') ===  $this->project_reviewer->order;
+
+        }
+        
 
         return $isLastReviewer;
     }
