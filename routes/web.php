@@ -44,7 +44,7 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
         # ./ 2fA Verify
 
         // 2fa middleware 
-        Route::middleware(['2fa'])->group(function () { 
+        Route::middleware(['2fa','project.owner.sync'])->group(function () { 
             #   dashboard
             // Route::view('dashboard', 'dashboard')
             //     ->middleware(['auth'])

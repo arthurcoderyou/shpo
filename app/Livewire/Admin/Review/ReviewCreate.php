@@ -1153,7 +1153,7 @@ class ReviewCreate extends Component
  
 
         $authId = Auth::id() ?? null;
-        $project = Project::find($project_document->id);
+        $project = Project::find($project_document->project_id);
 
         // Success message from the activity log project helper 
         $message =  ProjectDocumentLogHelper::getActivityMessage('reviewed',$project_document->id,$authId);
