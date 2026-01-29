@@ -22,6 +22,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectTimerController;
 use App\Http\Controllers\ProjectDocumentController;
 use App\Http\Controllers\ProjectReviewerController;
+use App\Http\Controllers\ForcePasswordUpdateController;
 use App\Http\Controllers\TwoFactorVerificationController;
 
 
@@ -40,11 +41,15 @@ Route::middleware(['throttle:60,1','verified'])->group(function () {
     Route::middleware(['auth' ,'log_user_device'])->group(function () {
 
         # 2fA Verify
-            // Route::get('/2fa/verify', [TwoFactorVerificationController::class, 'verify'])->name('2fa.verify');
+            Route::get('/2fa/verify', [TwoFactorVerificationController::class, 'verify'])->name('2fa.verify');
+        # ./ 2fA Verify
+
+        # 2fA Verify
+            Route::get('/force_update_password', [ForcePasswordUpdateController::class, 'index'])->name('auth.force_password_verify');
         # ./ 2fA Verify
 
         // 2fa middleware 
-        Route::middleware(['2fa','project.owner.sync'])->group(function () { 
+        Route::middleware(['2fa','project.owner.sync','force-password-update'])->group(function () { 
             #   dashboard
             // Route::view('dashboard', 'dashboard')
             //     ->middleware(['auth'])

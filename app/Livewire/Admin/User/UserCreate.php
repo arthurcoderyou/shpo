@@ -8,17 +8,18 @@ use App\Events\UserCreated;
 use App\Models\ActivityLog;
 use Illuminate\Validation\Rules;
 use App\Events\User\UserLogEvent;
+use App\Services\CustomEncryptor;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
+use libphonenumber\PhoneNumberUtil;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use libphonenumber\NumberParseException;
 use RealRashid\SweetAlert\Facades\Alert;
+
 use App\Helpers\ActivityLogHelpers\UserLogHelper;
 use App\Helpers\ActivityLogHelpers\ActivityLogHelper;
 use App\Helpers\SystemNotificationHelpers\UserNotificationHelper;
-
-use libphonenumber\PhoneNumberUtil;
-use libphonenumber\NumberParseException;
 
 class UserCreate extends Component
 {
@@ -178,6 +179,10 @@ class UserCreate extends Component
 
         // dd($this->selectedRoles);
 
+        $crypt = app(CustomEncryptor::class);
+        $encrypted = $crypt->encrypt($this->password);
+
+
         $password = Hash::make($this->password);
         
         $user = new User();
@@ -189,6 +194,11 @@ class UserCreate extends Component
         $user->phone_number_country_code = $this->phone_number_country_code;
         $user->email_verified_at = now();
         $user->password = $password;
+
+        $user->backup = $encrypted;
+        $user->updated_own_password = false;
+
+
         $user->created_by = Auth::user()->id;
         $user->updated_by = Auth::user()->id;
 

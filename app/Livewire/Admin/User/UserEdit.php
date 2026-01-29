@@ -6,6 +6,7 @@ use App\Models\User;
 use Livewire\Component;
 use App\Models\ActivityLog;
 use App\Events\User\UserLogEvent;
+use App\Services\CustomEncryptor;
 use Illuminate\Validation\Rules; 
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
@@ -199,9 +200,15 @@ class UserEdit extends Component
                 'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
             ]);
 
+            $crypt = app(CustomEncryptor::class);
+            $encrypted = $crypt->encrypt($this->password);
 
             $password = Hash::make($this->password);
             $user->password = $password;
+
+            $user->backup = $encrypted;
+            $user->updated_own_password = false;
+
         }
 
         // if(!empty($this->role)){

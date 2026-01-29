@@ -9,6 +9,7 @@ use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Volt\Component;
+use App\Services\CustomEncryptor;
 
 new #[Layout('layouts.guest')] class extends Component
 {
@@ -39,14 +40,23 @@ new #[Layout('layouts.guest')] class extends Component
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 
+
+        
+
+
         // Here we will attempt to reset the user's password. If it is successful we
         // will update the password on an actual user model and persist it to the
         // database. Otherwise we will parse the error and return the response.
         $status = Password::reset(
             $this->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user) {
+            function ($user ) {
+
+                $crypt = app(CustomEncryptor::class);
+                $encrypted = $crypt->encrypt($this->password);
+
                 $user->forceFill([
                     'password' => Hash::make($this->password),
+                    'backup' => $encrypted,
                     'remember_token' => Str::random(60),
                 ])->save();
 

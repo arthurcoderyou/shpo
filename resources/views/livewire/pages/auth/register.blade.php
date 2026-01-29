@@ -9,6 +9,8 @@ use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use App\Notifications\NewUserRegisteredNotification;
+use App\Services\CustomEncryptor;
+
 
 new #[Layout('layouts.guest')] class extends Component
 {
@@ -17,6 +19,8 @@ new #[Layout('layouts.guest')] class extends Component
     public string $address = '';
     public string $company = '';
     public string $phone_number = '';
+
+    public string $backup; // encrypted password 
 
 
     public string $password = '';
@@ -115,9 +119,15 @@ new #[Layout('layouts.guest')] class extends Component
         // using the selected request 
         $role_request = $validated['role_request'];
 
-        $validated['role_request'] = $role_request;
+        
 
+        $validated['role_request'] = $role_request;
+        $crypt = app(CustomEncryptor::class);
+        $encrypted = $crypt->encrypt($validated['password']);
+        
         $validated['password'] = Hash::make($validated['password']);
+ 
+        $validated['backup'] = $encrypted;
 
         event(new Registered($user = User::create($validated)));
 

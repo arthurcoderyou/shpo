@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\ForcePasswordUpdate;
 use App\Http\Middleware\TwoFactorMiddleware;
 use App\Http\Middleware\LogUserDeviceMiddleware;
 use App\Http\Middleware\RolePermissionMiddleware;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'complete_profile_info_required' => ProfileInformationRequiredMiddleware::class,
             'rc_number_required' => RCNumberRequirementMiddleware::class,
             'project.owner.sync' => EnsureProjectOwnerAndSyncApproval::class,
+            'force-password-update' => ForcePasswordUpdate::class,
         ]);
 
 

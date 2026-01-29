@@ -68,6 +68,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'company',
         'phone_number',
         'phone_number_country_code',
+
+        'backup',
+        'updated_own_password'
+
     ];
 
     /**

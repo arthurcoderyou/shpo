@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Encryption Key
+    |--------------------------------------------------------------------------
+    |
+    | This key is utilized for custom encyption 
+    |
+    */
+
+    'custom_encryption_key'  => env('APP_CUSTOM_ENCRYPTION_KEY'),
+
 ];
