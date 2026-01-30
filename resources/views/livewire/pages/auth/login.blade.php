@@ -17,9 +17,11 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $this->validate();
 
-       
+        //    dd("Okay");
 
         $this->form->authenticate();
+
+        // dd("After Auth");
 
         Session::regenerate();
  
@@ -39,7 +41,8 @@ new #[Layout('layouts.guest')] class extends Component
 
         // Check if the device is already logged
         $deviceLog = \App\Models\UserDeviceLog::firstOrCreate($data);
- 
+        
+        // dd($deviceLog);
 
         // ✅ **If device is trusted, store 2FA verification in session**
         if ($deviceLog->trusted) {

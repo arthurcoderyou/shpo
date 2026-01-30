@@ -39,11 +39,17 @@ class LoginForm extends Form
             ]);
         }
 
-        ActivityLog::create([
-            'log_action' => "User \"".Auth::user()->name."\" has logged in.",
-            'log_username' => Auth::user()->name,
-            'created_by' => Auth::user()->id,
-        ]);
+        // If the user has the role Admin or DSI God Admin, skip 2FA
+        if (Auth::user()->can('system access admin') || Auth::user()->can('system access global admin')) {
+           
+        }else{
+             ActivityLog::create([
+                'log_action' => "User \"".Auth::user()->name."\" has logged in.",
+                'log_username' => Auth::user()->name,
+                'created_by' => Auth::user()->id,
+            ]);
+        }
+        
 
 
         RateLimiter::clear($this->throttleKey());
