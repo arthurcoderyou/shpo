@@ -269,7 +269,8 @@
                                                     'wire:navigate' => false,
                                                 ],      
                                             ],
-                                            [
+                                            [   
+                                                'permissions' => ['user delete','system access global admin'],
                                                 'type'  => 'buttonConfirm',
                                                 'label' => 'Delete',
                                                 'confirm_btn_title' => 'Confirm Delete',

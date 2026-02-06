@@ -192,6 +192,14 @@ class UserList extends Component
                     ->with('alert.error','User cannot be deleted because they are connected to existing records.');
             }
 
+            if (!Auth::user()->can('user delete')) { 
+
+                // Alert::error('Error', 'User cannot be deleted because they are connected to existing records.');
+                return redirect()->route('user.index')
+                    ->with('alert.error','You do not have permissions to delete user');
+            }
+
+
         }
  
 

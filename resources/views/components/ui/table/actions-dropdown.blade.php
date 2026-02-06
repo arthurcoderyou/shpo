@@ -95,6 +95,7 @@
                             $href   = $option['href']  ?? '#';
                             $btnType = $option['button_type'] ?? 'button'; 
                             $extraClass = $option['class'] ?? '';
+                            $permissions = $option['permissions'] ?? [];
 
 
 
@@ -126,113 +127,126 @@
                             }
                         @endphp
 
-                        @if ($type === 'link')
-                            <a
-                                href="{{ $href }}"
-                                class="{{ $baseClass }}"
-                                {!! $attrString !!}
-                            >
-                                @if ($icon)
-                                    @switch($icon)
-                                        @case("show")
-                                            <x-svg.details />
-                                            @break 
-                                        @case("edit")
-                                            <x-svg.edit />
-                                            @break 
-                                        @case("role_edit")
-                                            <x-svg.edit-role />
-                                            @break 
-                                        @case("delete")
-                                            <x-svg.delete />
-                                            @break
-                                        @case("lock")
-                                            <x-svg.lock />
-                                            @break  
-                                    
-                                        @default
-                                            @break;
-                                    @endswitch
-                                    
-                                    
-                                @endif
-                                <span>{{ $label }}</span>
-                            </a>
-                        @elseif ($type === 'buttonConfirm')
-                            <div class="{{ $divBaseClass }}">
-                                @if ($icon)
-                                    @switch($icon)
-                                        @case("show")
-                                            <x-svg.details />
-                                            @break 
-                                        @case("edit")
-                                            <x-svg.edit />
-                                            @break 
-                                        @case("role_edit")
-                                            <x-svg.edit-role />
-                                            @break 
-                                        @case("delete")
-                                            <x-svg.delete />
-                                            @break
-                                        @case("lock")
-                                            <x-svg.lock />
-                                            @break  
-                                    
-                                        @default
-                                            
-                                    @endswitch
-                                    
-                                     
-                                @endif
+                        @php
+                            $permissions = $option['permissions'] ?? [];
 
-                                <x-ui.modal.modal 
-                                    permission=""
-                                    :buttonLabel='$confirmBtnLabel'
-                                    :modalTitle='$confirmBtnTitle' 
-                                    :modalTitle='$confirmBtnTitle' 
-                                    :submitBtnLabel="$confirmBtnLabel" 
-                                    wireAction="{{ $confirmBtnAction }}"
-                                    btnClass="{{ $confirmBtnBaseClass }}"
-                                    submitBtnClass="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-sky-600 rounded-lg hover:bg-sky-700" 
+                            // Show if no permissions required; otherwise require at least one permission
+                            $canRender = empty($permissions)
+                                ? true
+                                : auth()->check() && auth()->user()->canany($permissions);
+                        @endphp
+
+
+                        @if($canRender)
+                            @if ($type === 'link')
+                                <a
+                                    href="{{ $href }}"
+                                    class="{{ $baseClass }}"
+                                    {!! $attrString !!}
                                 >
-                                    {{ $confirmBtnMsg }}
-                                </x-ui.modal.modal>
+                                    @if ($icon)
+                                        @switch($icon)
+                                            @case("show")
+                                                <x-svg.details />
+                                                @break 
+                                            @case("edit")
+                                                <x-svg.edit />
+                                                @break 
+                                            @case("role_edit")
+                                                <x-svg.edit-role />
+                                                @break 
+                                            @case("delete")
+                                                <x-svg.delete />
+                                                @break
+                                            @case("lock")
+                                                <x-svg.lock />
+                                                @break  
+                                        
+                                            @default
+                                                @break;
+                                        @endswitch
+                                        
+                                        
+                                    @endif
+                                    <span>{{ $label }}</span>
+                                </a>
+                            @elseif ($type === 'buttonConfirm')
+                                <div class="{{ $divBaseClass }}">
+                                    @if ($icon)
+                                        @switch($icon)
+                                            @case("show")
+                                                <x-svg.details />
+                                                @break 
+                                            @case("edit")
+                                                <x-svg.edit />
+                                                @break 
+                                            @case("role_edit")
+                                                <x-svg.edit-role />
+                                                @break 
+                                            @case("delete")
+                                                <x-svg.delete />
+                                                @break
+                                            @case("lock")
+                                                <x-svg.lock />
+                                                @break  
+                                        
+                                            @default
+                                                
+                                        @endswitch
+                                        
+                                        
+                                    @endif
 
-                            </div>
-                            
-                        @else
-                            <button
-                                type="{{ $btnType }}"
-                                class="{{ $baseClass }}"
-                                {!! $attrString !!}
-                            >
-                               @if ($icon)
-                                    @switch($icon)
-                                        @case("show")
-                                            <x-svg.details />
-                                            @break 
-                                        @case("edit")
-                                            <x-svg.edit />
-                                            @break 
-                                        @case("role_edit")
-                                            <x-svg.edit-role />
-                                            @break 
-                                        @case("delete")
-                                            <x-svg.delete />
-                                            @break
-                                        @case("lock")
-                                            <x-svg.lock />
-                                            @break  
-                                    
-                                        @default
-                                            
-                                    @endswitch
-                                    
-                                    
-                                @endif
-                                <span>{{ $label }}</span>
-                            </button>
+                                    <x-ui.modal.modal 
+                                        permission=""
+                                        :buttonLabel='$confirmBtnLabel'
+                                        :modalTitle='$confirmBtnTitle' 
+                                        :modalTitle='$confirmBtnTitle' 
+                                        :submitBtnLabel="$confirmBtnLabel" 
+                                        wireAction="{{ $confirmBtnAction }}"
+                                        btnClass="{{ $confirmBtnBaseClass }}"
+                                        submitBtnClass="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-sky-600 rounded-lg hover:bg-sky-700" 
+                                    >
+                                        {{ $confirmBtnMsg }}
+                                    </x-ui.modal.modal>
+
+                                </div>
+                                
+                            @else
+                                <button
+                                    type="{{ $btnType }}"
+                                    class="{{ $baseClass }}"
+                                    {!! $attrString !!}
+                                >
+                                @if ($icon)
+                                        @switch($icon)
+                                            @case("show")
+                                                <x-svg.details />
+                                                @break 
+                                            @case("edit")
+                                                <x-svg.edit />
+                                                @break 
+                                            @case("role_edit")
+                                                <x-svg.edit-role />
+                                                @break 
+                                            @case("delete")
+                                                <x-svg.delete />
+                                                @break
+                                            @case("lock")
+                                                <x-svg.lock />
+                                                @break  
+                                        
+                                            @default
+                                                
+                                        @endswitch
+                                        
+                                        
+                                    @endif
+                                    <span>{{ $label }}</span>
+                                </button>
+                            @endif
                         @endif
+
                     @endforeach
                 @else
                     {{-- Fallback: manual items via slot --}}
