@@ -157,23 +157,23 @@ class UserCreate extends Component
 
         $phoneUtil = PhoneNumberUtil::getInstance();
 
-        try {
-            $phoneProto = $phoneUtil->parse(
-                $this->phone_number,
-                strtoupper($this->phone_number_country_code) // AF, PH, US
-            );
+        // try {
+        //     $phoneProto = $phoneUtil->parse(
+        //         $this->phone_number,
+        //         strtoupper($this->phone_number_country_code) // AF, PH, US
+        //     );
 
-            if (! $phoneUtil->isValidNumberForRegion(
-                $phoneProto,
-                strtoupper($this->phone_number_country_code)
-            )) {
-                throw new \Exception('Invalid phone number for selected country.');
-            }
+        //     if (! $phoneUtil->isValidNumberForRegion(
+        //         $phoneProto,
+        //         strtoupper($this->phone_number_country_code)
+        //     )) {
+        //         throw new \Exception('Invalid phone number for selected country.');
+        //     }
 
-        } catch (NumberParseException|\Exception $e) {
-            $this->addError('phone_number', 'The phone number does not match the selected country.');
-            return;
-        }
+        // } catch (NumberParseException|\Exception $e) {
+        //     $this->addError('phone_number', 'The phone number does not match the selected country.');
+        //     return;
+        // }
 
 
 
