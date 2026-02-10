@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Project;
 
+use App\Exports\ProjectsExport;
 use App\Models\User;
 use App\Models\Review;
 use App\Models\Project;
@@ -792,6 +793,124 @@ class ProjectList extends Component
         $this->projects_count = $paginated->total();
 
         return $paginated;
+    }
+
+
+
+    // This method is called automatically when selected_records is updated
+    public function updateSelectedCount()
+    {
+        // Update the count when checkboxes are checked or unchecked
+        $this->count = count($this->selected_records);
+    }
+
+    public function toggleSelectAll()
+    {
+        if ($this->selectAll) {
+
+            $query = Project::query();
+
+            $query = $this->applyRouteBasedFilters($query);
+
+            if (!empty($this->search)) {
+                $query->withSearch($this->search);
+            }
+
+            if (!empty($this->location)) {
+                $locations = array_map('trim', explode(',', $this->location));
+                $query->withLocationFilter($locations);
+            }
+
+            if (!empty($this->type)) {
+                $query->where('type', $this->type);
+            }
+
+            if (!empty($this->project_status)) {
+                // dd( $this->project_status);
+
+                $query->where('status', $this->project_status);
+            }
+
+            if (!empty($this->review_status)) {
+                // $query->withReviewStatus($this->review_status);
+
+                $query = $query->applyReviewStatusBasedFilters($this->review_status);
+
+            }
+
+
+
+            if($this->pending_rc_number == true){
+                // dd($this->pending_rc_number);
+                $query->whereNull('rc_number')
+                    // ->where(function ($q) {
+                    //     $q->doesntHave('project_documents');
+                    // })
+                    ->whereNot('status','draft');
+
+            }
+
+            // Add your sorting logic here (moved to another method for clarity if needed)
+            $query = $this->applySorting($query);
+ 
+
+
+
+            $this->selected_records = $query
+                ->pluck('id')
+                ->toArray();
+        } else {
+            $this->selected_records = []; // Deselect all
+        }
+
+        $this->count = count($this->selected_records);
+    }
+
+
+
+    public function export()
+    {
+        // return Excel::download(new CustomersExport, 'customers.xlsx');
+        // return (new CustomersExport($this->selected_records))->download('customers.xlsx');
+
+        if(empty($this->sort_by)){
+            $this->sort_by = "Latest Updated";
+        }
+
+
+        // ActivityLog::create([
+        //     'log_action' => 'Customer Export generated ',
+        //     'log_user' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
+
+
+        return (new ProjectsExport())->forCustomers($this->selected_records,$this->sort_by)->download('projects.xlsx');
+
+    }
+
+
+    //for the import part
+    public function import(){
+
+        ini_set('max_execution_time',3600);
+
+        $this->validate([
+            'file' => 'mimes:xlsx|required'
+        ]);
+
+        Excel::import(new CustomerImport, $this->file);
+
+
+        ActivityLog::create([
+            'log_action' => 'Customer Import generated ',
+            'log_user' => Auth::user()->name,
+            'created_by' => Auth::user()->id,
+        ]);
+
+        Alert::success('Success','Customers imported successfully');
+        return redirect()->route('customer.index');
+
     }
 
 

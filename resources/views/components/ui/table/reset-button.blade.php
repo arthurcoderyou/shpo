@@ -1,6 +1,7 @@
 @props([
     'wireClick' => 'resetFilters',
     'disabled' => false,
+    'class' => '',
 ])
 
 <button
