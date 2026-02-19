@@ -867,6 +867,56 @@ class ProjectList extends Component
     }
 
 
+    public array $export_table_columns = [
+        'name' => false,
+        'description' => false,
+        'agency' => false, 
+        'type' => false,  
+        'status' => false,   
+        'allow_project_submission' => false,  
+        'created_by' => false,
+        'updated_by' => false,
+        'created_at' => false,
+        'updated_at' => false, 
+        'project_number' => false, 
+        'rc_number' => false,
+        'street' => false,
+        'area' => false,
+        'lot_number' => false,
+ 
+        'submitter_response_duration_type' => false,
+        'submitter_response_duration' => false,
+        'submitter_due_date' => false,
+        'reviewer_response_duration' => false,
+        'reviewer_response_duration_type' => false,
+        'reviewer_due_date' => false, 
+ 
+        'latitude' => false, 'longitude' => false, 'location' => false,
+
+        'last_submitted_at' => false,
+        'last_submitted_by' => false,
+        'last_reviewed_at' => false,
+        'last_reviewed_by' => false,
+
+
+        'allotted_review_time_hours' => false,
+
+
+        'staff_engineering_data' => false,
+        'staff_initials' => false,
+        'lot_size' => false,
+        'unit_of_size' => false,
+        'site_area_inspection' => false,
+        'burials_discovered_onsite' => false,
+        'certificate_of_approval' => false,
+        'notice_of_violation' => false,
+
+
+        'installation' => false,
+        'sub_area' => false,
+        'project_size' => false,
+    ];
+
 
     public function export()
     {
@@ -885,7 +935,7 @@ class ProjectList extends Component
         // ]);
 
 
-        return (new ProjectsExport())->forCustomers($this->selected_records,$this->sort_by)->download('projects.xlsx');
+        return (new ProjectsExport())->forExportSorting($this->selected_records,$this->sort_by)->download('projects.xlsx');
 
     }
 

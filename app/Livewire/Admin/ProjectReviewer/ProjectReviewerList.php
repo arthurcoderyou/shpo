@@ -2,34 +2,35 @@
 
 namespace App\Livewire\Admin\ProjectReviewer;
 
-use App\Models\User;
-use App\Models\Review;
-use App\Models\Project;
-use Livewire\Component;
-use App\Models\Reviewer;
-use App\Models\ActivityLog;
-use Illuminate\Support\Str;
-use App\Models\DocumentType;
-use Livewire\WithPagination;
-use Livewire\WithFileUploads;
+use App\Events\ProjectReviewer\ProjectReviewerLogEvent;
+use App\Events\ReviewerListUpdated;
+use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
+use App\Helpers\ProjectDocumentHelpers;
 use App\Helpers\ProjectHelper;
+use App\Helpers\ProjectReviewerHelpers;
+use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
+use App\Models\ActivityLog;
+use App\Models\DocumentType;
+use App\Models\Project;
 use App\Models\ProjectDocument;
 use App\Models\ProjectReviewer;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
-use App\Events\ReviewerListUpdated;
-use Illuminate\Support\Facades\Auth;
-use App\Helpers\ProjectDocumentHelpers;
-use App\Helpers\ProjectReviewerHelpers;
-use RealRashid\SweetAlert\Facades\Alert;
-use Illuminate\Support\Facades\Notification;
+use App\Models\Review;
+use App\Models\Reviewer;
+use App\Models\User;
+use App\Notifications\ProjectReviewerUpdatedNotification;
+use App\Notifications\ProjectReviewerUpdatedNotificationDB;
 use App\Notifications\ProjectReviewNotification;
 use App\Notifications\ProjectReviewNotificationDB;
 use App\Notifications\ProjectSubscribersNotification;
-use App\Events\ProjectReviewer\ProjectReviewerLogEvent;
-use App\Notifications\ProjectReviewerUpdatedNotification;
-use App\Notifications\ProjectReviewerUpdatedNotificationDB;
-use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+use Livewire\WithPagination;
+use RealRashid\SweetAlert\Facades\Alert;
 
 class ProjectReviewerList extends Component
 {
@@ -882,7 +883,48 @@ class ProjectReviewerList extends Component
  
     public function save()
     {   
+ 
+        $this->saveReviewerList();
 
+ 
+        // $firstProjectDocument = $project->project_documents->first();
+
+        // $project_document_id = $firstProjectDocument->id ?? null;
+
+
+        // Alert::success('Success', 'Project reviewer list saved successfully');
+        // return redirect()->route('project.document.reviewer.index', [
+        //     'project' => $this->project->id, 
+        //     'project_document' => $project_document_id,
+        // ]);
+
+        $message = 'Project reviewer list saved successfully';
+        if(!empty($this->project_document_id)){
+
+            // Alert::success('Success','Project review submitted successfully');
+            return redirect()->route('project.document.reviewer.index',[
+                // 'project' => $this->project->id,
+                'project_document' => $this->project_document_id,
+            
+            ])
+            ->with('alert.success',$message)
+            ;
+
+        }
+
+        // Alert::success('Success', 'Project reviewer list saved successfully');
+        return redirect()->route('project.reviewer.index', [
+            'project' => $this->project->id, 
+            // 'project_document' => $project_document_id,
+        ]) 
+        ->with('alert.success',$message);
+
+
+    }
+
+
+
+    public function saveReviewerList(){
         // dd($this->assignedByType);
         $project = Project::where('id',$this->project_id)->first();
 
@@ -1180,41 +1222,11 @@ class ProjectReviewerList extends Component
             }
         }
 
- 
-        // $firstProjectDocument = $project->project_documents->first();
-
-        // $project_document_id = $firstProjectDocument->id ?? null;
-
-
-        // Alert::success('Success', 'Project reviewer list saved successfully');
-        // return redirect()->route('project.document.reviewer.index', [
-        //     'project' => $this->project->id, 
-        //     'project_document' => $project_document_id,
-        // ]);
-
-        $message = 'Project reviewer list saved successfully';
-        if(!empty($this->project_document_id)){
-
-            // Alert::success('Success','Project review submitted successfully');
-            return redirect()->route('project.document.reviewer.index',[
-                // 'project' => $this->project->id,
-                'project_document' => $this->project_document_id,
-            
-            ])
-            ->with('alert.success',$message)
-            ;
-
-        }
-
-        // Alert::success('Success', 'Project reviewer list saved successfully');
-        return redirect()->route('project.reviewer.index', [
-            'project' => $this->project->id, 
-            // 'project_document' => $project_document_id,
-        ]) 
-        ->with('alert.success',$message);
-
 
     }
+
+
+
 
 
     public function returnStatusConfig($status){
@@ -1230,7 +1242,10 @@ class ProjectReviewerList extends Component
         $project = Project::find($project_reviewer->project_id);
         $submission_type = "suplemental_submission";
 
+        
 
+
+        // update the project reviewer
         DB::transaction(function () use ($project_reviewer_id) {
 
             $projectReviewer = ProjectReviewer::query()->findOrFail($project_reviewer_id);
@@ -1252,6 +1267,12 @@ class ProjectReviewerList extends Component
                 ]);
 
         });
+
+        // update skipped project reviewers
+        $this->updateSkippedProjectDocumentReviewers($project_reviewer_id);
+        
+
+
         
 
         // After seeding/ensuring rows, align the "current" reviewer pointers.
@@ -1319,6 +1340,129 @@ class ProjectReviewerList extends Component
 
 
     }
+
+
+
+
+
+
+
+    public function updateSkippedProjectDocumentReviewers($project_reviewer_id){
+        $project_reviewer = ProjectReviewer::find($project_reviewer_id);
+        $reviewer_name = $project_reviewer->user->name ?? "Unnamed reviewer";
+        $project_document = ProjectDocument::find($project_reviewer->project_document_id);
+        $project = Project::find($project_reviewer->project_id); 
+
+        // set all previuos reviewers to be reviewed 
+        $review_status = "reviewed";
+
+        $project_review = "Project review had been approved";
+
+        $order = $project_reviewer->order;
+
+
+        $project_reviewers = ProjectReviewer::where('order','<',$order)
+            ->where('project_id',$project->id)
+            ->where('project_document_id',$project_document->id)
+            ->where('review_status','pending')
+            ->get();
+
+        // dd($project_reviewers);
+
+
+        foreach($project_reviewers as $reviewer){
+
+                // update current reviewer
+                // dd($project_reviewer);
+
+                // update review status 
+                $reviewer->review_status = $review_status; 
+                $reviewer->status = false;  
+    
+                
+                // add update date time and updater 
+                $reviewer->updated_at = now();
+                $reviewer->updated_by = Auth::user()->id;
+                $reviewer->save();
+            // ./ update project reviewer
+    
+
+    
+            // Add review
+
+                //add review
+                $review = new Review(); 
+                $review->project_review = $project_review;
+                $review->project_id = $project_document->project_id;
+                $review->project_document_id = $project_document->id;
+                $review->project_document_status = $project_document->status; 
+                $review->reviewer_id = Auth::user()->id; // this is considered the user 
+    
+
+
+                $review->project_reviewer_id = $reviewer->id;
+
+                /** Update the review time */
+                    /**
+                     * Review Time is now based on last_submitted_at of the project
+                     * 
+                     * last_reviewed_at
+                     * 
+                     */
+
+                    // Ensure updated_at is after created_at
+                    if ($project_document->updated_at && now()->greaterThan($project_document->updated_at)) {
+                        // Calculate time difference in hours
+                        // $review->review_time_hours = $project_document->updated_at->diffInHours(now()); 
+                        $review->review_time_hours = $project_document->updated_at->diffInSeconds(now()) / 3600; // shows hours in decimal
+                    }
+        
+                /** ./ Update the review time */
+        
+                // update review status
+                $review->review_status = $review_status;   
+    
+                // add create & update datetime and the current user  
+                $review->created_by = Auth::user()->id;
+                $review->updated_by = Auth::user()->id;
+                $review->created_at = now();
+                $review->updated_at = now();
+                $review->save();
+ 
+
+
+            // ./ Add review
+
+        }
+
+
+ 
+        
+
+
+         
+ 
+  
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public function updatedPageMode(){
         if($this->page_mode == "project"){

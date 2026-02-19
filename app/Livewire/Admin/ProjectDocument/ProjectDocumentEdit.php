@@ -2,25 +2,26 @@
 
 namespace App\Livewire\Admin\ProjectDocument;
 
-use Carbon\Carbon;
-use App\Models\Project;
-use App\Models\Setting;
-use Livewire\Component;
-use App\Models\ActivityLog;
-use Illuminate\Support\Arr; 
-use Livewire\WithFileUploads;
-use App\Helpers\ProjectHelper;
-use App\Models\ProjectDocument;
-use App\Models\ProjectAttachments;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\File;
-use App\Helpers\ProjectDocumentHelpers;
-use Illuminate\Support\Facades\Storage;
-use RealRashid\SweetAlert\Facades\Alert;
-use Spatie\LivewireFilepond\WithFilePond;
 use App\Events\ProjectDocument\ProjectDocumentLogEvent;
 use App\Helpers\ActivityLogHelpers\ProjectDocumentLogHelper;
+use App\Helpers\ProjectDocumentHelpers;
+use App\Helpers\ProjectHelper;
 use App\Helpers\SystemNotificationHelpers\ProjectDocumentNotificationHelper;
+use App\Models\ActivityLog;
+use App\Models\Project;
+use App\Models\ProjectAttachments;
+use App\Models\ProjectDocument;
+use App\Models\Setting;
+use Carbon\Carbon;
+use Illuminate\Support\Arr; 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\File;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+use RealRashid\SweetAlert\Facades\Alert;
+use Spatie\LivewireFilepond\WithFilePond;
 
 class ProjectDocumentEdit extends Component
 {
@@ -115,7 +116,14 @@ class ProjectDocumentEdit extends Component
  
                 // dd($file);
                 // Store the file in the "photos" directory of the default filesystem disk
-                $file->storeAs(path: $dir,name: $storedName,options: 'ftp'); 
+                // $file->storeAs(path: $dir,name: $storedName,options: 'ftp'); 
+
+
+                // Copy the file into your target disk/folder
+                Storage::disk($disk)->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
+                Storage::disk('ftp')->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
 
 
 
@@ -563,8 +571,12 @@ class ProjectDocumentEdit extends Component
                     $size = $file['size'] ?? @filesize($tmpPath) ?: 0;
 
                     $storedName = $now->format('Ymd_His').'-'.$originalName;
-                    // Copy the file into your target disk/folder
-                    Storage::disk($disk)->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+                    // Copy the file into your target disk/folder PUBLIC
+                    // Storage::disk($disk)->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
+                    // Copy the file into your target ftp/folder
+                    Storage::disk('ftp')->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
 
                 } else {
                     // Unknown type; skip

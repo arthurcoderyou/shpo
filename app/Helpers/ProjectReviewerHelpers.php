@@ -388,6 +388,16 @@ class ProjectReviewerHelpers
                         break;
                     case "open":
 
+
+                        // if the project creator is admin, still add them to the open review request 
+                        // set custom users that will not be notified  
+                        if(Auth::user()->can('system access admin') || Auth::user()->can('system access admin')){
+                            $auth_user_id = 0;
+
+                        } 
+
+
+
                        // Get admin IDs (users with system access admin)
                         $adminIds = User::permission('system access admin')
                             ->pluck('id')

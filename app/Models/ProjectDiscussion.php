@@ -67,6 +67,17 @@ class ProjectDiscussion extends Model
         return $this->hasMany(ProjectDiscussion::class, 'parent_id')->with('replies');
     }
 
+
+    /**
+     * Get all of the project_discussion_mentions for the ProjectDiscussion
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function project_discussion_mentions() // : HasMany
+    {
+        return $this->hasMany(ProjectDiscussionMentions::class, 'project_discussion_id', 'id');
+    }
+
     
 
 

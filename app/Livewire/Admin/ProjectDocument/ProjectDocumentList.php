@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\ProjectDocument;
 
+use App\Exports\ProjectDocumentExport;
 use App\Helpers\ProjectDocumentHelpers;
 use App\Models\Project;
 use Livewire\Component;
@@ -194,9 +195,18 @@ class ProjectDocumentList extends Component
 
 
         }else{
+
+            
+
+
             $project = Project::find($project_id);
             $this->project =  $project;
             $this->project_id = $project_id;
+
+            $this->project_id = request()->query('project_id', '');
+
+            // dd("Here");
+
         }
 
 
@@ -246,6 +256,10 @@ class ProjectDocumentList extends Component
         // dd($this->home_route);
 
         $this->setCountForReviewStatus();
+
+
+        // dd($this->project_id);
+
     }
 
 
@@ -387,69 +401,143 @@ class ProjectDocumentList extends Component
     public function toggleSelectAll()
     {
         if ($this->selectAll) {
-            $this->selected_records = Project::select('projects.*'); // Select all records
-
-
-            /**Identify the records to disply by roles  */
-            if(Auth::user()->can('system access user')){
-                // $projects = $projects->where('projects.created_by', '=', Auth::user()->id);
             
 
-                /**Identify the records to display based on the current route */
-                /** User route for pending project updates for resubmission */
-                if($this->routeIsPendingProject){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                        ->whereNot('status','draft')
-                        ->where('allow_project_submission',true)
-                        
-                        ->where('created_by',Auth::user()->id);
-                } 
+            $user = Auth::user();
+            $userId = $user->id;
 
-                // for other routes, user will display all of his projects
-                $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
+            // $projectIdsSub = $this->buildProjectBaseQuery();
+
+                // dd($projectIdsSub );
 
 
-            }elseif(Auth::user()->can('system access reviewer')){
-                // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
-                
-                if($this->routeIsReview){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved')->whereNot('status','draft')
-                        ->whereHas('project_reviewers', function ($query) {
-                            $query->where('user_id', Auth::id())
-                                ->where('status', true)
-                                ; // Filter by the logged-in user's ID
-                        });
+            $docs = ProjectDocument::query()
+                // Only docs for the filtered projects
+                // ->whereIn('project_id', $projectIdsSub)
+                // Avoid N+1
+                ->with([
+                    'project:id,name,project_number,status,submitter_due_date,reviewer_due_date',
+                    'document_type:id,name' // adjust columns to your table
+                ]);
 
+    
+            // $docs  = $this->applyRouteBasedFilters($docs );
+
+
+
+            // (Optional) additional filters just for documents:
+            if (!empty($this->document_type_id)) {
+                $docs->where('document_type_id', $this->document_type_id);
+            }
+
+            // (Optional) additional filters just for documents:
+            if (!empty($this->project_id)) {
+                $docs->where('project_id', $this->project_id);
+            }
+
+            $search = $this->search ?? null; // or request('search');
+
+
+            $docs = $docs->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    // Search in ProjectDocument fields
+                    $q->where('rc_number', 'like', "%{$search}%") ;      // adjust column names
+                    // ->orWhere('description', 'like', "%{$search}%");
+
+                // Also search in related Project fields
+                })->orWhereHas('project', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('rc_number', 'like', "%{$search}%");
+                });
+            });
+
+
+            if(Auth::user()->hasPermissionTo('system access global admin')){
+
+            }else if(Auth::user()->hasPermissionTo('system access admin')){
+
+                if($this->route == "project-document.index.open-review"){
+                    // dd($this->route );
+                    $docs = $docs->applyRouteBasedFilters($this->route);
+                }elseif($this->route == "project-document.index.review-pending"){
+
+                    $docs = $docs->applyRouteBasedFilters($this->route);
                 }
 
-                // do not show drafts to reviewers
-                $this->selected_records = $this->selected_records->whereNot('status','draft');
+                // dd($docs);
+
+            }elseif(Auth::user()->hasPermissionTo('system access reviewer')){
+    
+
+                $userId = Auth::user()->id;
+                // only documents where THIS user is an active reviewer
+                // $docs->whereHas('project_reviewers', function ($q) use ($userId) {
+                //     $q->where('user_id', $userId);
+                //     // ->where('status', true);
+                // });
+
+                if($this->route == "project-document.index.open-review"){
+                    // dd($this->route );
+                    $docs = $docs->applyRouteBasedFilters($this->route);
+                }elseif($this->route == "project-document.index.review-pending"){
+
+                    $docs = $docs->applyRouteBasedFilters($this->route);
+                }
 
 
-            }elseif(Auth::user()->can('system access admin') || Auth::user()->can('system access global admin')){
-                // $this->selected_records = $this->selected_records->where('projects.created_by', '=', Auth::user()->id);
-                
-                if($this->routeIsReview){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved')->whereNot('status','draft')
-                        ->whereHas('project_reviewers', function ($query) {
-                            $query->where('status', true)
-                                ; // Filter by the logged-in user's ID
-                        })
-                        ->where('allow_project_submission',false);
 
-                }elseif($this->routeIsPendingProject){
-                    $this->selected_records = $this->selected_records->whereNot('status','approved') // show projects that are pending update because the project needs to be updated after being reviewed
-                        ->whereNot('status','draft')
-                        ->where('allow_project_submission',true);
-                        
-                        // ->where('created_by',Auth::user()->id);
-                } 
-
-                // do not show drafts to reviewers
-                $this->selected_records = $this->selected_records->whereNot('status','draft');
             }
+            
+            
+            if(Auth::user()->hasPermissionTo('system access user') && request()->routeIs('project-document.index')){
+
+                if($this->route == "project-document.index.changes-requested"){
+                    $docs = $docs->applyRouteBasedFilters($this->route);
+                    // dd($this->route);
+                }
+
+
+                $docs = $docs->ownedBy($userId);
+
+            }
+
+
+
+
+
+            // if (!empty($this->uploaded_from) && !empty($this->uploaded_to)) {
+            //     $docs->whereBetween('created_at', [$this->uploaded_from, $this->uploaded_to]);
+            // }
+
+            if(!empty($this->sort_by)){
+                // dd("Here")
+                $docs = $docs->applySortingUsingWhereHas($this->sort_by)  // sorrting with aggregate to other model relationships
+                    ->applySorting($this->sort_by); // sorrting directly to the project document model
+            }else{
+
+                $cods = $docs->applySorting($this->sort_by);
+                
+            }
+
+
+            // (Optional) additional filters just for documents:
+            if (!empty($this->document_status)) {
+                $docs->where('status', $this->document_status);
+            }
+    
+            if (!empty($this->review_status) && $this->review_status !== "all") {
+
+                // dd($this->review_status);
+                $docs = $docs->ApplyReviewStatusBasedFilters($this->review_status);
+            }
+ 
+
+
+
+            
          
-            $this->selected_records = $this->selected_records->pluck('id')->toArray();
+            $this->selected_records = $docs->pluck('id')->toArray();
 
         } else {
             $this->selected_records = []; // Deselect all
@@ -509,9 +597,9 @@ class ProjectDocumentList extends Component
             if(!empty($project_document->project_attachments)){
                 foreach($project_document->project_attachments as $attachment){
                     // Construct the full file path
-                    $dir = "uploads/project_attachments/project_{$project_document->project->id}/project_document_{$project_document->id}/{$project_document->created_at}/{$attachment->attachment}";
+                    $dir = "{$project_document->path}/{$project_document->stored_name}";
 
- 
+                    // dd($dir);
  
 
                      // check if the file is completely uploaded on the ftp server
@@ -520,12 +608,10 @@ class ProjectDocumentList extends Component
                         // delete the file on the ftp server
                         Storage::disk('ftp')->delete($dir); 
 
+                        // delete the file on the public server
+                        // Storage::disk('public')->delete($dir); 
 
-                        // check if the file does not exist any more 
-                        
-                        $attachment->delete();
-                        $attachment->save(); 
-                        
+ 
 
                     }
 
@@ -1220,6 +1306,67 @@ class ProjectDocumentList extends Component
 
 
         return Project::where('id',$this->project_id)->first();
+
+    }
+
+
+
+    public array $export_table_columns = [
+        'project_id' => false,
+        'document_type_id' => false,
+        'created_by' => false,
+        'updated_by' => false,
+        'status' => false, 
+        'last_submitted_at' => false,
+        'last_submitted_by' => false,
+
+        'allow_project_submission' => false,
+
+        'rc_number' => false,
+
+        'submitter_response_duration_type' => false,
+        'submitter_response_duration' => false,
+        'submitter_due_date' => false,
+
+        'reviewer_response_duration' => false,
+        'reviewer_response_duration_type' => false,
+        'reviewer_due_date' => false,
+
+
+        'type' => false,
+
+
+        'permit_number' => false,
+        'application_type' => false, 
+
+
+        'applicant' => false,
+        'document_from' => false,
+        'company' => false,
+        'comments' => false,
+        'findings' => false,
+
+    ];
+
+
+    public function export()
+    {
+        // return Excel::download(new CustomersExport, 'customers.xlsx');
+        // return (new CustomersExport($this->selected_records))->download('customers.xlsx');
+
+        if(empty($this->sort_by)){
+            $this->sort_by = "Latest Updated";
+        }
+
+
+        // ActivityLog::create([
+        //     'log_action' => 'Customer Export generated ',
+        //     'log_user' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
+
+
+        return (new ProjectDocumentExport())->forExportSorting($this->selected_records,$this->sort_by)->download('project_documents.xlsx');
 
     }
 

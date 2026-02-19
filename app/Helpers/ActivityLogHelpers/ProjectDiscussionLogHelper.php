@@ -62,6 +62,7 @@ class ProjectDiscussionLogHelper
         $reply_message = "'{$authName}' had a reply on the discussion on project '{$projectName}'.";
         // replied on you message
         $replied_on_you_messsage = "'{$authName}' had a reply on the discussion on project '{$projectName}'.";
+         
 
         if($projectDiscussion->parent_id){
             // it means there is a source and this is a reply
@@ -105,6 +106,7 @@ class ProjectDiscussionLogHelper
                 'reply' => $reply_message,
                 'replied-on-you' => $replied_on_you_messsage,
                 'deleted' => "Message on discussion for '{$projectName}' has been deleted by '{$authName}'.",
+                'mentioned-you' => "'{$authName}' had mentioned you on the discussion on project '{$projectName}'.",
                 default => "Discussion '{$event}' action successfully by '{$authName}'."
             };
 
@@ -119,6 +121,7 @@ class ProjectDiscussionLogHelper
             'reply' => $reply_message,
             'replied-on-you' => $replied_on_you_messsage,
             'deleted' => "Message on discussion for '{$projectName}' has been deleted by '{$authName}'.",
+            'mentioned-you' => "'{$authName}' had mentioned you on the discussion on project '{$projectName}'.",
             default => "Discussion '{$event}' action successfully by '{$authName}'."
         };
  

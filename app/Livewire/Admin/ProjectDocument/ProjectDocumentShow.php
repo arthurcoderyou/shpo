@@ -371,7 +371,7 @@ class ProjectDocumentShow extends Component
         $project_document = ProjectDocument::find($attachment->project_document_id);
 
         // Construct the full file path
-        $dir = "uploads/project_attachments/project_{$project_document->project->id}/project_document_{$project_document->id}/{$project_document->created_at}/{$attachment->attachment}";
+        $dir = "{$attachment->path}/{$attachment->stored_name}";
 
 
 
@@ -396,15 +396,18 @@ class ProjectDocumentShow extends Component
 
             // delete the file on the public server
             Storage::disk('public')->delete($dir); 
-
-
-            // check if the file does not exist any more 
-            
-            $attachment->delete();
-            $attachment->save(); 
-            
-
+ 
         }
+
+
+        // check if the file is completely uploaded on the ftp server
+        if (Storage::disk('ftp')->exists($dir)) { 
+
+            // delete the file on the ftp server
+            Storage::disk('ftp')->delete($dir);  
+ 
+        }
+
 
 
 

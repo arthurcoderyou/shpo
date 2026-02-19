@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Review;
 
+use App\Exports\ReviewExport;
 use App\Helpers\ProjectReviewHelpers;
 use App\Models\Review;
 use App\Models\Project;
@@ -247,6 +248,167 @@ class ReviewList extends Component
     public function toggleSelectAll()
     {
         if ($this->selectAll) {
+
+
+            $reviews = Review::select('reviews.*');
+
+            // if(Auth::user()->can('system access admin')){
+            //     if(!empty( $this->project_id)){
+            //         $reviews = $reviews->where('project_id' ,$this->project_id);
+            //     }
+
+            // }else{
+            //     $reviews = $reviews->where('project_id' ,$this->project_id);
+            // }
+                
+
+                // if (!empty($this->search)) {
+                //     $search = $this->search;
+                //     // dd($this->search);
+
+                //     $reviews = $reviews
+                //         ->join('users', 'users.id', '=', 'reviews.reviewer_id')
+                //         ->where(function ($query) use ($search) {
+                //             $query->where('reviews.project_review', 'LIKE', '%' . $search . '%')
+                //                 ->orWhere('users.name', 'LIKE', '%' . $search . '%');
+                //         })
+                //         ->select('reviews.*'); // Ensure you select the correct columns
+
+
+                // }
+                if (!empty($this->search)) {
+                    $reviews = $reviews->orWhere(function ($query) {
+                        $query->whereHas('reviewer', function ($q) {
+                            $q->where('name', 'like', "%{$this->search}%")
+                                ->orWhere('email', 'like', "%{$this->search}%");
+                        });
+                    });
+
+
+                    $reviews = $reviews->orWhere('project_review' ,'LIKE','%'.$this->search.'%' );
+
+    
+
+                }
+                if (!empty($this->review_status)) {
+                    $reviews = $reviews->where('review_status' ,$this->review_status );
+                }
+
+                if (!empty($this->view_status)) {
+
+                    if($this->view_status == "viewed"){
+                        $reviews = $reviews->where('viewed' ,true );
+                    }elseif($this->view_status == "not_viewed"){
+                        $reviews = $reviews->where('viewed' ,false );
+                    }else{
+
+                    }
+
+                    
+                }
+                
+
+                // // Find the role
+                // $role = Role::where('name', 'DSI God Admin')->first();
+
+                // if ($role) {
+                //     // Get user IDs only if role exists
+                //     $dsiGodAdminUserIds = $role->reviews()->pluck('id');
+                // } else {
+                //     // Set empty array if role doesn't exist
+                //     $dsiGodAdminUserIds = [];
+                // }
+
+
+                // // if(!Auth::user()->can('system access global admin')){
+                // //     $reviews =  $reviews->where('reviews.created_by','=',Auth::user()->id);
+                // // }
+
+                // // Adjust the query
+                // if (!Auth::user()->can('system access global admin') && !Auth::user()->can('system access admin')) {
+
+                //     $reviews = $reviews->where('reviews.created_by', '=', Auth::user()->id);
+
+                // }else
+                
+            
+                // $reviews = $reviews->whereNotIn('reviews.created_by', $dsiGodAdminUserIds);
+                // if(Auth::user()->can('system access user')){
+                //     $reviews = $reviews->where('reviews.created_by', '=', Auth::user()->id);
+                // }
+            
+
+
+            // dd($this->sort_by);
+            if(!empty($this->sort_by) && $this->sort_by != ""){
+                // dd($this->sort_by);
+                switch($this->sort_by){
+    
+                    case "Description A - Z":
+                        $reviews =  $reviews->orderBy('reviews.description','ASC');
+                        break;
+    
+                    case "Description Z - A":
+                        $reviews =  $reviews->orderBy('reviews.description','DESC');
+                        break;
+
+                    case "Federal Agency A - Z":
+                        $reviews =  $reviews->orderBy('reviews.federal_agency','ASC');
+                        break;
+        
+                    case "Federal Agency Z - A":
+                        $reviews =  $reviews->orderBy('reviews.federal_agency','DESC');
+                        break;
+        
+
+                    /**
+                     * "Latest" corresponds to sorting by created_at in descending (DESC) order, so the most recent records come first.
+                     * "Oldest" corresponds to sorting by created_at in ascending (ASC) order, so the earliest records come first.
+                     */
+
+                    case "Latest Added":
+                        $reviews =  $reviews->orderBy('reviews.created_at','DESC');
+                        break;
+
+                    case "Oldest Added":
+                        $reviews =  $reviews->orderBy('reviews.created_at','ASC');
+                        break;
+
+                    case "Latest Updated":
+                        $reviews =  $reviews->orderBy('reviews.updated_at','DESC');
+                        break;
+
+                    case "Oldest Updated":
+                        $reviews =  $reviews->orderBy('reviews.updated_at','ASC');
+                        break;
+                    default:
+                        $reviews =  $reviews->orderBy('reviews.updated_at','DESC');
+                        break;
+
+                }
+
+
+            }else{
+                $reviews =  $reviews->orderBy('reviews.created_at','DESC');
+
+            }
+
+
+
+
+            if(!empty( $this->project_id)){
+                $reviews = $reviews->where('project_id' ,$this->project_id);
+            }
+
+
+            if(!empty( $this->project_document_id)){
+                $reviews = $reviews->where('project_document_id' ,$this->project_document_id);
+            }
+
+
+
+            $this->selected_records = $reviews->pluck('id')->toArray();
+
             $this->selected_records = Review::pluck('id')->toArray(); // Select all records
         } else {
             $this->selected_records = []; // Deselect all
@@ -514,7 +676,51 @@ class ReviewList extends Component
 
 
 
+    public array $export_table_columns = [
+         
+        'Reviewed Document' => false, 
 
+        'Reviewed Project' => false,     
+        'RC Number' => false, 
+
+        
+        'Reviewer' => false,
+        'Review' => false,
+        'Review Status' => false,
+
+        // 'Submitter Response Duration Type' => false,
+        // 'Submitter Response Duration' => false,
+        // 'Submitter Due Date' => false,
+
+        // 'Reviewer Response Duration Type' => false,
+        // 'Reviewer Response Duration' => false,
+        // 'Reviewer Due Date' => false,
+
+        'Created By' => false, 
+        'Created At' => false,  
+    ];
+
+
+    public function export()
+    {
+        // return Excel::download(new CustomersExport, 'customers.xlsx');
+        // return (new CustomersExport($this->selected_records))->download('customers.xlsx');
+
+        if(empty($this->sort_by)){
+            $this->sort_by = "Latest Updated";
+        }
+
+
+        // ActivityLog::create([
+        //     'log_action' => 'Customer Export generated ',
+        //     'log_user' => Auth::user()->name,
+        //     'created_by' => Auth::user()->id,
+        // ]);
+
+
+        return (new ReviewExport())->forExportSorting($this->selected_records,$this->sort_by)->download('reviews.xlsx');
+
+    }
 
 
     
@@ -678,7 +884,7 @@ class ReviewList extends Component
 
 
 
-        $this->selected_records = $reviews->pluck('id')->toArray();
+        // $this->selected_records = $reviews->pluck('id')->toArray();
 
 
         $reviews = $reviews->paginate($this->record_count);

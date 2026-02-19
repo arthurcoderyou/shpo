@@ -193,11 +193,33 @@ class ProjectDocumentCreate extends Component
     }
 
 
-
+    // to check if ftp is reachable
+    private function ftpIsReachable(string $disk = 'ftp'): bool
+    {
+        try {
+            // Any real operation forces a connection
+            Storage::disk($disk)->files('.');  // or ->directories('.')
+            return true;
+        } catch (\Throwable $e) {
+            logger()->error('FTP connectivity check failed', [
+                'disk' => $disk,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
     
     public function save(){
 
-    // dd("Here");
+        // if(!$this->ftpIsReachable('ftp')){
+        //     dd("FTP is unreachable");
+
+
+        // }
+    
+
+
+        // dd("Ftp is good");
 
         // $this->validate([
         //     'attachments.*' => File::types([
@@ -234,7 +256,7 @@ class ProjectDocumentCreate extends Component
 
 
          
-
+        
         //save
         $project = Project::find( $this->project_id);
 
@@ -261,9 +283,12 @@ class ProjectDocumentCreate extends Component
 
             // Flatten in case you have nested arrays from the UI
             foreach ($this->attachments as $file) {
-
+                 
                 // Case 1: Livewire/HTTP-uploaded file objects
                 if ($file instanceof TemporaryUploadedFile || $file instanceof \Illuminate\Http\UploadedFile) {
+
+                    // dd("Single");
+
                     $originalName = $file->getClientOriginalName();
                     $ext   = strtolower($file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION));
                     $mime  = $file->getMimeType();
@@ -275,6 +300,10 @@ class ProjectDocumentCreate extends Component
 
                 // Case 2: Your code supplied an array (e.g., from a custom uploader)
                 } elseif (is_array($file)) {
+
+                    // dd("Array");
+
+
                     // Try to read conventional keys; adjust as needed
                     $originalName = $file['name'] ?? 'attachment';
                     $tmpPath      = $file['tmp_path'] ?? $file['path'] ?? null;
@@ -290,13 +319,55 @@ class ProjectDocumentCreate extends Component
 
                     $storedName = $now->format('Ymd_His').'-'.$originalName;
                     // Copy the file into your target disk/folder
-                    Storage::disk($disk)->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+                    // Storage::disk($disk)->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
+                    Storage::disk('ftp')->putFileAs($dir, new \Illuminate\Http\File($tmpPath), $storedName);
+
 
                 } else {
                     // Unknown type; skip
                     Log::warning('Skipping unsupported attachment type', ['type' => gettype($file)]);
                     continue;
                 }
+                    
+
+
+                    // dd("All Goods");
+                // // 2) Upload to FTP (stream from tmpPath if available; otherwise stream from local disk)
+                // $remotePath = $dir . '/' . $storedName;
+
+                // try {
+                //     if ($tmpPath && is_readable($tmpPath)) {
+
+
+                //         $stream = fopen($tmpPath, 'r');
+                //         Storage::disk('ftp')->putFileAs($dir, $stream);
+                //         if (is_resource($stream)) fclose($stream);
+                //     } else {
+                //         // fallback: read from local disk and stream to FTP
+                //         $localPath = Storage::putFileAs('ftp')->path($dir);
+                //         $stream = fopen($localPath, 'r');
+                //         Storage::disk('ftp')->put($dir, $stream);
+                //         if (is_resource($stream)) fclose($stream);
+                //     }
+                // } catch (\Throwable $e) {
+                //     Log::error('FTP upload failed', [
+                //         'error' => $e->getMessage(),
+                //         'remotePath' => $dir,
+                //         'project_id' => $project->id,
+                //         'project_document_id' => $project_document->id,
+                //     ]);
+
+                //     // choose behavior:
+                //     // A) continue and keep local copy only
+                //     // continue;
+
+                //     // B) fail the whole request
+                //     throw $e;
+                // }
+
+
+
 
                 // Optional integrity/dimensions
                 $sha256 = (isset($tmpPath) && is_readable($tmpPath)) ? @hash_file('sha256', $tmpPath) : null;

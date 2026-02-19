@@ -208,7 +208,7 @@
 
                                 <div class="flex items-center justify-center gap-2 border border-gray-200 rounded w-full h-14 bg-gray-100">
                                     <div class="text-center text-slate-900 text-sm font-medium">
-                                        No Attachments Found. <a href="" class="text-sky-500 hover:text-blue-500">Click to add files</a>
+                                        No Attachments Found. <a href="{{ route('project.project_document.edit_attachments',['project' => $project->id,'project_document' => $project_document->id]) }}"  class="text-sky-500 hover:text-blue-500">Click to add files</a>
                                     </div>
                                 </div>
 

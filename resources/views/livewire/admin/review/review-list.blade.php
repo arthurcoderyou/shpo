@@ -29,7 +29,8 @@
             this.showModal = false;
             this.showDocumentModal = false; 
             {{-- $wire.search = '';  --}}
-        }
+        },
+        openExport: false,  
     }"
 >
 
@@ -157,6 +158,12 @@
                         </button> --}}
                      {{-- @endif --}}
 
+                    <div class="inline-flex items-center gap-x-2"> 
+                    <!-- exportt projects box -->
+                        <x-ui.review.export-box :count="$count" :export_table_columns="$export_table_columns"  />
+                    <!-- ./ exportt projects box -->
+                    </div>
+
                     <x-ui.table.reset-button class="px-3 py-1.5" wireClick="resetFilters" />
                 </div>
                 </div>
@@ -166,7 +173,31 @@
             <!-- Table -->
             <table class="min-w-full divide-y divide-gray-200 ">
                 <thead class="bg-gray-50 ">
+
+
+
+
+
+
+
+
+
+
+
+
                 <tr>
+                    <th scope="col" class="ps-6 py-3 text-start">
+                        <label for="hs-at-with-checkboxes-main" class="flex">
+                        <input
+                            type="checkbox"
+                            wire:model="selectAll"
+                            wire:click="toggleSelectAll"
+                            wire:change="updateSelectedCount"
+                            class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none  "
+                            id="hs-at-with-checkboxes-main">
+                        <span class="sr-only">Checkbox</span>
+                        </label>
+                    </th>
                     <th scope="col" class="px-2 py-3 text-start max-w-32 text-wrap">
                         <div class="flex items-center gap-x-2">
                             <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 ">
@@ -214,20 +245,20 @@
                                 @endphp
 
 
-                                {{-- <td class="w-4 whitespace-nowrap">
+                                <td class="w-4 whitespace-nowrap">
                                     <div class="px-2 py-2">
-                                        <label for="project_{{ $review->id }}" class="flex">
+                                        <label for="review_{{ $review->id }}" class="flex">
                                             <input type="checkbox"
                                             wire:model="selected_records"
                                             wire:change="updateSelectedCount"
                                             class="shrink-0 border-gray-300 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none "
-                                            id="project_{{ $review->id }}"
+                                            id="review_{{ $review->id }}"
                                             value="{{ $review->id }}"
                                             >
                                             <span class="sr-only">Checkbox</span>
                                         </label>
                                     </div>
-                                </td> --}}
+                                </td>
 
                                 <!-- Actions -->
                                 <td class="w-fill text-nowrap align-top px-4 py-3   ">

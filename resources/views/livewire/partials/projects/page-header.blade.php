@@ -717,10 +717,17 @@ new class extends Component {
 
                         
                         
-                     
-                        <!-- Discussion button and box -->
-                            <x-ui.project.page-header.project-discussion-box  :project="$project" />
-                        <!-- ./ Discussion button and box -->
+                        @if(!empty($project_document))
+                            <!-- Discussion button and box -->
+                                <x-ui.project.page-header.project-discussion-box  :project="$project" :project_document="$project_document" />
+                            <!-- ./ Discussion button and box -->
+                            
+
+                        @else
+                            <!-- Discussion button and box -->
+                                <x-ui.project.page-header.project-discussion-box  :project="$project" />
+                            <!-- ./ Discussion button and box -->
+                        @endif
 
                         <!-- Project subscribers button and box -->
                             <x-ui.project.page-header.project-subs-box :project="$project" /> 

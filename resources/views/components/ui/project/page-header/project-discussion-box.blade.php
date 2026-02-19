@@ -68,7 +68,17 @@
                     @endif
                 </div>
 
-                <livewire:admin.project-discussion.project-discussion-list :project="$project" />
+                
+
+                @if(!empty($project_document))
+                    <livewire:admin.project-discussion.project-discussion-list :project="$project" :project_document="$project_document" />
+                    
+
+                @else
+                   <livewire:admin.project-discussion.project-discussion-list :project="$project"   />
+                @endif
+
+                
 
 
 

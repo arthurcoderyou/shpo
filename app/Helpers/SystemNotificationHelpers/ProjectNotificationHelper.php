@@ -38,7 +38,14 @@ class ProjectNotificationHelper
 
         // set custom users that will not be notified 
         $excluded_users = []; 
-        $excluded_users[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
+        if(Auth::user()->can('system access admin') || Auth::user()->can('system access admin')){
+
+
+        }else{
+            $excluded_users[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
+        }
+
+        
         // $excluded_users[] = 72; // for testing only
         // dd($excluded_users);
 

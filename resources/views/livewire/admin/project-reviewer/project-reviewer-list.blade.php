@@ -804,17 +804,7 @@
               @endif
 
 
-              @if( !$isFirst && !empty($row['project_reviewer_id']) && $row['review_status'] !== "pending")
-                @if($row['status'] == false )
-                <button  
-                    type="button"
-                    onclick="confirm('Are you sure, you want to go back in this review step for this project document?') || event.stopImmediatePropagation()"
-                    wire:click.prevent="set_as_current({{ $row['project_reviewer_id'] }})"
-                    class="px-2 py-1 text-sm rounded-md bg-slate-500 text-slate-50 hover:bg-slate-800 text-nowrap disabled:opacity-50 disabled:pointer-events-none">
-                    Set As Current  
-                </button> 
-                @endif
-              @endif
+              
 
 
               {{-- @if($isFirst)
@@ -936,20 +926,21 @@
                           </div> --}}
 
 
+
                           @if(!$isFirst)
-                          <div class="col-span-6 md:col-span-2" >
-                            <x-ui.select
-                              id="{{ $row['row_uid'] }}_user_id"
-                              label="User"
-                              x-model="updated_user_id"
-                              placeholder="Select user"
-                              :options="$isLast ? $user_admin_options : $user_options"
-                              :error="$errors->first('updated_user_id')"
-                              displayTooltip="true"
-                              position="right"
-                              tooltipText="Set the user"
-                            />
-                          </div>
+                            <div class="col-span-6 md:col-span-2" >
+                              <x-ui.select
+                                id="{{ $row['row_uid'] }}_user_id"
+                                label="User"
+                                x-model="updated_user_id"
+                                placeholder="Select user"
+                                :options="$isLast ? $user_admin_options : $user_options"
+                                :error="$errors->first('updated_user_id')"
+                                displayTooltip="true"
+                                position="right"
+                                tooltipText="Set the user"
+                              />
+                            </div>
                           @endif
 
 
@@ -999,7 +990,7 @@
               {{-- @endif --}}
 
 
-              @if($isFirst || $isLast || $row['review_status'] !== "pending" )
+              @if($isFirst || $isLast || $row['review_status'] !== "pending" ||  $row['status'] == true)
                 
 
                 <button
@@ -1027,6 +1018,69 @@
                 </button>
 
               @endif
+
+              
+ 
+
+              @if( !$isFirst && !empty($row['project_reviewer_id'])  )
+
+
+                @if($row['status'] == false && $row['review_status'] !== "pending" )
+                  {{-- -
+                  setting reviewer that has already reviewed the project into current reviewer again 
+                  REVIEW BACK
+                  --}}
+
+
+                  <button  
+                      type="button"
+                      onclick="confirm('Are you sure, you want to go back in this review step for this project document?') || event.stopImmediatePropagation()"
+                      wire:click.prevent="set_as_current({{ $row['project_reviewer_id'] }})"
+                      class="px-2 py-1 text-sm rounded-md bg-slate-500 text-slate-50 hover:bg-slate-800 text-nowrap disabled:opacity-50 disabled:pointer-events-none">
+                      Set as Current  
+                  </button> 
+                @elseif($row['status'] == false && $row['review_status'] == "pending" )
+
+                  {{-- -
+                  setting reviewer that has not reviewed the project into current reviewer and skipped previuos reviewers 
+                  REVIEW FORWARD
+                  --}}
+
+                  <button  
+                      type="button"
+                      onclick="confirm('Are you sure, you want to go skip other reviewers in this review list and move to this review step for this project document?') || event.stopImmediatePropagation()"
+                      wire:click.prevent="set_as_current({{ $row['project_reviewer_id'] }})"
+                      class="px-2 py-1 text-sm rounded-md bg-slate-500 text-slate-50 hover:bg-slate-800 text-nowrap disabled:opacity-50 disabled:pointer-events-none">
+                      Set as Current  
+                  </button> 
+
+                @else
+
+                  <button  
+                    type="button"
+                    disabled
+                    class="px-2 py-1 text-sm rounded-md bg-slate-500 text-slate-50 hover:bg-slate-800 text-nowrap disabled:opacity-50 disabled:pointer-events-none">
+                    Set as Current  
+                </button> 
+
+
+                @endif
+
+                 
+ 
+              @else 
+              
+
+                 <button  
+                    type="button"
+                    disabled
+                    class="px-2 py-1 text-sm rounded-md bg-slate-500 text-slate-50 hover:bg-slate-800 text-nowrap disabled:opacity-50 disabled:pointer-events-none">
+                    Set As Current  
+                </button> 
+
+              @endif
+
+
 
 
               

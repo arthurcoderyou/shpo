@@ -194,6 +194,13 @@ class ProjectDocumentCreate extends Component
     public $selected_attachments = [];
 
 
+
+    
+
+
+
+
+
     public function validateUploadedFile(){
 
         $this->validate([
@@ -208,6 +215,13 @@ class ProjectDocumentCreate extends Component
 
 
         ]);
+
+
+
+
+
+
+
 
         $user = Auth::user(); 
 

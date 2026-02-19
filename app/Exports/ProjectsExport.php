@@ -16,7 +16,7 @@ class ProjectsExport  implements FromQuery, WithHeadings, WithMapping
     public $project_ids;
     public $sort_by;
 
-    public function forCustomers(array $project_ids,string $sort_by)
+    public function forExportSorting(array $project_ids,string $sort_by)
     {
         $this->project_ids = $project_ids;
         $this->sort_by = $sort_by;
@@ -57,8 +57,8 @@ class ProjectsExport  implements FromQuery, WithHeadings, WithMapping
             // 'Reviewer Response Duration Type',
             // 'Reviewer Due Date',
 
-            'Latitude',
-            'Longitude',
+            // 'Latitude',
+            // 'Longitude',
             'Location',
 
             'Last Submitted At',
@@ -69,13 +69,13 @@ class ProjectsExport  implements FromQuery, WithHeadings, WithMapping
             'Allotted Review Time (Hours)',
 
             // 'Staff Engineering Data',
-            'Staff Initials',
+            // 'Staff Initials',
             'Lot Size',
             'Unit of Size',
-            'Site Area Inspection',
-            'Burials Discovered Onsite',
-            'Certificate of Approval',
-            'Notice of Violation',
+            // 'Site Area Inspection',
+            // 'Burials Discovered Onsite',
+            // 'Certificate of Approval',
+            // 'Notice of Violation',
 
             'Installation',
             'Sub Area',
@@ -92,15 +92,15 @@ class ProjectsExport  implements FromQuery, WithHeadings, WithMapping
         return [
             $project->name,
             $project->description,
-            $project->agency, // shown as Company
+            $project->type == "Private" ? optional($project->creator)->company  : $project->agency, // shown as Company
             ucfirst($project->type), // local / federal
 
-            strtoupper($project->status),
+            strtoupper(str_replace('_', ' ', (string) $project->status)),
 
             $project->allow_project_submission ? 'Yes' : 'No',
 
             optional($project->creator)->name ?? $project->created_by,
-            optional($project->updater)->name ?? $project->updated_by,
+            optional($project->updator)->name ?? $project->updated_by,
 
             optional($project->created_at)?->format('Y-m-d H:i'),
             optional($project->updated_at)?->format('Y-m-d H:i'),
@@ -120,8 +120,8 @@ class ProjectsExport  implements FromQuery, WithHeadings, WithMapping
             // $project->reviewer_response_duration_type,
             // optional($project->reviewer_due_date)?->format('Y-m-d'),
 
-            $project->latitude,
-            $project->longitude,
+            // $project->latitude,
+            // $project->longitude,
             $project->location,
 
             optional($project->last_submitted_at)?->format('Y-m-d H:i'),
@@ -133,14 +133,14 @@ class ProjectsExport  implements FromQuery, WithHeadings, WithMapping
             $project->allotted_review_time_hours,
 
             // $project->staff_engineering_data,
-            $project->staff_initials,
+            // $project->staff_initials,
             $project->lot_size,
             $project->unit_of_size,
 
-            $project->site_area_inspection ? 'Yes' : 'No',
-            $project->burials_discovered_onsite ? 'Yes' : 'No',
-            $project->certificate_of_approval ? 'Yes' : 'No',
-            $project->notice_of_violation ? 'Yes' : 'No',
+            // $project->site_area_inspection ? 'Yes' : 'No',
+            // $project->burials_discovered_onsite ? 'Yes' : 'No',
+            // $project->certificate_of_approval ? 'Yes' : 'No',
+            // $project->notice_of_violation ? 'Yes' : 'No',
 
             $project->installation,
             $project->sub_area,

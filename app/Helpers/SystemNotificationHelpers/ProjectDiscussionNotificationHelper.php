@@ -37,9 +37,17 @@ class ProjectDiscussionNotificationHelper
 
         // set custom users that will not be notified 
         $excluded_users = []; 
-        $excluded_users[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
+        if(Auth::user()->can('system access admin') || Auth::user()->can('system access admin')){
+            // do nothing
+        }else{
+            $excluded_users[] = Auth::user()->id ?? null; // exclude the current user to the notified user list 
+        }
+
+
         // $excluded_users[] = 72; // for testing only
         // dd($excluded_users);
+
+
 
 
         // notified users without hte popup notification | ideal in notifying the user that triggered the event without the popu
@@ -183,7 +191,9 @@ class ProjectDiscussionNotificationHelper
             
         );
 
+        
     }
-    
+
+ 
  
 }
